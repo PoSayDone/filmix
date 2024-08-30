@@ -25,7 +25,7 @@ class MovieSearchViewModel(private val repository: FilmixRepository) : ViewModel
 
         viewModelScope.launch {
             try {
-                val result = repository.searchMovies(query)
+                val result = repository.fetchListWIthQuerry(query)
                 _movies.value = result
             } catch (e: Exception) {
                 _error.value = "Failed to load movies"

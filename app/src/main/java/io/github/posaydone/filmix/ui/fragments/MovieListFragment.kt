@@ -1,15 +1,18 @@
 package io.github.posaydone.filmix.ui.fragments
 
-import android.R.attr.numColumns
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import io.github.posaydone.filmix.data.adapters.MoviesAdapter
 import io.github.posaydone.filmix.data.api.RetrofitClient
 import io.github.posaydone.filmix.data.repository.FilmixRepository
@@ -22,6 +25,8 @@ import io.github.posaydone.filmix.utils.RecyclerViewMargin
 class MovieListFragment : Fragment() {
     private lateinit var binding: FragmentMovieListBinding
     private lateinit var moviesAdapter: MoviesAdapter
+    private var isLoading = true
+    private var page = 2
 
     private val movieViewModel: MovieViewModel by viewModels {
         MovieViewModelFactory(FilmixRepository(RetrofitClient.apiService))
@@ -41,8 +46,10 @@ class MovieListFragment : Fragment() {
     }
 
     private fun initRcView() = with(binding) {
-        rcMovies.layoutManager = GridLayoutManager(activity, 3)
-        val decoration = RecyclerViewMargin(24, numColumns)
+        val spanCount = 3
+        val gridLayoutManager = GridLayoutManager(activity, spanCount)
+        rcMovies.layoutManager = gridLayoutManager
+        val decoration = RecyclerViewMargin(spanCount, 24, false)
         rcMovies.addItemDecoration(decoration)
 
         moviesAdapter = MoviesAdapter(emptyList()) { movie ->
@@ -54,8 +61,25 @@ class MovieListFragment : Fragment() {
             moviesAdapter.updateMovies(movies)
         })
 
-        // Запуск загрузки фильмов
-        movieViewModel.loadMovies()
+        rcMovies.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (dy > 0) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    val visibleItemCount = gridLayoutManager.childCount
+                    val totalItemCount = gridLayoutManager.itemCount
+                    val firstVisibleItemPosition = gridLayoutManager.findFirstVisibleItemPosition()
+
+                    if (isLoading) {
+                        if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount) {
+                            isLoading = false;
+                            movieViewModel.loadMoreMovies(page)
+                            page++
+                            isLoading = true;
+                        }
+                    }
+                }
+            }
+        })
     }
 
     companion object {

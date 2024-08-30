@@ -4,43 +4,63 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import io.github.posaydone.filmix.data.model.Episode
 import androidx.lifecycle.viewModelScope
+import io.github.posaydone.filmix.data.model.Episode
+import io.github.posaydone.filmix.data.model.File
 import io.github.posaydone.filmix.data.model.MovieOrSeriesResponse
-import io.github.posaydone.filmix.data.model.MoviePiece
+import io.github.posaydone.filmix.data.model.MovieTranslation
 import io.github.posaydone.filmix.data.model.Season
 import io.github.posaydone.filmix.data.model.Series
+import io.github.posaydone.filmix.data.model.SeriesProgress
 import io.github.posaydone.filmix.data.model.Translation
 import io.github.posaydone.filmix.data.repository.FilmixRepository
+import io.github.posaydone.filmix.data.repository.SeriesProgressRepository
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
-class PlayerViewModel(private val repository: FilmixRepository, private val movieId: Int) : ViewModel() {
-    private val _translations = MutableLiveData<List<String>>()
-    val translations: LiveData<List<String>> get() = _translations
+class PlayerViewModel(
+    private val filmixRepository: FilmixRepository,
+    private val seriesProgressRepository: SeriesProgressRepository,
+    private val movieId: Int
+) :
+    ViewModel() {
 
-    private val _seasons = MutableLiveData<List<String>>()
-    val seasons: LiveData<List<String>> get() = _seasons
+    private val TAG: String? = "PlayerVIewModel"
 
-    private val _episodes = MutableLiveData<List<Episode>>()
-    val episodes: LiveData<List<Episode>> get() = _episodes
+    private val _selectedSeason = MutableLiveData<Season?>()
+    val selectedSeason: LiveData<Season?> get() = _selectedSeason
 
-    private val _qualities = MutableLiveData<List<Int>>()
-    val qualities: LiveData<List<Int>> get() = _qualities
+    private val _selectedEpisode = MutableLiveData<Episode?>()
+    val selectedEpisode: LiveData<Episode?> get() = _selectedEpisode
 
-    private val _videoUrl = MutableLiveData<String?>()
-    val videoUrl: LiveData<String?> get() = _videoUrl
+    private val _selectedTranslation = MutableLiveData<Translation?>()
+    val selectedTranslation: LiveData<Translation?> get() = _selectedTranslation
+
+    private val _selectedQuality = MutableLiveData<File?>()
+    val selectedQuality: LiveData<File?> get() = _selectedQuality
+
+    private val _seasons = MutableLiveData<List<Season>?>()
+    val seasons: LiveData<List<Season>?> get() = _seasons
 
 
-    // Данные
-    lateinit var contentType: String
+    private val _moviePieces = MutableLiveData<List<MovieTranslation>?>()
+    val moviePieces: LiveData<List<MovieTranslation>?> get() = _moviePieces
+
+    private val _selectedMovieTranslation = MutableLiveData<MovieTranslation?>()
+    val selectedMovieTranslation: LiveData<MovieTranslation?> get() = _selectedMovieTranslation
+
+
+    private val _contentType = MutableLiveData<String>()
+    val contentType: LiveData<String> get() = _contentType
+
+    // LiveData for the final video URL
+    private val _videoUrl = MutableLiveData<String>()
+    val videoUrl: LiveData<String> get() = _videoUrl
+
 
     private lateinit var series: Series
-    private lateinit var movie: List<MoviePiece>
-
-    private var selectedTranslation: Translation? = null
-    private var selectedSeason: Season? = null
-    private var selectedEpisode: Episode? = null
-    private var selectedQuality: Int? = null
+    private lateinit var movie: List<MovieTranslation>
 
 
     init {
@@ -50,82 +70,123 @@ class PlayerViewModel(private val repository: FilmixRepository, private val movi
     // Инициализация данных
     fun initialize() {
         viewModelScope.launch {
-            val response = repository.fetchSeriesOrMovie(movieId)
-            when (response)  {
+            val response = filmixRepository.fetchSeriesOrMovie(movieId)
+            when (response) {
                 is MovieOrSeriesResponse.MovieResponse -> {
                     Log.d("contentType", "Movie")
                     movie = response.movies
+                    _moviePieces.value = movie
+                    _contentType.value = "movie"
                 }
+
                 is MovieOrSeriesResponse.SeriesResponse -> {
                     Log.d("contentType", "Series")
-                    val translationsData = response.series
-                    series = translationsData
-                    val translationKeys = translationsData.keys.toList()
-                    _translations.value = translationKeys
+                    val seriesTransformed = response.series
+                    series = seriesTransformed
+                    _contentType.value = "series"
+                    _seasons.value = seriesTransformed.seasons
+                    restoreSeriesProgress()
+                }
+            }
+        }
+    }
 
-                    if (translationKeys.isNotEmpty()) {
-                        selectTranslation(translationKeys[0])
+    private fun restoreSeriesProgress() {
+        viewModelScope.launch {
+            val savedSeries = seriesProgressRepository.getSeriesProgressById(movieId).firstOrNull()
+            Log.d(TAG, "restoreSeriesProgress: ${savedSeries}")
+            if (savedSeries != null) {
+                seasons.value?.find { it.season == savedSeries.season }.let {
+                    _selectedSeason.value = it
+                    selectedSeason.value?.episodes?.find { it.episode == savedSeries.episode }.let {
+                        _selectedEpisode.value = it
+                        selectedEpisode.value?.translations?.find { it.translation == savedSeries.translation }
+                            .let {
+                                _selectedTranslation.value = it
+                                selectedTranslation.value?.files?.find {
+                                    it.quality == savedSeries.quality
+                                }.let {
+                                    _selectedQuality.value = it
+                                }
+                            }
+                    }
+                }
+            } else {
+                seasons.value?.get(0).let {
+                    _selectedSeason.value = it
+                    selectedSeason.value?.episodes?.get(0).let {
+                        _selectedEpisode.value = it
                     }
                 }
             }
-
-
         }
     }
 
-    // Выбор озвучки
-    fun selectTranslation(translationKey: String) {
-        selectedTranslation = series[translationKey]
-        selectedTranslation?.let {
-            val seasonsList = it.keys.map { it }.sorted()
-            _seasons.value = seasonsList
+    // Function to set the selected season
+    fun setSeason(season: Season) {
+        _selectedSeason.value = season
+        _selectedEpisode.value = null
+        _selectedTranslation.value = null
+        _selectedQuality.value = null
+    }
 
-            if (seasonsList.isNotEmpty()) {
-                Log.d("Seasons", seasonsList.toString())
-                selectSeason(seasonsList[0])
+    // Function to set the selected episode
+    fun setEpisode(episode: Episode) {
+        _selectedEpisode.value = episode
+        // Reset translation and quality when episode changes
+        _selectedTranslation.value = null
+        _selectedQuality.value = null
+    }
+
+    // Function to set the selected translation
+    fun setTranslation(translation: Translation) {
+        _selectedTranslation.value = translation
+        // Reset quality when translation changes
+        _selectedQuality.value = null
+    }
+
+    fun setMovieTranslation(movieTranslation: MovieTranslation) {
+        _selectedMovieTranslation.value = movieTranslation
+        _selectedQuality.value = null
+    }
+
+    // Function to set the selected quality
+    fun setQuality(qualityFile: File) {
+        _selectedQuality.value = qualityFile
+        updateVideoUrl()
+    }
+
+    // Function to update the video URL
+    private fun updateVideoUrl() {
+        if (contentType.value == "series") {
+            val season = selectedSeason.value
+            val episode = selectedEpisode.value
+            val translation = _selectedTranslation.value
+            val qualityFile = _selectedQuality.value
+
+            if (season != null && episode != null && translation != null && qualityFile != null) {
+                _videoUrl.value = qualityFile.url
+                viewModelScope.launch {
+                    seriesProgressRepository.insertSeriesProgress(
+                        SeriesProgress(
+                            movieId,
+                            season.season,
+                            episode.episode,
+                            translation.translation,
+                            qualityFile.quality
+                        )
+                    )
+                }
+            }
+        } else {
+            val translation = _selectedMovieTranslation.value
+            val qualityFile = _selectedQuality.value
+
+            if (translation != null && qualityFile != null) {
+                val file =
+                    _selectedMovieTranslation.value?.files?.find { it.quality == qualityFile.quality }
+                _videoUrl.value = file?.url
             }
         }
     }
-
-    // Выбор сезона
-    fun selectSeason(seasonId: String) {
-        selectedSeason = selectedTranslation?.get(seasonId)
-        selectedSeason?.let {
-            val episodesList = it.episodes.values.toList().sortedBy { it.episode }
-            Log.d("Episodes", episodesList.toString())
-            _episodes.value = episodesList
-
-            if (episodesList.isNotEmpty()) {
-                selectEpisode(0)
-            }
-        }
-    }
-
-    // Выбор серии
-    fun selectEpisode(episodeIndex: Int) {
-        val episode = episodeIndex +1
-        Log.d("Episodes", selectedSeason?.episodes.toString())
-        selectedEpisode = selectedSeason?.episodes?.get("e$episode")
-        selectedEpisode?.let {
-            val qualitiesList = it.files.map { if (it.quality == 480) it.quality else null }
-                .filterNotNull()
-                .distinct()
-                .sortedDescending()
-            _qualities.value = qualitiesList
-
-            if (qualitiesList.isNotEmpty()) {
-                selectQuality(qualitiesList[0])
-            }
-        }
-    }
-
-
-    // Выбор качества видео
-    fun selectQuality(quality: Int) {
-        selectedQuality= quality
-        val selectedFile = selectedEpisode?.files?.find { it.quality == quality }
-        Log.d("FILE", selectedFile.toString())
-        _videoUrl.value = selectedFile?.url
-    }
-
 }

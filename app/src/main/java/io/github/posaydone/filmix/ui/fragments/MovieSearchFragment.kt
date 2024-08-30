@@ -1,16 +1,16 @@
 package io.github.posaydone.filmix.ui.fragments
 
-import android.R.attr.numColumns
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import io.github.posaydone.filmix.data.adapters.MoviesAdapter
 import io.github.posaydone.filmix.data.api.RetrofitClient
 import io.github.posaydone.filmix.data.repository.FilmixRepository
@@ -43,13 +43,17 @@ class MovieSearchFragment : Fragment() {
 
         setupRecyclerView()
         setupObservers()
-
-        binding.searchButton.setOnClickListener {
-            val query = binding.searchEditText.text.toString()
-            if (query.isNotEmpty()) {
-                viewModel.searchMovies(query)
+//        binding.searchView.setupWithSearchBar(binding.searchBar)
+        binding.searchView.editText.doOnTextChanged() { text, _, _, _ ->
+            if (text.toString() != "") {
+                performSearch(text.toString())
             }
         }
+        binding.searchView.onFocusChangeListener
+    }
+
+    private fun performSearch(query: String) {
+        viewModel.searchMovies(query)
     }
 
     private fun setupRecyclerView() = with(binding) {
@@ -58,8 +62,9 @@ class MovieSearchFragment : Fragment() {
             findNavController().navigate(action)
         }
 
-        searchResultsRecyclerView.layoutManager = GridLayoutManager(activity, 3)
-        val decoration = RecyclerViewMargin(24, numColumns)
+        val spanCount = 3
+        searchResultsRecyclerView.layoutManager = GridLayoutManager(activity, spanCount)
+        val decoration = RecyclerViewMargin(spanCount, 24, false)
         searchResultsRecyclerView.addItemDecoration(decoration)
         searchResultsRecyclerView.adapter = adapter
     }

@@ -1,74 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    >
 
-    <androidx.cardview.widget.CardView
+    <!-- AppBarLayout with Toolbar -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="32dp">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <ImageView
-            android:id="@+id/moviePosterImageView"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:scaleType="centerCrop"
-            tools:srcCompat="@tools:sample/avatars[1]" />
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="16dp">
+            android:clipToPadding="false"
+            android:padding="16dp">
 
-            <TextView
-                android:id="@+id/kpScoreTextView"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:text="8.1" />
-        </androidx.cardview.widget.CardView>
+                android:orientation="vertical">
 
-    </androidx.cardview.widget.CardView>
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="32dp">
 
-    <TextView
-        android:id="@+id/movieTitleTextView"
+                    <ImageView
+                        android:id="@+id/moviePosterImageView"
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp"
+                        android:scaleType="centerCrop"
+                        tools:srcCompat="@tools:sample/avatars[1]" />
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="16dp"
+                        app:cardCornerRadius="16dp">
+
+                        <TextView
+                            android:id="@+id/kpScoreTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="8dp"
+                            android:text="8.1" />
+                    </androidx.cardview.widget.CardView>
+
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:id="@+id/movieTitleTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    tools:text="@tools:sample/cities" />
+
+                <TextView
+                    android:id="@+id/movieOriginalTitleTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="16sp"
+                    tools:text="@tools:sample/lorem" />
+
+                <Button
+                    android:id="@+id/playButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Смотреть"
+                    app:icon="@drawable/ic_arrow_play"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp" />
+
+                <TextView
+                    android:id="@+id/movieDescriptionTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    tools:text="@tools:sample/lorem/random" />
+
+            </LinearLayout>
+
+        </ScrollView>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        tools:text="@tools:sample/cities" />
+        android:fitsSystemWindows="true"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/movieOriginalTitleTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textSize="16sp"
-        tools:text="@tools:sample/lorem" />
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar_a"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Главная" />
 
-    <Button
-        android:id="@+id/playButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Смотреть"
-        app:icon="@drawable/ic_arrow_play"
-        app:iconGravity="textStart"
-        app:iconPadding="8dp" />
+        <!-- Add filters as required -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/filter_chip_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true">
+            <!-- Your filters here -->
+        </com.google.android.material.chip.ChipGroup>
 
-    <TextView
-        android:id="@+id/movieDescriptionTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="TextView"
-        tools:text="@tools:sample/lorem/random" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-</LinearLayout>
+    <!-- ScrollView for Content -->
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -11,23 +11,20 @@ import kotlinx.coroutines.launch
 
 class MovieViewModel(private val repository: FilmixRepository) : ViewModel() {
 
-    private var cachedMovieCards: List<MovieCard>? = null
-
-    private val _movies = MutableLiveData<List<MovieCard>>()
+    private var _movies = MutableLiveData<List<MovieCard>>()
     val movies: LiveData<List<MovieCard>> get() = _movies
 
-    fun loadMovies() {
+    init {
         viewModelScope.launch {
-            // Проверяем, есть ли уже закэшированные фильмы
-            if (cachedMovieCards == null) {
-                // Если нет, загружаем их из репозитория
-                val movieList = repository.fetchMovies()
-                cachedMovieCards = movieList // Кэшируем данные
-                _movies.value = movieList
-            } else {
-                // Если есть, используем кэшированные данные
-                _movies.value = cachedMovieCards!!
-            }
+            val movieList = repository.fetchList(24)
+            _movies.value = movieList
+        }
+    }
+
+    fun loadMoreMovies(page: Int) {
+        viewModelScope.launch {
+            val movieList = repository.fetchList(24, page)
+            _movies.value = _movies.value?.plus(movieList)
         }
     }
 }

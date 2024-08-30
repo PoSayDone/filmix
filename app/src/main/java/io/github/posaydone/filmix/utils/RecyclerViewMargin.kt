@@ -1,12 +1,12 @@
 package io.github.posaydone.filmix.utils
 import android.graphics.Rect
-import android.util.Log
 import android.view.View
-import androidx.annotation.IntRange
 import androidx.recyclerview.widget.RecyclerView
+
 class RecyclerViewMargin(
-    @IntRange(from = 0) private val margin: Int,
-    @IntRange(from = 0) private val columns: Int
+    private val spanCount: Int,
+    private val spacing: Int,
+    private val includeEdge: Boolean
 ) : RecyclerView.ItemDecoration() {
 
     override fun getItemOffsets(
@@ -15,14 +15,23 @@ class RecyclerViewMargin(
         parent: RecyclerView,
         state: RecyclerView.State
     ) {
-        val position = parent.getChildLayoutPosition(view)
-        val column = position % columns
+        val position = parent.getChildAdapterPosition(view) // item position
+        val column = position % spanCount // item column
 
-        outRect.left = column * margin / columns; // column * ((1f / spanCount) * spacing)
-        outRect.right = margin - (column + 1) * margin / columns; // spacing - (column + 1) * ((1f /    spanCount) * spacing)
+        if (includeEdge) {
+            outRect.left = spacing - column * spacing / spanCount
+            outRect.right = (column + 1) * spacing / spanCount
 
-        if (position >= columns) {
-            outRect.top = margin; // item top
+            if (position < spanCount) { // top edge
+                outRect.top = spacing
+            }
+            outRect.bottom = spacing // item bottom
+        } else {
+            outRect.left = column * spacing / spanCount
+            outRect.right = spacing - (column + 1) * spacing / spanCount
+            if (position >= spanCount) {
+                outRect.top = spacing // item top
+            }
         }
     }
 }
