@@ -1,7 +1,6 @@
 package io.github.posaydone.filmix.ui.fragments
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,7 +43,7 @@ class MovieSearchFragment : Fragment() {
         setupRecyclerView()
         setupObservers()
 //        binding.searchView.setupWithSearchBar(binding.searchBar)
-        binding.searchView.editText.doOnTextChanged() { text, _, _, _ ->
+        binding.searchView.editText.doOnTextChanged { text, _, _, _ ->
             if (text.toString() != "") {
                 performSearch(text.toString())
             }

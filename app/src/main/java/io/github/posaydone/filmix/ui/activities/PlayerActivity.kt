@@ -60,7 +60,7 @@ class PlayerActivity : AppCompatActivity() {
         episodesDialogBinding = EpisodesDialogBinding.bind(episdoesDialogView)
 
 
-        controlsBinding.episodePickerButton.setOnClickListener() {
+        controlsBinding.episodePickerButton.setOnClickListener {
             episodesDialog.show()
         }
         setContentView(binding.root)

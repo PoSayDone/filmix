@@ -15,7 +15,6 @@ import io.github.posaydone.filmix.data.model.SeriesProgress
 import io.github.posaydone.filmix.data.model.Translation
 import io.github.posaydone.filmix.data.repository.FilmixRepository
 import io.github.posaydone.filmix.data.repository.SeriesProgressRepository
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
@@ -26,7 +25,7 @@ class PlayerViewModel(
 ) :
     ViewModel() {
 
-    private val TAG: String? = "PlayerVIewModel"
+    private val TAG: String = "PlayerVIewModel"
 
     private val _selectedSeason = MutableLiveData<Season?>()
     val selectedSeason: LiveData<Season?> get() = _selectedSeason
@@ -70,8 +69,7 @@ class PlayerViewModel(
     // Инициализация данных
     fun initialize() {
         viewModelScope.launch {
-            val response = filmixRepository.fetchSeriesOrMovie(movieId)
-            when (response) {
+            when (val response = filmixRepository.fetchSeriesOrMovie(movieId)) {
                 is MovieOrSeriesResponse.MovieResponse -> {
                     Log.d("contentType", "Movie")
                     movie = response.movies

@@ -4,9 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -35,7 +32,7 @@ class MovieListFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentMovieListBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -71,10 +68,10 @@ class MovieListFragment : Fragment() {
 
                     if (isLoading) {
                         if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount) {
-                            isLoading = false;
+                            isLoading = false
                             movieViewModel.loadMoreMovies(page)
                             page++
-                            isLoading = true;
+                            isLoading = true
                         }
                     }
                 }

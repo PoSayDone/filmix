@@ -5,18 +5,18 @@ import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import io.github.posaydone.filmix.data.api.FilmixApiService
 import io.github.posaydone.filmix.data.model.Episode
+import io.github.posaydone.filmix.data.model.File
+import io.github.posaydone.filmix.data.model.FilmixSeries
 import io.github.posaydone.filmix.data.model.MovieCard
 import io.github.posaydone.filmix.data.model.MovieDetails
-import io.github.posaydone.filmix.data.model.MovieTranslation
-import io.github.posaydone.filmix.data.model.FilmixSeries
 import io.github.posaydone.filmix.data.model.MovieOrSeriesResponse
+import io.github.posaydone.filmix.data.model.MovieTranslation
 import io.github.posaydone.filmix.data.model.Season
 import io.github.posaydone.filmix.data.model.Series
-import io.github.posaydone.filmix.data.model.File
 import io.github.posaydone.filmix.data.model.Translation
 
 class FilmixRepository(private val apiService: FilmixApiService) {
-    private val TAG: String? = "FilmixRepo"
+    private val TAG: String = "FilmixRepo"
 
     fun transformSeries(filmixSeries: FilmixSeries): Series {
         val transformedSeasons = mutableListOf<Season>()
@@ -32,7 +32,7 @@ class FilmixRepository(private val apiService: FilmixApiService) {
                     transformedSeasons.add(season)
                 }
                 seasonValue.episodes.forEach { (_, episodeValue) ->
-                    var episode = season?.episodes?.find { it.episode == episodeValue.episode }
+                    var episode = season.episodes.find { it.episode == episodeValue.episode }
                     if (episode == null) {
                         episode = Episode(
                             episodeValue.episode,
