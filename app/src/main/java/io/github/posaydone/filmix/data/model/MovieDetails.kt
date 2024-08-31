@@ -13,7 +13,7 @@ data class MovieDetails(
     val is_favorite: Boolean,
     val is_hdr: Boolean,
     val last_episode: Any,
-    val max_episode: Any,
+    val max_episode: MaxEpisode,
     val mpaa: String,
     val original_title: String,
     val poster: String,
@@ -42,4 +42,8 @@ data class Genre(
 data class Country(
     val id: Int,
     val name: String
+)
+data class MaxEpisode(
+    val season: Int,
+    val episode: Int
 )

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.posaydone.filmix.data.model.Episode
 import io.github.posaydone.filmix.data.model.File
+import io.github.posaydone.filmix.data.model.MovieDetails
 import io.github.posaydone.filmix.data.model.MovieOrSeriesResponse
 import io.github.posaydone.filmix.data.model.MovieTranslation
 import io.github.posaydone.filmix.data.model.Season
@@ -49,6 +50,8 @@ class PlayerViewModel(
     private val _selectedMovieTranslation = MutableLiveData<MovieTranslation?>()
     val selectedMovieTranslation: LiveData<MovieTranslation?> get() = _selectedMovieTranslation
 
+    private val _details = MutableLiveData<MovieDetails>()
+    val details: LiveData<MovieDetails> get() = _details
 
     private val _contentType = MutableLiveData<String>()
     val contentType: LiveData<String> get() = _contentType
@@ -73,6 +76,7 @@ class PlayerViewModel(
                 is MovieOrSeriesResponse.MovieResponse -> {
                     Log.d("contentType", "Movie")
                     movie = response.movies
+                    _details.value = filmixRepository.fetchMovieDetails(movieId)
                     _moviePieces.value = movie
                     _contentType.value = "movie"
                 }
@@ -81,6 +85,7 @@ class PlayerViewModel(
                     Log.d("contentType", "Series")
                     val seriesTransformed = response.series
                     series = seriesTransformed
+                    _details.value = filmixRepository.fetchMovieDetails(movieId)
                     _contentType.value = "series"
                     _seasons.value = seriesTransformed.seasons
                     restoreSeriesProgress()
@@ -105,15 +110,31 @@ class PlayerViewModel(
                                     it.quality == savedSeries.quality
                                 }.let {
                                     _selectedQuality.value = it
+                                    selectedQuality.value?.url?.let {
+                                        _videoUrl.value = it
+                                    }
                                 }
                             }
                     }
                 }
+                Log.d(
+                    TAG,
+                    "restoreSeriesProgress: ${selectedSeason.value} ${selectedEpisode.value} "
+                )
             } else {
                 seasons.value?.get(0).let {
                     _selectedSeason.value = it
                     selectedSeason.value?.episodes?.get(0).let {
                         _selectedEpisode.value = it
+                        selectedEpisode.value?.translations?.get(0).let {
+                            _selectedTranslation.value = it
+                            selectedTranslation.value?.files?.get(0).let {
+                                _selectedQuality.value = it
+                                selectedQuality.value?.url?.let {
+                                    _videoUrl.value = it
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -123,68 +144,130 @@ class PlayerViewModel(
     // Function to set the selected season
     fun setSeason(season: Season) {
         _selectedSeason.value = season
-        _selectedEpisode.value = null
-        _selectedTranslation.value = null
-        _selectedQuality.value = null
     }
 
     // Function to set the selected episode
     fun setEpisode(episode: Episode) {
+        val oldTranslation = selectedTranslation.value?.translation
+        val oldQuality = selectedQuality.value?.quality
+
         _selectedEpisode.value = episode
-        // Reset translation and quality when episode changes
-        _selectedTranslation.value = null
-        _selectedQuality.value = null
+
+        val oldTranslationInNewEpisode =
+            selectedEpisode.value?.translations?.find { it.translation == oldTranslation }
+        if (oldTranslationInNewEpisode != null) {
+            _selectedTranslation.value = oldTranslationInNewEpisode
+            val oldQualityInNewEpisode =
+                selectedTranslation.value?.files?.find { it.quality == oldQuality }
+            if (oldQualityInNewEpisode != null) {
+                _selectedQuality.value = oldQualityInNewEpisode
+            } else {
+                _selectedQuality.value = selectedTranslation.value?.files?.get(0)
+            }
+
+        } else {
+            _selectedTranslation.value = selectedEpisode.value?.translations?.get(0)
+            _selectedQuality.value = selectedTranslation.value?.files?.get(0)
+        }
+        _videoUrl.value = selectedQuality.value?.url
+        saveProgress()
     }
 
     // Function to set the selected translation
     fun setTranslation(translation: Translation) {
+        val oldQuality = selectedQuality.value?.quality
         _selectedTranslation.value = translation
-        // Reset quality when translation changes
-        _selectedQuality.value = null
+
+        val oldQualityInNewEpisode =
+            selectedTranslation.value?.files?.find { it.quality == oldQuality }
+        if (oldQualityInNewEpisode != null) {
+            _selectedQuality.value = oldQualityInNewEpisode
+        } else {
+            _selectedQuality.value = selectedTranslation.value?.files?.get(0)
+        }
+        _videoUrl.value = selectedQuality.value?.url
+        saveProgress()
     }
 
     fun setMovieTranslation(movieTranslation: MovieTranslation) {
+        val oldQuality = selectedQuality.value?.quality
         _selectedMovieTranslation.value = movieTranslation
-        _selectedQuality.value = null
+
+        val oldQualityInNewEpisode =
+            selectedTranslation.value?.files?.find { it.quality == oldQuality }
+        if (oldQualityInNewEpisode != null) {
+            _selectedQuality.value = oldQualityInNewEpisode
+        } else {
+            _selectedQuality.value = selectedTranslation.value?.files?.get(0)
+        }
+        _videoUrl.value = selectedQuality.value?.url
+        saveProgress()
     }
 
     // Function to set the selected quality
     fun setQuality(qualityFile: File) {
         _selectedQuality.value = qualityFile
-        updateVideoUrl()
+        _videoUrl.value = selectedQuality.value?.url
+        saveProgress()
     }
 
-    // Function to update the video URL
-    private fun updateVideoUrl() {
-        if (contentType.value == "series") {
-            val season = selectedSeason.value
-            val episode = selectedEpisode.value
-            val translation = _selectedTranslation.value
-            val qualityFile = _selectedQuality.value
+    private fun saveProgress() {
+        val season = selectedSeason.value
+        val episode = selectedEpisode.value
+        val translation = _selectedTranslation.value
+        val qualityFile = _selectedQuality.value
 
-            if (season != null && episode != null && translation != null && qualityFile != null) {
-                _videoUrl.value = qualityFile.url
-                viewModelScope.launch {
-                    seriesProgressRepository.insertSeriesProgress(
-                        SeriesProgress(
-                            movieId,
-                            season.season,
-                            episode.episode,
-                            translation.translation,
-                            qualityFile.quality
-                        )
-                    )
-                }
-            }
-        } else {
-            val translation = _selectedMovieTranslation.value
-            val qualityFile = _selectedQuality.value
+        if (season != null && episode != null && translation != null && qualityFile != null) {
+            viewModelScope.launch {
+                val savedSeriesProgress = SeriesProgress(
+                    movieId,
+                    season.season,
+                    episode.episode,
+                    translation.translation,
+                    qualityFile.quality
+                )
+                Log.d(TAG, "updateVideoUrl: ${savedSeriesProgress}")
+                seriesProgressRepository.insertSeriesProgress(
+                    savedSeriesProgress
+                )
 
-            if (translation != null && qualityFile != null) {
-                val file =
-                    _selectedMovieTranslation.value?.files?.find { it.quality == qualityFile.quality }
-                _videoUrl.value = file?.url
             }
         }
     }
+
+//    // Function to update the video URL
+//    private fun updateVideoUrl() {
+//        if (contentType.value == "series") {
+//            val season = selectedSeason.value
+//            val episode = selectedEpisode.value
+//            val translation = _selectedTranslation.value
+//            val qualityFile = _selectedQuality.value
+//
+//            if (season != null && episode != null && translation != null && qualityFile != null) {
+//                _videoUrl.value = qualityFile.url
+//                viewModelScope.launch {
+//                    val savedSeriesProgress = SeriesProgress(
+//                        movieId,
+//                        season.season,
+//                        episode.episode,
+//                        translation.translation,
+//                        qualityFile.quality
+//                    )
+//                    Log.d(TAG, "updateVideoUrl: ${savedSeriesProgress}")
+//                    seriesProgressRepository.insertSeriesProgress(
+//                        savedSeriesProgress
+//                    )
+//                }
+//            }
+//        } else {
+//            val translation = _selectedMovieTranslation.value
+//            val qualityFile = _selectedQuality.value
+//
+//            if (translation != null && qualityFile != null) {
+//                val file =
+//                    _selectedMovieTranslation.value?.files?.find { it.quality == qualityFile.quality }
+//                _videoUrl.value = file?.url
+//            }
+//        }
+//    }
 }

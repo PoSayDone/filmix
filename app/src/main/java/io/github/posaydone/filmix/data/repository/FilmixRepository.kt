@@ -62,18 +62,18 @@ class FilmixRepository(private val apiService: FilmixApiService) {
     }
 
     // Получение списка фильмов
-    suspend fun fetchList(count: Int = 48, page: Int = 1): List<MovieCard> {
+    suspend fun fetchList(limit: Int = 48, page: Int = 1): List<MovieCard> {
         return apiService.getList(
             "",
             "s7",
             page,
-            count
+            limit
         ).items
     }
 
     // Поиск фильмов по запросу
-    suspend fun fetchListWIthQuerry(query: String): List<MovieCard> {
-        return apiService.getList(query, "").items
+    suspend fun fetchListWIthQuerry(query: String, limit: Int = 48): List<MovieCard> {
+        return apiService.getSearch(query, limit).items
     }
 
     // Получение деталей фильма, включая сезоны, серии и озвучки

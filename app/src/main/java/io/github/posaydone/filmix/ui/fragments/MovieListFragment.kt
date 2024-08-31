@@ -9,7 +9,6 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import io.github.posaydone.filmix.data.adapters.MoviesAdapter
 import io.github.posaydone.filmix.data.api.RetrofitClient
 import io.github.posaydone.filmix.data.repository.FilmixRepository
@@ -58,25 +57,25 @@ class MovieListFragment : Fragment() {
             moviesAdapter.updateMovies(movies)
         })
 
-        rcMovies.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                if (dy > 0) {
-                    super.onScrolled(recyclerView, dx, dy)
-                    val visibleItemCount = gridLayoutManager.childCount
-                    val totalItemCount = gridLayoutManager.itemCount
-                    val firstVisibleItemPosition = gridLayoutManager.findFirstVisibleItemPosition()
-
-                    if (isLoading) {
-                        if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount) {
-                            isLoading = false
-                            movieViewModel.loadMoreMovies(page)
-                            page++
-                            isLoading = true
-                        }
-                    }
-                }
-            }
-        })
+//        rcMovies.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+//                if (dy > 0) {
+//                    super.onScrolled(recyclerView, dx, dy)
+//                    val visibleItemCount = gridLayoutManager.childCount
+//                    val totalItemCount = gridLayoutManager.itemCount
+//                    val firstVisibleItemPosition = gridLayoutManager.findFirstVisibleItemPosition()
+//
+//                    if (isLoading) {
+//                        if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount) {
+//                            isLoading = false
+//                            movieViewModel.loadMoreMovies(page)
+//                            page++
+//                            isLoading = true
+//                        }
+//                    }
+//                }
+//            }
+//        })
     }
 
     companion object {

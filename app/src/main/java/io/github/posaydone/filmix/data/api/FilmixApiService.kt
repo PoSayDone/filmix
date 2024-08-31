@@ -5,8 +5,8 @@ import io.github.posaydone.filmix.data.model.MovieList
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.GET
-import retrofit2.http.Query
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface FilmixApiService {
 
@@ -15,6 +15,12 @@ interface FilmixApiService {
         @Query("search") search: String = "",
         @Query("category") category: String = "s7",
         @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 48,
+    ): MovieList
+
+    @GET("list")
+    suspend fun getSearch(
+        @Query("search") search: String = "",
         @Query("limit") limit: Int = 48,
     ): MovieList
 
