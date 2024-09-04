@@ -1,6 +1,5 @@
 package io.github.posaydone.filmix.data.adapters
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -54,7 +53,6 @@ class TranslationsAdapter(
         view.isSelected = (translation == selectedTranslation)
 
         view.setOnClickListener {
-            Log.d(TAG, "onClick: $translation")
             viewModel.setTranslation(translation)
         }
 

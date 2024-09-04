@@ -10,4 +10,7 @@
     <string name="playString">Play</string>
     <string name="episodesString">Episodes</string>
     <string name="audioString">Audio</string>
+    <string name="enter_your_email">Enter your email</string>
+    <string name="enter_password">Enter your password</string>
+    <string name="signin">Sign in</string>
 </resources>

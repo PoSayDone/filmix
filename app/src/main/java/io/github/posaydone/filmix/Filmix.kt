@@ -3,7 +3,7 @@ package io.github.posaydone.filmix
 import android.app.Application
 import com.google.android.material.color.DynamicColors
 
-class Filmix : Application(){
+class Filmix : Application() {
 
     override fun onCreate() {
         super.onCreate()

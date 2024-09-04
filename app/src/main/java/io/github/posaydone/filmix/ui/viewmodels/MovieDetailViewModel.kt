@@ -16,14 +16,15 @@ class MovieDetailViewModel(private val repository: FilmixRepository) : ViewModel
 
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> get() = _error
-    
+
     fun loadMovieDetails(movieId: Int) {
         _error.value = null
-        
+
         viewModelScope.launch {
             try {
                 val movie = repository.fetchMovieDetails(movieId)
-                _movieDetails.postValue(movie)
+                Log.d("MovieDetails", "loadMovieDetails: ${movie}")
+                _movieDetails.value = movie
             } catch (e: Exception) {
                 _error.value = "Failed to load movie"
             }

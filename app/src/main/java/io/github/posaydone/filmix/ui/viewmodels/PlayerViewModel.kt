@@ -12,11 +12,11 @@ import io.github.posaydone.filmix.data.model.MovieOrSeriesResponse
 import io.github.posaydone.filmix.data.model.MovieTranslation
 import io.github.posaydone.filmix.data.model.Season
 import io.github.posaydone.filmix.data.model.Series
-import io.github.posaydone.filmix.data.model.SeriesProgress
+import io.github.posaydone.filmix.data.model.SeriesHistory
 import io.github.posaydone.filmix.data.model.Translation
 import io.github.posaydone.filmix.data.repository.FilmixRepository
 import io.github.posaydone.filmix.data.repository.SeriesProgressRepository
-import kotlinx.coroutines.flow.firstOrNull
+import io.github.posaydone.filmix.ui.utils.PlaybackPositionListener
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(
@@ -25,6 +25,8 @@ class PlayerViewModel(
     private val movieId: Int
 ) :
     ViewModel() {
+
+    var playbackPositionListener: PlaybackPositionListener? = null
 
     private val TAG: String = "PlayerVIewModel"
 
@@ -79,6 +81,7 @@ class PlayerViewModel(
                     _details.value = filmixRepository.fetchMovieDetails(movieId)
                     _moviePieces.value = movie
                     _contentType.value = "movie"
+                    restoreMovieProgress()
                 }
 
                 is MovieOrSeriesResponse.SeriesResponse -> {
@@ -94,50 +97,65 @@ class PlayerViewModel(
         }
     }
 
+    private fun restoreMovieProgress() {
+        movie.get(0).let {
+            _selectedMovieTranslation.value = it
+            selectedMovieTranslation.value?.files?.get(0).let {
+                _selectedQuality.value = it
+            }
+        }
+    }
+
     private fun restoreSeriesProgress() {
         viewModelScope.launch {
-            val savedSeries = seriesProgressRepository.getSeriesProgressById(movieId).firstOrNull()
-            Log.d(TAG, "restoreSeriesProgress: ${savedSeries}")
-            if (savedSeries != null) {
-                seasons.value?.find { it.season == savedSeries.season }.let {
-                    _selectedSeason.value = it
-                    selectedSeason.value?.episodes?.find { it.episode == savedSeries.episode }.let {
-                        _selectedEpisode.value = it
-                        selectedEpisode.value?.translations?.find { it.translation == savedSeries.translation }
-                            .let {
-                                _selectedTranslation.value = it
-                                selectedTranslation.value?.files?.find {
-                                    it.quality == savedSeries.quality
-                                }.let {
-                                    _selectedQuality.value = it
-                                    selectedQuality.value?.url?.let {
-                                        _videoUrl.value = it
-                                    }
-                                }
-                            }
-                    }
-                }
-                Log.d(
-                    TAG,
-                    "restoreSeriesProgress: ${selectedSeason.value} ${selectedEpisode.value} "
-                )
+            val savedSeriesHistory = filmixRepository.getSeriesHistory(movieId)
+
+            if (savedSeriesHistory.isNotEmpty()) {
+                restoreSeriesSavedProgress(savedSeriesHistory.first()!!)
             } else {
-                seasons.value?.get(0).let {
-                    _selectedSeason.value = it
-                    selectedSeason.value?.episodes?.get(0).let {
-                        _selectedEpisode.value = it
-                        selectedEpisode.value?.translations?.get(0).let {
-                            _selectedTranslation.value = it
-                            selectedTranslation.value?.files?.get(0).let {
-                                _selectedQuality.value = it
-                                selectedQuality.value?.url?.let {
-                                    _videoUrl.value = it
-                                }
-                            }
-                        }
-                    }
-                }
+                setDefaultSeriesProgress()
             }
+        }
+    }
+
+    private fun restoreSeriesSavedProgress(savedSeries: SeriesHistory) {
+        val season = seasons.value?.find { it.season == savedSeries.season }
+        _selectedSeason.value = season
+
+        val episode = season?.episodes?.find { it.episode == savedSeries.episode }
+        _selectedEpisode.value = episode
+
+        val translation = episode?.translations?.find {
+            it.translation.equals(savedSeries.voiceover, ignoreCase = true)
+        }
+        _selectedTranslation.value = translation
+
+        val file = translation?.files?.find {
+            it.quality == savedSeries.quality || it.quality == 1080
+        }
+        _selectedQuality.value = file
+
+        file?.url?.let {
+            _videoUrl.value = it
+            playbackPositionListener?.onRestorePlaybackPosition(savedSeries.time)
+        }
+    }
+
+    private fun setDefaultSeriesProgress() {
+        val defaultSeason = seasons.value?.getOrNull(0)
+        _selectedSeason.value = defaultSeason
+
+        val defaultEpisode = defaultSeason?.episodes?.getOrNull(0)
+        _selectedEpisode.value = defaultEpisode
+
+        val defaultTranslation = defaultEpisode?.translations?.getOrNull(0)
+        _selectedTranslation.value = defaultTranslation
+
+        val defaultFile = defaultTranslation?.files?.getOrNull(0)
+        _selectedQuality.value = defaultFile
+
+        defaultFile?.url?.let {
+            _videoUrl.value = it
         }
     }
 
@@ -211,63 +229,24 @@ class PlayerViewModel(
         saveProgress()
     }
 
-    private fun saveProgress() {
+    fun saveProgress(playbackPosition: Long? = null) {
         val season = selectedSeason.value
         val episode = selectedEpisode.value
         val translation = _selectedTranslation.value
         val qualityFile = _selectedQuality.value
+        val time = if (playbackPosition != null) playbackPosition else 0L
 
         if (season != null && episode != null && translation != null && qualityFile != null) {
             viewModelScope.launch {
-                val savedSeriesProgress = SeriesProgress(
-                    movieId,
+                val savedSeriesProgress = SeriesHistory(
                     season.season,
                     episode.episode,
                     translation.translation,
-                    qualityFile.quality
+                    time,
+                    qualityFile.quality,
                 )
-                Log.d(TAG, "updateVideoUrl: ${savedSeriesProgress}")
-                seriesProgressRepository.insertSeriesProgress(
-                    savedSeriesProgress
-                )
-
+                filmixRepository.setSeriesHistory(movieId, savedSeriesProgress)
             }
         }
     }
-
-//    // Function to update the video URL
-//    private fun updateVideoUrl() {
-//        if (contentType.value == "series") {
-//            val season = selectedSeason.value
-//            val episode = selectedEpisode.value
-//            val translation = _selectedTranslation.value
-//            val qualityFile = _selectedQuality.value
-//
-//            if (season != null && episode != null && translation != null && qualityFile != null) {
-//                _videoUrl.value = qualityFile.url
-//                viewModelScope.launch {
-//                    val savedSeriesProgress = SeriesProgress(
-//                        movieId,
-//                        season.season,
-//                        episode.episode,
-//                        translation.translation,
-//                        qualityFile.quality
-//                    )
-//                    Log.d(TAG, "updateVideoUrl: ${savedSeriesProgress}")
-//                    seriesProgressRepository.insertSeriesProgress(
-//                        savedSeriesProgress
-//                    )
-//                }
-//            }
-//        } else {
-//            val translation = _selectedMovieTranslation.value
-//            val qualityFile = _selectedQuality.value
-//
-//            if (translation != null && qualityFile != null) {
-//                val file =
-//                    _selectedMovieTranslation.value?.files?.find { it.quality == qualityFile.quality }
-//                _videoUrl.value = file?.url
-//            }
-//        }
-//    }
 }

@@ -1,23 +1,24 @@
 package io.github.posaydone.filmix.data.adapters
+
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import io.github.posaydone.filmix.R
-import io.github.posaydone.filmix.data.model.MovieCard
+import io.github.posaydone.filmix.data.model.ShowCard
 import io.github.posaydone.filmix.databinding.MovieCardBinding
 
-class MoviesAdapter(
-    private var movieCards: List<MovieCard>,
-    private val onItemClick: (MovieCard) -> Unit
-) : RecyclerView.Adapter<MoviesAdapter.MovieViewHolder>() {
+class ShowCardListAdapter(
+    private var showCards: List<ShowCard>,
+    private val onItemClick: (ShowCard) -> Unit
+) : RecyclerView.Adapter<ShowCardListAdapter.MovieViewHolder>() {
 
     class MovieViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val binding = MovieCardBinding.bind(view)
-        fun bind(item: MovieCard) = with(binding) {
+        fun bind(item: ShowCard) = with(binding) {
             movieTitle.text = item.title
-            Glide.with(binding.root.context).load(item.poster).into(binding.movieImage)
+            Glide.with(binding.root.context).load(item.poster).into(binding.posterImageView)
         }
     }
 
@@ -27,14 +28,14 @@ class MoviesAdapter(
     }
 
     override fun onBindViewHolder(holder: MovieViewHolder, position: Int) {
-        holder.bind(movieCards[position])
-        holder.itemView.setOnClickListener { onItemClick(movieCards[position]) }
+        holder.bind(showCards[position])
+        holder.itemView.setOnClickListener { onItemClick(showCards[position]) }
     }
 
-    override fun getItemCount(): Int = movieCards.size
+    override fun getItemCount(): Int = showCards.size
 
-    fun updateMovies(newMovieCards: List<MovieCard>) {
-        movieCards = newMovieCards
+    fun updateShows(newShowCards: List<ShowCard>) {
+        showCards = newShowCards
         notifyDataSetChanged()
     }
 }

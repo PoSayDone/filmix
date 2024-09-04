@@ -8,10 +8,12 @@ import android.widget.Toast
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.NavController
+import androidx.navigation.NavDirections
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
-import io.github.posaydone.filmix.data.adapters.MoviesAdapter
-import io.github.posaydone.filmix.data.api.RetrofitClient
+import io.github.posaydone.filmix.data.adapters.SearchAdapter
+import io.github.posaydone.filmix.data.api.FilmixApiClient
 import io.github.posaydone.filmix.data.repository.FilmixRepository
 import io.github.posaydone.filmix.databinding.FragmentMovieSearchBinding
 import io.github.posaydone.filmix.ui.viewmodels.MovieSearchViewModel
@@ -24,10 +26,12 @@ class MovieSearchFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: MovieSearchViewModel by viewModels {
-        MovieSearchViewModelFactory(FilmixRepository(RetrofitClient.apiService))
+        MovieSearchViewModelFactory(
+            FilmixRepository(FilmixApiClient().getApiService(requireContext()))
+        )
     }
 
-    private lateinit var adapter: MoviesAdapter
+    private lateinit var adapter: SearchAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -55,10 +59,19 @@ class MovieSearchFragment : Fragment() {
         viewModel.searchMovies(query)
     }
 
+    fun NavController.safeNavigate(direction: NavDirections) {
+        currentDestination?.getAction(direction.actionId)?.let {
+            navigate(direction)
+        }
+    }
+
     private fun setupRecyclerView() = with(binding) {
-        adapter = MoviesAdapter(emptyList()) { movie ->
-            val action = MovieSearchFragmentDirections.actionMovieSearchFragmentToMovieDetailFragment(movie.id)
-            findNavController().navigate(action)
+        adapter = SearchAdapter(emptyList()) { movie ->
+            findNavController().safeNavigate(
+                MovieSearchFragmentDirections.toMovieDetailFragment(
+                    movie.id
+                )
+            )
         }
 
         val spanCount = 3

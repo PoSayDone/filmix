@@ -5,26 +5,27 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rcMovies"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/categoriesViewPager"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:clipToPadding="false"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:padding="8dp"/>
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fitsSystemWindows="true"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:tabMode="scrollable">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar_a"
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/categoriesTabLayout"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Главная" />
+            android:background="#00FFFFFF"
+            app:tabContentStart="40dp"
+            app:tabMode="scrollable" />
 
         <!-- Add filters as required -->
         <com.google.android.material.chip.ChipGroup

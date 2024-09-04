@@ -7,16 +7,93 @@ import io.github.posaydone.filmix.data.api.FilmixApiService
 import io.github.posaydone.filmix.data.model.Episode
 import io.github.posaydone.filmix.data.model.File
 import io.github.posaydone.filmix.data.model.FilmixSeries
-import io.github.posaydone.filmix.data.model.MovieCard
 import io.github.posaydone.filmix.data.model.MovieDetails
 import io.github.posaydone.filmix.data.model.MovieOrSeriesResponse
 import io.github.posaydone.filmix.data.model.MovieTranslation
 import io.github.posaydone.filmix.data.model.Season
 import io.github.posaydone.filmix.data.model.Series
+import io.github.posaydone.filmix.data.model.SeriesHistory
+import io.github.posaydone.filmix.data.model.ShowCard
+import io.github.posaydone.filmix.data.model.ShowsPage
 import io.github.posaydone.filmix.data.model.Translation
 
 class FilmixRepository(private val apiService: FilmixApiService) {
     private val TAG: String = "FilmixRepo"
+
+    suspend fun getSeriesHistory(movieId: Int): List<SeriesHistory?> {
+        return apiService.getShowHistory(movieId)
+    }
+
+    suspend fun setSeriesHistory(movieId: Int, seriesHistory: SeriesHistory) {
+        return apiService.setShowHistory(movieId, seriesHistory)
+    }
+
+    // Получение списка фильмов
+    suspend fun fetchList(
+        limit: Int = 48,
+        page: Int? = null,
+        category: String = "s0",
+        genre: String? = null
+    ): ShowsPage {
+        return apiService.getList(
+            category = category,
+            page = page,
+            limit = limit,
+            genre = genre
+        )
+    }
+
+    suspend fun fetchNew(limit: Int = 48, page: Int = 1): ShowsPage {
+        return apiService.getNew(
+            page = page,
+            limit = limit
+        )
+    }
+
+    suspend fun fetchPopular(limit: Int = 48, page: Int = 1): ShowsPage {
+        return apiService.getPopular(
+            page = page,
+            limit = limit
+        )
+    }
+
+    // Поиск фильмов по запросу
+    suspend fun fetchListWIthQuerry(query: String, limit: Int = 48): List<ShowCard> {
+        return apiService.getSearch(query, limit).items
+    }
+
+    // Получение деталей фильма, включая сезоны, серии и озвучки
+    suspend fun fetchMovieDetails(movieId: Int): MovieDetails {
+        return apiService.getMovieDetails(movieId)
+    }
+
+    // Получение ссылки на видео для выбранного сезона, серии и озвучки
+    suspend fun fetchSeriesOrMovie(movieId: Int): MovieOrSeriesResponse {
+        val response = apiService.getSeriesOrMovie(movieId)
+
+        if (response.isSuccessful) {
+            val responseBody = response.body()?.string() ?: ""
+
+            val gson = Gson()
+
+            return try {
+                val filmixSeriesType = object : TypeToken<FilmixSeries>() {}.type
+                val filmixSeries = gson.fromJson<FilmixSeries>(responseBody, filmixSeriesType)
+                val seriesTransformed = transformSeries(filmixSeries)
+                MovieOrSeriesResponse.SeriesResponse(seriesTransformed)
+            } catch (e: JsonSyntaxException) {
+                try {
+                    val moviesType = object : TypeToken<List<MovieTranslation>>() {}.type
+                    val movies = gson.fromJson<List<MovieTranslation>>(responseBody, moviesType)
+                    MovieOrSeriesResponse.MovieResponse(movies)
+                } catch (e: JsonSyntaxException) {
+                    throw IllegalStateException("Unexpected response format")
+                }
+            }
+        } else {
+            throw Exception("HTTP error: ${response.code()}")
+        }
+    }
 
     fun transformSeries(filmixSeries: FilmixSeries): Series {
         val transformedSeasons = mutableListOf<Season>()
@@ -59,53 +136,5 @@ class FilmixRepository(private val apiService: FilmixApiService) {
         }
 
         return Series(seasons = transformedSeasons)
-    }
-
-    // Получение списка фильмов
-    suspend fun fetchList(limit: Int = 48, page: Int = 1): List<MovieCard> {
-        return apiService.getList(
-            "",
-            "s7",
-            page,
-            limit
-        ).items
-    }
-
-    // Поиск фильмов по запросу
-    suspend fun fetchListWIthQuerry(query: String, limit: Int = 48): List<MovieCard> {
-        return apiService.getSearch(query, limit).items
-    }
-
-    // Получение деталей фильма, включая сезоны, серии и озвучки
-    suspend fun fetchMovieDetails(movieId: Int): MovieDetails {
-        return apiService.getMovieDetails(movieId)
-    }
-
-    // Получение ссылки на видео для выбранного сезона, серии и озвучки
-    suspend fun fetchSeriesOrMovie(movieId: Int): MovieOrSeriesResponse {
-        val response = apiService.getSeriesOrMovie(movieId)
-
-        if (response.isSuccessful) {
-            val responseBody = response.body()?.string() ?: ""
-
-            val gson = Gson()
-
-            return try {
-                val filmixSeriesType = object : TypeToken<FilmixSeries>() {}.type
-                val filmixSeries = gson.fromJson<FilmixSeries>(responseBody, filmixSeriesType)
-                val seriesTransformed = transformSeries(filmixSeries)
-                MovieOrSeriesResponse.SeriesResponse(seriesTransformed)
-            } catch (e: JsonSyntaxException) {
-                try {
-                    val moviesType = object : TypeToken<List<MovieTranslation>>() {}.type
-                    val movies = gson.fromJson<List<MovieTranslation>>(responseBody, moviesType)
-                    MovieOrSeriesResponse.MovieResponse(movies)
-                } catch (e: JsonSyntaxException) {
-                    throw IllegalStateException("Unexpected response format")
-                }
-            }
-        } else {
-            throw Exception("HTTP error: ${response.code()}")
-        }
     }
 }

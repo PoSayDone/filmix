@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.activityViewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.tabs.TabLayoutMediator
 import io.github.posaydone.filmix.R
@@ -15,13 +15,8 @@ import java.util.Objects
 
 
 class EpisodesDialogFragment : BottomSheetDialogFragment() {
-    private lateinit var sharedViewModel: PlayerViewModel
+    private val viewModel: PlayerViewModel by activityViewModels()
     private lateinit var binding: FragmentEpisodesDialogBinding
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        sharedViewModel = ViewModelProvider(requireActivity()).get(PlayerViewModel::class.java)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -33,7 +28,7 @@ class EpisodesDialogFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        sharedViewModel.seasons.observe(this) { seasons ->
+        viewModel.seasons.observe(this) { seasons ->
             seasons?.let {
                 val seasonPagerAdapter = SeasonPagerAdapter(requireActivity(), it)
                 binding.pager.adapter = seasonPagerAdapter
@@ -44,13 +39,13 @@ class EpisodesDialogFragment : BottomSheetDialogFragment() {
                     tab.text =
                         getString(
                             R.string.season,
-                            sharedViewModel.seasons.value!![position].season
+                            viewModel.seasons.value!![position].season
                         )
                 }.attach()
 
             }
         }
-        sharedViewModel.selectedSeason.observe(this) { selectedSeason ->
+        viewModel.selectedSeason.observe(this) { selectedSeason ->
             Objects.requireNonNull(binding.seasonTabs.getTabAt(selectedSeason?.season!!.minus(1)))
                 .select()
         }

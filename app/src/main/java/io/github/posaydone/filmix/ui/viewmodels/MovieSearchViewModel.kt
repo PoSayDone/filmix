@@ -4,14 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.posaydone.filmix.data.model.MovieCard
+import io.github.posaydone.filmix.data.model.ShowCard
 import io.github.posaydone.filmix.data.repository.FilmixRepository
 import kotlinx.coroutines.launch
 
 class MovieSearchViewModel(private val repository: FilmixRepository) : ViewModel() {
 
-    private val _movies = MutableLiveData<List<MovieCard>>()
-    val movies: LiveData<List<MovieCard>> get() = _movies
+    private val _movies = MutableLiveData<List<ShowCard>>()
+    val movies: LiveData<List<ShowCard>> get() = _movies
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> get() = _isLoading
