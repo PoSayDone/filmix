@@ -15,7 +15,6 @@ import io.github.posaydone.filmix.data.network.model.ShowCard
 import io.github.posaydone.filmix.databinding.FragmentCategoryShowsListBinding
 import io.github.posaydone.filmix.presentation.ui.adapter.ShowCardListAdapter
 import io.github.posaydone.filmix.presentation.ui.viewModel.CategoriesViewModel
-import io.github.posaydone.filmix.ui.fragment.ShowsSearchFragmentDirections
 import io.github.posaydone.filmix.utils.RecyclerViewMargin
 
 class CategoryShowsListFragment : Fragment() {

@@ -33,7 +33,7 @@ class SignInActivity : AppCompatActivity() {
         if (savedToken != null && savedRefresh != null) {
             val intent = Intent(
                 this,
-                MainTvActivity::class.java
+                MainActivity::class.java
             )
             startActivity(intent)
             finish()
@@ -93,7 +93,7 @@ class SignInActivity : AppCompatActivity() {
 
             val intent = Intent(
                 this,
-                MainTvActivity::class.java
+                MainActivity::class.java
             )
             startActivity(intent)
             finish()

@@ -15,13 +15,11 @@ import io.github.posaydone.filmix.data.network.model.ShowResponse
 import io.github.posaydone.filmix.data.network.model.Translation
 import io.github.posaydone.filmix.data.network.model.VideoWithQualities
 import io.github.posaydone.filmix.data.repository.FilmixRepository
-import io.github.posaydone.filmix.data.repository.SeriesProgressRepository
-import io.github.posaydone.filmix.ui.util.PlaybackPositionListener
+import io.github.posaydone.filmix.presentation.ui.util.PlaybackPositionListener
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(
     private val filmixRepository: FilmixRepository,
-    private val seriesProgressRepository: SeriesProgressRepository,
     private val movieId: Int
 ) :
     ViewModel() {

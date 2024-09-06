@@ -11,18 +11,16 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import io.github.posaydone.filmix.R
-import io.github.posaydone.filmix.data.db.MainDb
 import io.github.posaydone.filmix.data.network.client.FilmixApiClient
 import io.github.posaydone.filmix.data.repository.FilmixRepository
-import io.github.posaydone.filmix.data.repository.SeriesProgressRepository
 import io.github.posaydone.filmix.databinding.ActivityPlayerBinding
 import io.github.posaydone.filmix.databinding.CustomPlayerViewBinding
-import io.github.posaydone.filmix.ui.fragment.EpisodesDialogFragment
-import io.github.posaydone.filmix.ui.fragment.PlayerSettingsDialogFragment
-import io.github.posaydone.filmix.ui.fragment.TranslationsDialogFragment
-import io.github.posaydone.filmix.ui.util.PlaybackPositionListener
-import io.github.posaydone.filmix.ui.viewModel.PlayerViewModel
-import io.github.posaydone.filmix.ui.viewModel.PlayerViewModelFactory
+import io.github.posaydone.filmix.presentation.ui.fragment.EpisodesDialogFragment
+import io.github.posaydone.filmix.presentation.ui.fragment.PlayerSettingsDialogFragment
+import io.github.posaydone.filmix.presentation.ui.fragment.TranslationsDialogFragment
+import io.github.posaydone.filmix.presentation.ui.util.PlaybackPositionListener
+import io.github.posaydone.filmix.presentation.ui.viewModel.PlayerViewModel
+import io.github.posaydone.filmix.presentation.ui.viewModel.PlayerViewModelFactory
 
 class PlayerActivity : AppCompatActivity(), PlaybackPositionListener {
     private lateinit var viewModel: PlayerViewModel
@@ -40,13 +38,11 @@ class PlayerActivity : AppCompatActivity(), PlaybackPositionListener {
 
         super.onCreate(savedInstanceState)
 
-        val db = MainDb.getDb(this)
         val showId = intent.getIntExtra("SHOW_ID", 0)
 
-        val seriesProgressRepository = SeriesProgressRepository(db.getDao())
         val filmixRepository = FilmixRepository(FilmixApiClient().getApiService(this))
         val viewModelFactory =
-            PlayerViewModelFactory(filmixRepository, seriesProgressRepository, showId)
+            PlayerViewModelFactory(filmixRepository, showId)
 
         episodesDialogFragment = EpisodesDialogFragment()
         playerSettingsDialogFragment = PlayerSettingsDialogFragment()

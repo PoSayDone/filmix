@@ -8,8 +8,8 @@ import androidx.fragment.app.activityViewModels
 import com.google.android.material.tabs.TabLayoutMediator
 import io.github.posaydone.filmix.R
 import io.github.posaydone.filmix.databinding.FragmentEpisodesDialogBinding
-import io.github.posaydone.filmix.ui.adapter.SeasonPagerAdapter
-import io.github.posaydone.filmix.ui.viewModel.PlayerViewModel
+import io.github.posaydone.filmix.presentation.ui.adapter.SeasonPagerAdapter
+import io.github.posaydone.filmix.presentation.ui.viewModel.PlayerViewModel
 import java.util.Objects
 
 

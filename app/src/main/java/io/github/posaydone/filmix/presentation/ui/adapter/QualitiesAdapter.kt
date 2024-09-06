@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.CheckedTextView
 import io.github.posaydone.filmix.data.network.model.File
-import io.github.posaydone.filmix.ui.viewModel.PlayerViewModel
+import io.github.posaydone.filmix.presentation.ui.viewModel.PlayerViewModel
 
 class QualitiesAdapter(
     private val viewModel: PlayerViewModel,

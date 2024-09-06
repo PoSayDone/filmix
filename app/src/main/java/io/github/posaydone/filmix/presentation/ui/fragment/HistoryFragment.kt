@@ -16,7 +16,6 @@ import io.github.posaydone.filmix.databinding.FragmentHistoryBinding
 import io.github.posaydone.filmix.presentation.ui.adapter.HistoryAdapter
 import io.github.posaydone.filmix.presentation.ui.viewModel.HistoryViewModel
 import io.github.posaydone.filmix.presentation.ui.viewModel.HistoryViewModelFactory
-import io.github.posaydone.filmix.ui.fragment.ShowsSearchFragmentDirections
 import io.github.posaydone.filmix.utils.RecyclerViewMargin
 
 class HistoryFragment : Fragment() {

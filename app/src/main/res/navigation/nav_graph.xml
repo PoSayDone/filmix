@@ -10,7 +10,7 @@
         app:startDestination="@id/mainFragment">
         <fragment
             android:id="@+id/mainFragment"
-            android:name="io.github.posaydone.filmix.ui.fragment.MainFragment"
+            android:name="io.github.posaydone.filmix.presentation.ui.fragment.MainFragment"
             tools:layout="@layout/fragment_main">
             <action
                 android:id="@+id/toShowDetailFragment"
@@ -22,7 +22,7 @@
         </fragment>
         <fragment
             android:id="@+id/showDetailFragment"
-            android:name="io.github.posaydone.filmix.ui.fragment.ShowDetailFragment">
+            android:name="io.github.posaydone.filmix.presentation.ui.fragment.ShowDetailFragment">
             <argument
                 android:name="showId"
                 app:argType="integer" />
@@ -34,7 +34,7 @@
         app:startDestination="@id/historyFragment">
         <fragment
             android:id="@+id/historyFragment"
-            android:name="io.github.posaydone.filmix.ui.fragment.HistoryFragment"
+            android:name="io.github.posaydone.filmix.presentation.ui.fragment.HistoryFragment"
             android:label="@string/history"
             tools:layout="@layout/fragment_history">
             <action
@@ -47,7 +47,7 @@
         </fragment>
         <fragment
             android:id="@+id/showDetailFragment"
-            android:name="io.github.posaydone.filmix.ui.fragment.ShowDetailFragment">
+            android:name="io.github.posaydone.filmix.presentation.ui.fragment.ShowDetailFragment">
             <argument
                 android:name="showId"
                 app:argType="integer" />
@@ -59,7 +59,7 @@
         app:startDestination="@id/showsSearchFragment">
         <fragment
             android:id="@+id/showsSearchFragment"
-            android:name="io.github.posaydone.filmix.ui.fragment.ShowsSearchFragment"
+            android:name="io.github.posaydone.filmix.presentation.ui.fragment.ShowsSearchFragment"
             tools:layout="@layout/fragment_shows_search">
             <action
                 android:id="@+id/toShowDetailFragment"
@@ -71,7 +71,7 @@
         </fragment>
         <fragment
             android:id="@+id/showDetailFragment"
-            android:name="io.github.posaydone.filmix.ui.fragment.ShowDetailFragment">
+            android:name="io.github.posaydone.filmix.presentation.ui.fragment.ShowDetailFragment">
             <argument
                 android:name="showId"
                 app:argType="integer" />

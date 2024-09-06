@@ -18,7 +18,6 @@ import io.github.posaydone.filmix.databinding.FragmentShowsSearchBinding
 import io.github.posaydone.filmix.presentation.ui.adapter.SearchAdapter
 import io.github.posaydone.filmix.presentation.ui.viewModel.ShowsSearchViewModel
 import io.github.posaydone.filmix.presentation.ui.viewModel.ShowsSearchViewModelFactory
-import io.github.posaydone.filmix.ui.fragment.ShowsSearchFragmentDirections
 import io.github.posaydone.filmix.utils.RecyclerViewMargin
 
 class ShowsSearchFragment : Fragment() {

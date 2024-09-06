@@ -20,7 +20,6 @@ import io.github.posaydone.filmix.data.repository.FilmixRepository
 import io.github.posaydone.filmix.databinding.FragmentShowDetailBinding
 import io.github.posaydone.filmix.presentation.ui.viewModel.ShowDetailViewModel
 import io.github.posaydone.filmix.presentation.ui.viewModel.ShowDetailViewModelFactory
-import io.github.posaydone.filmix.ui.fragment.ShowDetailFragmentArgs
 
 class ShowDetailFragment : Fragment() {
     private val TAG = "MovieDetailFragment"

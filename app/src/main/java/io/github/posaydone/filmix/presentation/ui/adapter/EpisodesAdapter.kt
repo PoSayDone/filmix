@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import io.github.posaydone.filmix.R
 import io.github.posaydone.filmix.data.network.model.Episode
 import io.github.posaydone.filmix.data.network.model.Season
-import io.github.posaydone.filmix.ui.viewModel.PlayerViewModel
+import io.github.posaydone.filmix.presentation.ui.viewModel.PlayerViewModel
 
 class EpisodesAdapter(
     private val season: Season,
