@@ -5,12 +5,34 @@
     <string name="title_activity_player">PlayerActivity</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
-    <string name="season">Season %1$s</string>
-    <string name="seasonsCountString">%1$s seasons</string>
+    <string name="season">Season %1$x</string>
+    <string name="episode">Episode %1$x</string>
+    <string name="seasonsCountString">%1$x seasons</string>
     <string name="playString">Play</string>
     <string name="episodesString">Episodes</string>
     <string name="audioString">Audio</string>
     <string name="enter_your_email">Enter your email</string>
     <string name="enter_password">Enter your password</string>
     <string name="signin">Sign in</string>
+    <string name="continueWatchingMovie">Continue</string>
+    <string name="continueWatchingSeries">Season %1$x, Episode %2$x</string>
+    <string name="history">History</string>
+    <string name="score">%.1f</string>
+    <string name="title_activity_main_tv">Leanback MainTvActivity</string>
+    <string name="browse_title">Videos by Your Company</string>
+    <string name="related_movies">Related Videos</string>
+    <string name="grid_view">Grid View</string>
+    <string name="error_fragment">Error Fragment</string>
+    <string name="personal_settings">Personal Settings</string>
+    <string name="watch_trailer_1">Watch trailer</string>
+    <string name="watch_trailer_2">FREE</string>
+    <string name="rent_1">Rent By Day</string>
+    <string name="rent_2">From $1.99</string>
+    <string name="buy_1">Buy and Own</string>
+    <string name="buy_2">AT $9.99</string>
+    <string name="movie">Movie</string>
+
+    <!-- Error messages -->
+    <string name="error_fragment_message">An error occurred</string>
+    <string name="dismiss_error">Dismiss</string>
 </resources>

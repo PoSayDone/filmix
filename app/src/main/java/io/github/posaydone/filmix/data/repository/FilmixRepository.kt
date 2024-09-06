@@ -3,33 +3,36 @@ package io.github.posaydone.filmix.data.repository
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
-import io.github.posaydone.filmix.data.api.FilmixApiService
-import io.github.posaydone.filmix.data.model.Episode
-import io.github.posaydone.filmix.data.model.File
-import io.github.posaydone.filmix.data.model.FilmixSeries
-import io.github.posaydone.filmix.data.model.MovieDetails
-import io.github.posaydone.filmix.data.model.MovieOrSeriesResponse
-import io.github.posaydone.filmix.data.model.MovieTranslation
-import io.github.posaydone.filmix.data.model.Season
-import io.github.posaydone.filmix.data.model.Series
-import io.github.posaydone.filmix.data.model.SeriesHistory
-import io.github.posaydone.filmix.data.model.ShowCard
-import io.github.posaydone.filmix.data.model.ShowsPage
-import io.github.posaydone.filmix.data.model.Translation
+import io.github.posaydone.filmix.data.network.model.Episode
+import io.github.posaydone.filmix.data.network.model.File
+import io.github.posaydone.filmix.data.network.model.FilmixSeries
+import io.github.posaydone.filmix.data.network.model.LastSeenPage
+import io.github.posaydone.filmix.data.network.model.Season
+import io.github.posaydone.filmix.data.network.model.Series
+import io.github.posaydone.filmix.data.network.model.ShowCard
+import io.github.posaydone.filmix.data.network.model.ShowDetails
+import io.github.posaydone.filmix.data.network.model.ShowHistoryItem
+import io.github.posaydone.filmix.data.network.model.ShowImages
+import io.github.posaydone.filmix.data.network.model.ShowResponse
+import io.github.posaydone.filmix.data.network.model.ShowTrailers
+import io.github.posaydone.filmix.data.network.model.ShowsPage
+import io.github.posaydone.filmix.data.network.model.Translation
+import io.github.posaydone.filmix.data.network.model.VideoWithQualities
+import io.github.posaydone.filmix.data.network.service.FilmixApiService
 
 class FilmixRepository(private val apiService: FilmixApiService) {
     private val TAG: String = "FilmixRepo"
 
-    suspend fun getSeriesHistory(movieId: Int): List<SeriesHistory?> {
-        return apiService.getShowHistory(movieId)
+    suspend fun getShowHistory(movieId: Int): List<ShowHistoryItem?> {
+        return apiService.fetchShowHistory(movieId)
     }
 
-    suspend fun setSeriesHistory(movieId: Int, seriesHistory: SeriesHistory) {
+    suspend fun setShowHistory(movieId: Int, seriesHistory: ShowHistoryItem) {
         return apiService.setShowHistory(movieId, seriesHistory)
     }
 
     // Получение списка фильмов
-    suspend fun fetchList(
+    suspend fun getShowsList(
         limit: Int = 48,
         page: Int? = null,
         category: String = "s0",
@@ -43,33 +46,60 @@ class FilmixRepository(private val apiService: FilmixApiService) {
         )
     }
 
-    suspend fun fetchNew(limit: Int = 48, page: Int = 1): ShowsPage {
-        return apiService.getNew(
+    suspend fun getNewShowsList(limit: Int = 48, page: Int = 1): ShowsPage {
+        return apiService.fetchNewShowsList(
             page = page,
             limit = limit
         )
     }
 
-    suspend fun fetchPopular(limit: Int = 48, page: Int = 1): ShowsPage {
-        return apiService.getPopular(
+    suspend fun getPopularShowsList(limit: Int = 48, page: Int = 1): ShowsPage {
+        return apiService.fetchPopularShowsList(
             page = page,
             limit = limit
+        )
+    }
+
+    suspend fun getLastSeenListFull(
+        limit: Int = 10,
+        page: Int = 1,
+        full: Boolean? = true
+    ): LastSeenPage {
+        return apiService.fetchLastSeenListFull(
+            page = page,
+            limit = limit,
+            full = full
+        )
+    }
+
+    suspend fun getLastSeenList(limit: Int = 10, page: Int = 1): ShowsPage {
+        return apiService.fetchLastSeenList(
+            page = page,
+            limit = limit,
         )
     }
 
     // Поиск фильмов по запросу
-    suspend fun fetchListWIthQuerry(query: String, limit: Int = 48): List<ShowCard> {
-        return apiService.getSearch(query, limit).items
+    suspend fun getShowsListWithQuery(query: String, limit: Int = 48): List<ShowCard> {
+        return apiService.fetchShowsListWithQuery(query, limit).items
     }
 
     // Получение деталей фильма, включая сезоны, серии и озвучки
-    suspend fun fetchMovieDetails(movieId: Int): MovieDetails {
-        return apiService.getMovieDetails(movieId)
+    suspend fun getShowDetails(movieId: Int): ShowDetails {
+        return apiService.fetchShowDetails(movieId)
+    }
+
+    suspend fun getShowImages(movieId: Int): ShowImages {
+        return apiService.fetchShowImages(movieId)
+    }
+
+    suspend fun getShowTrailers(movieId: Int): ShowTrailers {
+        return apiService.fetchShowTrailers(movieId)
     }
 
     // Получение ссылки на видео для выбранного сезона, серии и озвучки
-    suspend fun fetchSeriesOrMovie(movieId: Int): MovieOrSeriesResponse {
-        val response = apiService.getSeriesOrMovie(movieId)
+    suspend fun getShow(movieId: Int): ShowResponse {
+        val response = apiService.fetchShow(movieId)
 
         if (response.isSuccessful) {
             val responseBody = response.body()?.string() ?: ""
@@ -80,12 +110,12 @@ class FilmixRepository(private val apiService: FilmixApiService) {
                 val filmixSeriesType = object : TypeToken<FilmixSeries>() {}.type
                 val filmixSeries = gson.fromJson<FilmixSeries>(responseBody, filmixSeriesType)
                 val seriesTransformed = transformSeries(filmixSeries)
-                MovieOrSeriesResponse.SeriesResponse(seriesTransformed)
+                ShowResponse.SeriesResponse(seriesTransformed)
             } catch (e: JsonSyntaxException) {
                 try {
-                    val moviesType = object : TypeToken<List<MovieTranslation>>() {}.type
-                    val movies = gson.fromJson<List<MovieTranslation>>(responseBody, moviesType)
-                    MovieOrSeriesResponse.MovieResponse(movies)
+                    val moviesType = object : TypeToken<List<VideoWithQualities>>() {}.type
+                    val movies = gson.fromJson<List<VideoWithQualities>>(responseBody, moviesType)
+                    ShowResponse.MovieResponse(movies)
                 } catch (e: JsonSyntaxException) {
                     throw IllegalStateException("Unexpected response format")
                 }

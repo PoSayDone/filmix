@@ -3,42 +3,79 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_main"
-    app:startDestination="@id/mainFragment">
+    app:startDestination="@id/nav_main_fragment">
 
-    <fragment
-        android:id="@+id/mainFragment"
-        android:name="io.github.posaydone.filmix.ui.fragments.MainFragment"
-        android:label="Movie List"
-        tools:layout="@layout/fragment_main">
-        <action
-            android:id="@+id/toMovieDetailFragment"
-            app:destination="@id/movieDetailFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:exitAnim="@anim/nav_default_exit_anim"
-            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
-    </fragment>
+    <navigation
+        android:id="@+id/nav_main_fragment"
+        app:startDestination="@id/mainFragment">
+        <fragment
+            android:id="@+id/mainFragment"
+            android:name="io.github.posaydone.filmix.ui.fragment.MainFragment"
+            tools:layout="@layout/fragment_main">
+            <action
+                android:id="@+id/toShowDetailFragment"
+                app:destination="@id/showDetailFragment"
+                app:enterAnim="@anim/nav_slide_in_right"
+                app:exitAnim="@anim/nav_slide_out_left"
+                app:popEnterAnim="@anim/nav_slide_in_left"
+                app:popExitAnim="@anim/nav_slide_out_right" />
+        </fragment>
+        <fragment
+            android:id="@+id/showDetailFragment"
+            android:name="io.github.posaydone.filmix.ui.fragment.ShowDetailFragment">
+            <argument
+                android:name="showId"
+                app:argType="integer" />
+        </fragment>
+    </navigation>
 
-    <fragment
-        android:id="@+id/movieSearchFragment"
-        android:name="io.github.posaydone.filmix.ui.fragments.MovieSearchFragment"
-        android:label="Search"
-        tools:layout="@layout/fragment_movie_search">
-        <action
-            android:id="@+id/toMovieDetailFragment"
-            app:destination="@id/movieDetailFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:exitAnim="@anim/nav_default_exit_anim"
-            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
-    </fragment>
-    <fragment
-        android:id="@+id/movieDetailFragment"
-        android:name="io.github.posaydone.filmix.ui.fragments.MovieDetailFragment"
-        android:label="MovieDetailFragment">
-        <argument
-            android:name="movieId"
-            app:argType="integer" />
-    </fragment>
+    <navigation
+        android:id="@+id/nav_history_fragment"
+        app:startDestination="@id/historyFragment">
+        <fragment
+            android:id="@+id/historyFragment"
+            android:name="io.github.posaydone.filmix.ui.fragment.HistoryFragment"
+            android:label="@string/history"
+            tools:layout="@layout/fragment_history">
+            <action
+                android:id="@+id/toShowDetailFragment"
+                app:destination="@id/showDetailFragment"
+                app:enterAnim="@anim/nav_slide_in_right"
+                app:exitAnim="@anim/nav_slide_out_left"
+                app:popEnterAnim="@anim/nav_slide_in_left"
+                app:popExitAnim="@anim/nav_slide_out_right" />
+        </fragment>
+        <fragment
+            android:id="@+id/showDetailFragment"
+            android:name="io.github.posaydone.filmix.ui.fragment.ShowDetailFragment">
+            <argument
+                android:name="showId"
+                app:argType="integer" />
+        </fragment>
+    </navigation>
+
+    <navigation
+        android:id="@+id/nav_show_search_fragment"
+        app:startDestination="@id/showsSearchFragment">
+        <fragment
+            android:id="@+id/showsSearchFragment"
+            android:name="io.github.posaydone.filmix.ui.fragment.ShowsSearchFragment"
+            tools:layout="@layout/fragment_shows_search">
+            <action
+                android:id="@+id/toShowDetailFragment"
+                app:destination="@id/showDetailFragment"
+                app:enterAnim="@anim/nav_slide_in_right"
+                app:exitAnim="@anim/nav_slide_out_left"
+                app:popEnterAnim="@anim/nav_slide_in_left"
+                app:popExitAnim="@anim/nav_slide_out_right" />
+        </fragment>
+        <fragment
+            android:id="@+id/showDetailFragment"
+            android:name="io.github.posaydone.filmix.ui.fragment.ShowDetailFragment">
+            <argument
+                android:name="showId"
+                app:argType="integer" />
+        </fragment>
+    </navigation>
 
 </navigation>

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("androidx.navigation.safeargs.kotlin")
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
@@ -22,6 +23,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        compose = true
     }
 
     buildTypes {
@@ -43,7 +45,21 @@ android {
 }
 
 dependencies {
+    val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // UI Tests
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation(libs.androidx.room.ktx)
+    implementation("androidx.tv:tv-foundation:1.0.0-alpha11")
+    implementation("androidx.tv:tv-material:1.0.0")
+    implementation("androidx.leanback:leanback:1.2.0-alpha04")
     annotationProcessor(libs.androidx.room.compiler)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.media3.exoplayer)

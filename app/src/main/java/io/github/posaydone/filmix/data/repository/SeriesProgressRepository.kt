@@ -1,7 +1,7 @@
 package io.github.posaydone.filmix.data.repository
 
 import io.github.posaydone.filmix.data.dao.SeriesProgressDao
-import io.github.posaydone.filmix.data.model.SeriesProgress
+import io.github.posaydone.filmix.data.network.model.SeriesProgress
 import kotlinx.coroutines.flow.Flow
 
 class SeriesProgressRepository(private val seriesProgressDao: SeriesProgressDao) {

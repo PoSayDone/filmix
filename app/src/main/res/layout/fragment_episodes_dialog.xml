@@ -12,13 +12,17 @@
     <com.google.android.material.bottomsheet.BottomSheetDragHandleView
         android:id="@+id/drag_handle"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:minHeight="0dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="4dp" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/seasonTabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#00FFFFFF"
+        app:tabContentStart="16dp"
         app:tabMode="scrollable" />
 
     <androidx.viewpager2.widget.ViewPager2
