@@ -3,21 +3,22 @@ package io.github.posaydone.filmix.data.repository
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
-import io.github.posaydone.filmix.data.network.model.Episode
-import io.github.posaydone.filmix.data.network.model.File
-import io.github.posaydone.filmix.data.network.model.FilmixSeries
-import io.github.posaydone.filmix.data.network.model.LastSeenPage
-import io.github.posaydone.filmix.data.network.model.Season
-import io.github.posaydone.filmix.data.network.model.Series
-import io.github.posaydone.filmix.data.network.model.ShowCard
-import io.github.posaydone.filmix.data.network.model.ShowDetails
-import io.github.posaydone.filmix.data.network.model.ShowHistoryItem
-import io.github.posaydone.filmix.data.network.model.ShowImages
-import io.github.posaydone.filmix.data.network.model.ShowResponse
-import io.github.posaydone.filmix.data.network.model.ShowTrailers
-import io.github.posaydone.filmix.data.network.model.ShowsPage
-import io.github.posaydone.filmix.data.network.model.Translation
-import io.github.posaydone.filmix.data.network.model.VideoWithQualities
+import io.github.posaydone.filmix.data.entities.Episode
+import io.github.posaydone.filmix.data.entities.File
+import io.github.posaydone.filmix.data.entities.FilmixCategory
+import io.github.posaydone.filmix.data.entities.FilmixSeries
+import io.github.posaydone.filmix.data.entities.LastSeenPage
+import io.github.posaydone.filmix.data.entities.Season
+import io.github.posaydone.filmix.data.entities.Series
+import io.github.posaydone.filmix.data.entities.Show
+import io.github.posaydone.filmix.data.entities.ShowDetails
+import io.github.posaydone.filmix.data.entities.ShowHistoryItem
+import io.github.posaydone.filmix.data.entities.ShowImages
+import io.github.posaydone.filmix.data.entities.ShowResponse
+import io.github.posaydone.filmix.data.entities.ShowTrailers
+import io.github.posaydone.filmix.data.entities.ShowsPage
+import io.github.posaydone.filmix.data.entities.Translation
+import io.github.posaydone.filmix.data.entities.VideoWithQualities
 import io.github.posaydone.filmix.data.network.service.FilmixApiService
 
 class FilmixRepository(private val apiService: FilmixApiService) {
@@ -36,7 +37,7 @@ class FilmixRepository(private val apiService: FilmixApiService) {
         limit: Int = 48,
         page: Int? = null,
         category: String = "s0",
-        genre: String? = null
+        genre: String? = null,
     ): ShowsPage {
         return apiService.getList(
             category = category,
@@ -46,16 +47,21 @@ class FilmixRepository(private val apiService: FilmixApiService) {
         )
     }
 
-    suspend fun getNewShowsList(limit: Int = 48, page: Int = 1): ShowsPage {
-        return apiService.fetchNewShowsList(
+    suspend fun getViewingShowsList(limit: Int = 48, page: Int = 1): ShowsPage {
+        return apiService.fetchViewingShowsList(
             page = page,
             limit = limit
         )
     }
 
-    suspend fun getPopularShowsList(limit: Int = 48, page: Int = 1): ShowsPage {
+    suspend fun getPopularShowsList(
+        limit: Int = 48,
+        page: Int = 1,
+        section: FilmixCategory = FilmixCategory.MOVIE,
+    ): ShowsPage {
         return apiService.fetchPopularShowsList(
             page = page,
+            section = section,
             limit = limit
         )
     }
@@ -63,7 +69,7 @@ class FilmixRepository(private val apiService: FilmixApiService) {
     suspend fun getLastSeenListFull(
         limit: Int = 10,
         page: Int = 1,
-        full: Boolean? = true
+        full: Boolean? = true,
     ): LastSeenPage {
         return apiService.fetchLastSeenListFull(
             page = page,
@@ -80,7 +86,7 @@ class FilmixRepository(private val apiService: FilmixApiService) {
     }
 
     // Поиск фильмов по запросу
-    suspend fun getShowsListWithQuery(query: String, limit: Int = 48): List<ShowCard> {
+    suspend fun getShowsListWithQuery(query: String, limit: Int = 48): List<Show> {
         return apiService.fetchShowsListWithQuery(query, limit).items
     }
 

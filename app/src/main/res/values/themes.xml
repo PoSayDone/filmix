@@ -1,33 +1,33 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Filmix" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:statusBarColor">
-            @android:color/transparent
-        </item>
-        <item name="android:navigationBarColor">
-            @android:color/transparent
-        </item>
-        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.App.BottomSheetDialog</item>
-    </style>
+<resources>
+    <!--    &lt;!&ndash; Base application theme. &ndash;&gt;-->
+    <!--    <style name="Base.Theme.Filmix" parent="Theme.Material3.DayNight.NoActionBar">-->
+    <!--        <item name="android:windowDrawsSystemBarBackgrounds">true</item>-->
+    <!--        <item name="android:statusBarColor">-->
+    <!--            @android:color/transparent-->
+    <!--        </item>-->
+    <!--        <item name="android:navigationBarColor">-->
+    <!--            @android:color/transparent-->
+    <!--        </item>-->
+    <!--        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.App.BottomSheetDialog</item>-->
+    <!--    </style>-->
 
-    <style name="Theme.Filmix" parent="Base.Theme.Filmix" />
+    <!--    <style name="Theme.Filmix" parent="Base.Theme.Filmix" />-->
 
-    <style name="Theme.Filmix.Fullscreen" parent="Theme.Filmix">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="p">shortEdges</item>
-    </style>
+    <!--    <style name="Theme.Filmix.Fullscreen" parent="Theme.Filmix">-->
+    <!--        <item name="windowActionBar">false</item>-->
+    <!--        <item name="windowNoTitle">true</item>-->
+    <!--        <item name="android:windowFullscreen">true</item>-->
+    <!--        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="p">shortEdges</item>-->
+    <!--    </style>-->
 
-    <style name="ThemeOverlay.Filmix.FullscreenContainer" parent="">
-        <item name="fullscreenBackgroundColor">@color/light_blue_600</item>
-        <item name="fullscreenTextColor">@color/light_blue_A200</item>
-    </style>
+    <!--    <style name="ThemeOverlay.Filmix.FullscreenContainer" parent="">-->
+    <!--        <item name="fullscreenBackgroundColor">@color/light_blue_600</item>-->
+    <!--        <item name="fullscreenTextColor">@color/light_blue_A200</item>-->
+    <!--    </style>-->
 
-    <style name="ThemeOverlay.App.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:navigationBarColor" tools:ignore="NewApi">@android:color/transparent
-        </item>
-    </style>
+    <!--    <style name="ThemeOverlay.App.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">-->
+    <!--        <item name="android:windowFullscreen">true</item>-->
+    <!--        <item name="android:navigationBarColor" tools:ignore="NewApi">@android:color/transparent-->
+    <!--        </item>-->
+    <!--    </style>-->
 </resources>

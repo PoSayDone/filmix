@@ -1,6 +1,6 @@
 package io.github.posaydone.filmix.data.network.service
 
-import io.github.posaydone.filmix.data.network.model.RefreshTokenResponse
+import io.github.posaydone.filmix.data.entities.RefreshTokenResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

@@ -1,11 +1,12 @@
 package io.github.posaydone.filmix.data.network.service
 
-import io.github.posaydone.filmix.data.network.model.LastSeenPage
-import io.github.posaydone.filmix.data.network.model.ShowDetails
-import io.github.posaydone.filmix.data.network.model.ShowHistoryItem
-import io.github.posaydone.filmix.data.network.model.ShowImages
-import io.github.posaydone.filmix.data.network.model.ShowTrailers
-import io.github.posaydone.filmix.data.network.model.ShowsPage
+import io.github.posaydone.filmix.data.entities.FilmixCategory
+import io.github.posaydone.filmix.data.entities.LastSeenPage
+import io.github.posaydone.filmix.data.entities.ShowDetails
+import io.github.posaydone.filmix.data.entities.ShowHistoryItem
+import io.github.posaydone.filmix.data.entities.ShowImages
+import io.github.posaydone.filmix.data.entities.ShowTrailers
+import io.github.posaydone.filmix.data.entities.ShowsPage
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -22,7 +23,7 @@ interface FilmixApiService {
 
     @POST("post/{movieId}/history")
     suspend fun setShowHistory(
-        @Path("movieId") movieId: Int, @Body showHistoryItem: ShowHistoryItem
+        @Path("movieId") movieId: Int, @Body showHistoryItem: ShowHistoryItem,
     )
 
     @GET("list")
@@ -35,7 +36,7 @@ interface FilmixApiService {
     ): ShowsPage
 
     @GET("viewing")
-    suspend fun fetchNewShowsList(
+    suspend fun fetchViewingShowsList(
         @Query("page") page: Int? = null,
         @Query("limit") limit: Int = 48,
     ): ShowsPage
@@ -43,6 +44,7 @@ interface FilmixApiService {
     @GET("popular")
     suspend fun fetchPopularShowsList(
         @Query("page") page: Int? = null,
+        @Query("section") section: FilmixCategory,
         @Query("limit") limit: Int = 48,
     ): ShowsPage
 

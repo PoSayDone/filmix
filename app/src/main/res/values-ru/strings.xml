@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="season">Сезон %1$x</string>
+    <string name="episode">Эпизод %1$x</string>
+    <string name="continueWatchingMovie">Продолжить</string>
+    <string name="continueWatchingSeries">Сеозн %1$x, Эпизод %2$x</string>
+    <string name="history">История</string>
+    <string name="movie">Фильм</string>
+    <string name="seasonsCountString">%1$x сезонов</string>
+    <string name="playString">Запустить</string>
+    <string name="episodesString">Эпизоды</string>
+    <string name="audioString">Озвучка</string>
+    <string name="search">Поиск</string>
+    <string name="retry_error">Упс, не получилось загрузить фильмы, попробуйте снова</string>
+    <string name="retry">"Повторить попытку "</string>
+    <string name="last_seen">Вы смотрели</string>
+    <string name="watching_now">Смотрят сейчас</string>
+    <string name="popular_movies">Популярные фильмы</string>
+    <string name="popular_series">Популярные сериалы</string>
+    <string name="popular_cartoons">Популярные мультфильмы</string>
+</resources>

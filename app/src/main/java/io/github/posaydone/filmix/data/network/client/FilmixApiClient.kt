@@ -1,7 +1,6 @@
 package io.github.posaydone.filmix.data.network.client
 
 import android.content.Context
-import android.util.Log
 import io.github.posaydone.filmix.data.network.service.FilmixApiService
 import io.github.posaydone.filmix.data.pref.SessionManager
 import io.github.posaydone.filmix.data.util.Constants
@@ -48,7 +47,7 @@ class FilmixApiClient {
             if (accessToken != null && refreshToken != null && sessionManager.isAccessTokenExpired()) {
                 val refreshedToken = runBlocking {
                     val response = filmixApiService.refresh(refreshToken)
-                    Log.d(TAG, "intercept: ${response}")
+
                     sessionManager.saveAccessToken(
                         response.accessToken, System.currentTimeMillis() + (50 * 60 * 1000)
                     )
