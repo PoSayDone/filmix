@@ -18,7 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import io.github.posaydone.filmix.data.entities.ShowDetails
+import io.github.posaydone.filmix.core.model.ShowDetails
 
 @Composable
 fun HistoryCard(showDetails: ShowDetails, onClick: () -> Unit) {

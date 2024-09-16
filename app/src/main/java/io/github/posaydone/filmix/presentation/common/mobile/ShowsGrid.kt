@@ -8,8 +8,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import io.github.posaydone.filmix.data.entities.Show
-import io.github.posaydone.filmix.presentation.navigation.Screens
+import io.github.posaydone.filmix.core.model.Show
+import io.github.posaydone.filmix.presentation.navigation.MobileScreens
 
 @Composable
 fun ShowsGrid(shows: List<Show>, navController: NavHostController) {
@@ -21,7 +21,7 @@ fun ShowsGrid(shows: List<Show>, navController: NavHostController) {
     ) {
         items(shows) { show ->
             ShowCard(show) {
-                navController.navigate(Screens.Main.Details(show.id)) {
+                navController.navigate(MobileScreens.Main.Details(show.id)) {
                     launchSingleTop = true
                     restoreState = true
                 }

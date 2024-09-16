@@ -24,9 +24,9 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import io.github.posaydone.filmix.data.entities.Show
-import io.github.posaydone.filmix.data.entities.ShowList
-import io.github.posaydone.filmix.presentation.navigation.Screens
+import io.github.posaydone.filmix.core.model.Show
+import io.github.posaydone.filmix.core.model.ShowList
+import io.github.posaydone.filmix.presentation.navigation.MobileScreens
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -73,7 +73,7 @@ fun ShowsRow(
                         index = index,
                         onMovieSelected = {
                             lazyRow.saveFocusedChild()
-                            navController.navigate(Screens.Main.Details(show.id)) {
+                            navController.navigate(MobileScreens.Main.Details(show.id)) {
                                 launchSingleTop = true
                                 restoreState = true
                             }

@@ -2,65 +2,49 @@ package io.github.posaydone.filmix.presentation.ui.homeScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.posaydone.filmix.data.entities.FilmixCategory
-import io.github.posaydone.filmix.data.entities.Show
-import io.github.posaydone.filmix.data.repository.FilmixRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.model.FilmixCategory
+import io.github.posaydone.filmix.core.model.ShowList
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
-class HomeScreenViewModel(private val filmixRepository: FilmixRepository) : ViewModel() {
-    private val _lastSeenShows = MutableStateFlow<List<Show>>(emptyList())
-    val lastSeenShows: StateFlow<List<Show>> = _lastSeenShows.asStateFlow()
+private const val TAG = "HomeScreenViewModel"
 
-    private val _viewingShows = MutableStateFlow<List<Show>>(emptyList())
-    val viewingShows: StateFlow<List<Show>> = _viewingShows.asStateFlow()
+sealed class HomeScreenUiState {
+    data object Loading : HomeScreenUiState()
+    data object Error : HomeScreenUiState()
+    data class Done(
+        val lastSeenShows: ShowList,
+        val viewingShows: ShowList,
+        val popularMovies: ShowList,
+        val popularSeries: ShowList,
+        val popularCartoons: ShowList,
+    ) : HomeScreenUiState()
+}
 
-    private val _popularMovies = MutableStateFlow<List<Show>>(emptyList())
-    val popularMovies: StateFlow<List<Show>> = _popularMovies.asStateFlow()
+@HiltViewModel
+class HomeScreenViewModel @Inject constructor(filmixRepository: FilmixRepository) : ViewModel() {
+    val uiState = combine(
+        filmixRepository.getHistoryList(20),
+        filmixRepository.getViewingList(20),
+        filmixRepository.getPopularList(20, section = FilmixCategory.MOVIE),
+        filmixRepository.getPopularList(20, section = FilmixCategory.SERIES),
+        filmixRepository.getPopularList(20, section = FilmixCategory.CARTOON),
+    ) { (lastSeenShows, viewingShows, popularMovies, popularSeries, popularCartoons) ->
+        HomeScreenUiState.Done(
+            lastSeenShows = lastSeenShows,
+            viewingShows = viewingShows,
+            popularMovies = popularMovies,
+            popularSeries = popularSeries,
+            popularCartoons = popularCartoons,
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = HomeScreenUiState.Loading
+    )
 
-    private val _popularSeries = MutableStateFlow<List<Show>>(emptyList())
-    val popularSeries: StateFlow<List<Show>> = _popularSeries.asStateFlow()
-
-    private val _popularCartoons = MutableStateFlow<List<Show>>(emptyList())
-    val popularCartoons: StateFlow<List<Show>> = _popularCartoons.asStateFlow()
-
-    val _isLoading = MutableStateFlow<Boolean>(false)
-    val isLoading = _isLoading.asStateFlow()
-
-    val _error = MutableStateFlow<Boolean>(false)
-    val error = _error.asStateFlow()
-
-    init {
-        loadCategories()
-    }
-
-    fun loadCategories() {
-        _isLoading.value = true
-        _error.value = false
-
-        viewModelScope.launch {
-            try {
-                val lastSeen = filmixRepository.getLastSeenList(20)
-                val viewing = filmixRepository.getViewingShowsList(20)
-                val popularMovies =
-                    filmixRepository.getPopularShowsList(20, section = FilmixCategory.MOVIE)
-                val popularSeries =
-                    filmixRepository.getPopularShowsList(20, section = FilmixCategory.SERIES)
-                val popularCartoons =
-                    filmixRepository.getPopularShowsList(20, section = FilmixCategory.CARTOON)
-
-                _lastSeenShows.value = lastSeen.items
-                _viewingShows.value = viewing.items
-                _popularMovies.value = popularMovies.items
-                _popularSeries.value = popularSeries.items
-                _popularCartoons.value = popularCartoons.items
-            } catch (e: Exception) {
-                _error.value = true
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
 }

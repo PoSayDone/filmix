@@ -32,7 +32,7 @@ fun ShowCard(
                         ),
                     )
                 ),
-                scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1.0f),
                 content = image
             )
         },

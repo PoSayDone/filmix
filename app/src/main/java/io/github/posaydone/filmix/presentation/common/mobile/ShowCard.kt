@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.github.posaydone.filmix.data.entities.Show
+import io.github.posaydone.filmix.core.model.Show
 
 @Composable
 fun ShowCard(show: Show, modifier: Modifier = Modifier, onClick: () -> Unit) {

@@ -6,7 +6,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.github.posaydone.filmix.data.entities.Show
+import io.github.posaydone.filmix.core.model.Show
 
 @Composable
 fun PosterImage(

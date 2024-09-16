@@ -64,11 +64,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.Player
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
@@ -77,11 +77,11 @@ import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
 import io.github.posaydone.filmix.R
-import io.github.posaydone.filmix.data.entities.Episode
-import io.github.posaydone.filmix.data.entities.File
-import io.github.posaydone.filmix.data.entities.Season
-import io.github.posaydone.filmix.data.entities.Translation
-import io.github.posaydone.filmix.data.entities.VideoWithQualities
+import io.github.posaydone.filmix.core.model.Episode
+import io.github.posaydone.filmix.core.model.File
+import io.github.posaydone.filmix.core.model.Season
+import io.github.posaydone.filmix.core.model.Translation
+import io.github.posaydone.filmix.core.model.VideoWithQualities
 import io.github.posaydone.filmix.presentation.utils.handleDPadKeyEvents
 import io.github.posaydone.filmix.presentation.utils.toHhMmSs
 import kotlinx.coroutines.delay
@@ -91,7 +91,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlayerScreen(
     showId: Int,
-    viewModel: PlayerScreenViewModel = viewModel<PlayerScreenViewModel>(factory = PlayerScreenViewModel.Factory),
+    viewModel: PlayerScreenViewModel = hiltViewModel(),
 ) {
     val playerState by viewModel.playerState.collectAsState()
     val details by viewModel.details.collectAsState()

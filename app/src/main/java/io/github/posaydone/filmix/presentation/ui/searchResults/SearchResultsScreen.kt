@@ -16,8 +16,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.R
 import io.github.posaydone.filmix.presentation.common.mobile.ShowsGrid
@@ -27,7 +27,7 @@ fun SearchResultsScreen(
     query: String,
     paddingValues: PaddingValues,
     navController: NavHostController,
-    viewModel: SearchResultsViewModel = viewModel<SearchResultsViewModel>(factory = SearchResultsViewModel.Factory),
+    viewModel: SearchResultsViewModel = hiltViewModel(),
 ) {
     val shows by viewModel.shows.collectAsStateWithLifecycle()
 

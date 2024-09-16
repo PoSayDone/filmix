@@ -4,32 +4,28 @@ import android.content.pm.ActivityInfo
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
-import io.github.posaydone.filmix.app.host.Filmix
-import io.github.posaydone.filmix.data.entities.Episode
-import io.github.posaydone.filmix.data.entities.File
-import io.github.posaydone.filmix.data.entities.Season
-import io.github.posaydone.filmix.data.entities.Series
-import io.github.posaydone.filmix.data.entities.ShowDetails
-import io.github.posaydone.filmix.data.entities.ShowHistoryItem
-import io.github.posaydone.filmix.data.entities.ShowResponse
-import io.github.posaydone.filmix.data.entities.Translation
-import io.github.posaydone.filmix.data.entities.VideoWithQualities
-import io.github.posaydone.filmix.data.repository.FilmixRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.model.Episode
+import io.github.posaydone.filmix.core.model.File
+import io.github.posaydone.filmix.core.model.Season
+import io.github.posaydone.filmix.core.model.Series
+import io.github.posaydone.filmix.core.model.ShowDetails
+import io.github.posaydone.filmix.core.model.ShowProgressItem
+import io.github.posaydone.filmix.core.model.ShowResourceResponse
+import io.github.posaydone.filmix.core.model.Translation
+import io.github.posaydone.filmix.core.model.VideoWithQualities
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @UnstableApi
 data class PlayerState(
@@ -47,10 +43,11 @@ sealed class VideoPlayerScreenUiState {
 }
 
 @UnstableApi
-class PlayerScreenViewModel(
+@HiltViewModel
+class PlayerScreenViewModel @Inject constructor(
+    val player: ExoPlayer,
     private val repository: FilmixRepository,
     private val savedStateHandle: SavedStateHandle,
-    val player: ExoPlayer,
 ) : ViewModel() {
 
     private val TAG: String = "PlayerVIewModel"
@@ -106,8 +103,8 @@ class PlayerScreenViewModel(
     // Инициализация данных
     private fun initialize() {
         viewModelScope.launch {
-            when (val response = repository.getShow(showId)) {
-                is ShowResponse.MovieResponse -> {
+            when (val response = repository.getShowResource(showId)) {
+                is ShowResourceResponse.MovieResourceResponse -> {
                     movie = response.movies
                     _details.value = repository.getShowDetails(showId)
                     _moviePieces.value = movie
@@ -115,7 +112,7 @@ class PlayerScreenViewModel(
                     restoreMovieProgress()
                 }
 
-                is ShowResponse.SeriesResponse -> {
+                is ShowResourceResponse.SeriesResourceResponse -> {
                     val seriesTransformed = response.series
                     series = seriesTransformed
                     _details.value = repository.getShowDetails(showId)
@@ -129,10 +126,10 @@ class PlayerScreenViewModel(
 
     private fun restoreMovieProgress() {
         viewModelScope.launch {
-            val savedMovieHistory = repository.getShowHistory(showId)
+            val savedMovieHistory = repository.getShowProgress(showId)
 
             if (savedMovieHistory.isNotEmpty()) {
-                restoreMovieSavedProgress(savedMovieHistory.first()!!)
+                restoreMovieSavedProgress(savedMovieHistory.first())
             } else {
                 setDefaultMovieProgress()
             }
@@ -145,13 +142,13 @@ class PlayerScreenViewModel(
         }
     }
 
-    private fun restoreMovieSavedProgress(savedMovie: ShowHistoryItem) {
+    private fun restoreMovieSavedProgress(savedMovie: ShowProgressItem) {
         val translation = moviePieces.value?.find { it.voiceover == savedMovie.voiceover }
         _selectedMovieTranslation.value = translation
 
         val file = translation?.files?.find {
             it.quality == savedMovie.quality || it.quality == 1080
-        }
+        } ?: translation?.files?.getOrNull(0)
         _selectedQuality.value = file
         file?.url?.let {
             _videoUrl.value = it
@@ -174,17 +171,17 @@ class PlayerScreenViewModel(
 
     private fun restoreSeriesProgress() {
         viewModelScope.launch {
-            val savedSeriesHistory = repository.getShowHistory(showId)
+            val savedSeriesHistory = repository.getShowProgress(showId)
 
             if (savedSeriesHistory.isNotEmpty()) {
-                restoreSeriesSavedProgress(savedSeriesHistory.first()!!)
+                restoreSeriesSavedProgress(savedSeriesHistory.first())
             } else {
                 setDefaultSeriesProgress()
             }
         }
     }
 
-    private fun restoreSeriesSavedProgress(savedSeries: ShowHistoryItem) {
+    private fun restoreSeriesSavedProgress(savedSeries: ShowProgressItem) {
         val season = seasons.value?.find { it.season == savedSeries.season }
         _selectedSeason.value = season
 
@@ -198,7 +195,7 @@ class PlayerScreenViewModel(
 
         val file = translation?.files?.find {
             it.quality == savedSeries.quality || it.quality == 1080
-        }
+        } ?: translation?.files?.getOrNull(0)
         _selectedQuality.value = file
 
         file?.url?.let {
@@ -329,25 +326,25 @@ class PlayerScreenViewModel(
 
         if (contentType.value == ShowType.MOVIE) {
             if (movieTranslation != null && qualityFile != null) viewModelScope.launch {
-                val savedSeriesProgress = ShowHistoryItem(
+                val savedSeriesProgress = ShowProgressItem(
                     0,
                     0,
                     movieTranslation.voiceover,
                     time,
                     qualityFile.quality,
                 )
-                repository.setShowHistory(showId, savedSeriesProgress)
+                repository.addShowProgress(showId, savedSeriesProgress)
             }
         } else {
             if (season != null && episode != null && translation != null && qualityFile != null) viewModelScope.launch {
-                val savedSeriesProgress = ShowHistoryItem(
+                val savedSeriesProgress = ShowProgressItem(
                     season.season,
                     episode.episode,
                     translation.translation,
                     time,
                     qualityFile.quality,
                 )
-                repository.setShowHistory(showId, savedSeriesProgress)
+                repository.addShowProgress(showId, savedSeriesProgress)
             }
         }
     }
@@ -371,24 +368,6 @@ class PlayerScreenViewModel(
     fun setResizeMode(resizeMode: Int) {
         _playerState.update {
             it.copy(resizeMode = resizeMode)
-        }
-    }
-
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val savedStateHandle = createSavedStateHandle()
-                val application = this[APPLICATION_KEY] as Filmix
-                val filmixRepository = application.filmixRepository
-                val player = ExoPlayer.Builder(application)
-                    .setSeekForwardIncrementMs(10000)
-                    .setSeekBackIncrementMs(10000)
-                    .build()
-                PlayerScreenViewModel(
-                    repository = filmixRepository, savedStateHandle = savedStateHandle, player
-                )
-            }
         }
     }
 }

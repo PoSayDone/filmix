@@ -6,6 +6,8 @@ plugins {
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
     kotlin("plugin.serialization")
+    id("kotlin-kapt")
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -13,7 +15,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "io.github.posaydone.filmix"
+        applicationId = rootProject.extra["defaultApplicationId"] as String
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -23,7 +25,6 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true
         compose = true
     }
 
@@ -47,13 +48,13 @@ android {
 
 
 dependencies {
-    // Jetpack Compose BOM (Bill of Materials)
-    val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
+    implementation(project(":core:data"))
+    implementation(project(":core:model"))
 
     // Compose UI and related libraries
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.navigation.compose)
-    implementation(composeBom)
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.foundation.layout)
@@ -63,6 +64,11 @@ dependencies {
     implementation(libs.accompanist.placeholder.material)
     implementation(libs.androidx.material.icons.extended)
 
+    //Hilt
+    implementation(libs.hilt.android)
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    kapt(libs.hilt.android.compiler)
+
     // For image loading in Compose
     implementation(libs.coil.compose)
 
@@ -71,7 +77,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // Debug and testing
-    androidTestImplementation(composeBom)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
 
@@ -92,4 +98,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.exoplayer.dash)
+}
+
+kapt {
+    correctErrorTypes = true
 }

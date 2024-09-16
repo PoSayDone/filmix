@@ -6,11 +6,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.tv.material3.LocalContentColor
+import androidx.tv.material3.MaterialTheme
+import dagger.hilt.android.AndroidEntryPoint
 import io.github.posaydone.filmix.presentation.navigation.MobileNavGraph
 import io.github.posaydone.filmix.presentation.navigation.TvNavGraph
-import io.github.posaydone.filmix.presentation.theme.MainTheme
+import io.github.posaydone.filmix.presentation.theme.MobileTheme
+import io.github.posaydone.filmix.presentation.theme.TvTheme
 
-
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
@@ -26,12 +35,23 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         setContent {
             if (isTv) {
-                MainTheme(darkTheme = true)
+                TvTheme(darkTheme = true)
                 {
-                    TvNavGraph()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        CompositionLocalProvider(
+                            LocalContentColor provides MaterialTheme.colorScheme.onSurface
+                        ) {
+                            TvNavGraph(
+                            )
+                        }
+                    }
                 }
             } else {
-                MainTheme {
+                MobileTheme {
                     MobileNavGraph()
                 }
             }

@@ -36,7 +36,7 @@ fun MobileNavGraph(
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screens.Auth,
+            startDestination = MobileScreens.Auth,
             enterTransition = {
                 slideInHorizontally(
                     initialOffsetX = { it }, animationSpec = tween(animationDuration)
@@ -85,7 +85,7 @@ fun MobileNavGraph(
 private fun NavGraphBuilder.authGraph(
     navController: NavHostController,
 ) {
-    composable<Screens.Auth> {
+    composable<MobileScreens.Auth> {
         AuthScreen(navController)
     }
 }
@@ -94,22 +94,22 @@ private fun NavGraphBuilder.mainGraph(
     paddingValues: PaddingValues = PaddingValues(),
     navController: NavHostController,
 ) {
-    navigation<Screens.Main>(startDestination = Screens.Main.Home) {
-        composable<Screens.Main.Home> {
-            HomeScreen(paddingValues, navController)
+    navigation<MobileScreens.Main>(startDestination = MobileScreens.Main.Home) {
+        composable<MobileScreens.Main.Home> {
+            HomeScreen(paddingValues = paddingValues, navController = navController)
         }
-        composable<Screens.Main.Explore> {
+        composable<MobileScreens.Main.Explore> {
             ExploreScreen(paddingValues, navController)
         }
-        composable<Screens.Main.History> {
+        composable<MobileScreens.Main.History> {
             HistoryScreen(paddingValues, navController)
         }
-        composable<Screens.Main.Details> {
-            val args = it.toRoute<Screens.Main.Details>()
+        composable<MobileScreens.Main.Details> {
+            val args = it.toRoute<MobileScreens.Main.Details>()
             ShowDetailsScreen(args.showId, paddingValues, navController)
         }
-        composable<Screens.Main.SearchResults> {
-            val args = it.toRoute<Screens.Main.SearchResults>()
+        composable<MobileScreens.Main.SearchResults> {
+            val args = it.toRoute<MobileScreens.Main.SearchResults>()
             SearchResultsScreen(args.query, paddingValues, navController)
         }
     }
@@ -119,8 +119,8 @@ private fun NavGraphBuilder.mainGraph(
 private fun NavGraphBuilder.playerGraph(
     navController: NavHostController,
 ) {
-    composable<Screens.Player> {
-        val args = it.toRoute<Screens.Player>()
+    composable<MobileScreens.Player> {
+        val args = it.toRoute<MobileScreens.Player>()
         PlayerScreen(args.showId)
     }
 }

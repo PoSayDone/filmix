@@ -5,26 +5,30 @@ import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import io.github.posaydone.filmix.data.pref.SessionManager
-import io.github.posaydone.filmix.presentation.navigation.Screens
+import io.github.posaydone.filmix.core.model.SessionManager
+import io.github.posaydone.filmix.presentation.navigation.MobileScreens
 
 
-private var token: String? = null
+private var access: String? = null
 private var refresh: String? = null
 
 @Composable
-fun AuthScreen(navController: NavHostController) {
+fun AuthScreen(
+    navController: NavHostController,
+    viewModel: AuthScreenViewModel = hiltViewModel(),
+) {
+    val sessionManager = viewModel.sessionManager
+
     val mUrl = "https://filmix.tv/auth/login"
-    val sessionManager = SessionManager(LocalContext.current)
     val savedToken = sessionManager.fetchAccessToken()
     val savedRefresh = sessionManager.fetchRefreshToken()
 
     if (savedToken != null && savedRefresh != null) {
-        navController.navigate(Screens.Main) {
-            popUpTo<Screens.Auth> {
+        navController.navigate(MobileScreens.Main) {
+            popUpTo<MobileScreens.Auth> {
                 inclusive = true
             }
         }
@@ -62,13 +66,13 @@ class CustomWebViewClient(private val sessionManager: SessionManager) : WebViewC
 private fun handleToken(url: String, view: WebView?, sessionManager: SessionManager) {
     if (view != null) {
         view.evaluateJavascript("(function() { return localStorage.getItem(\"token\"); })();") {
-            token = it.replace("\"", "")
+            access = it.replace("\"", "")
         }
         view.evaluateJavascript("(function() { return localStorage.getItem(\"refresh\"); })();") {
             refresh = it.replace("\"", "")
         }
-        if (token == "null" || token == "")
-            token = null
+        if (access == "null" || access == "")
+            access = null
         if (refresh == "null" || refresh == "")
             refresh = null
     }
@@ -77,9 +81,9 @@ private fun handleToken(url: String, view: WebView?, sessionManager: SessionMana
 
 
 private fun checkAndStoreTokens(sessionManager: SessionManager) {
-    if (token != null && refresh != null) {
+    if (access != null && refresh != null) {
         sessionManager.saveAccessToken(
-            token!!,
+            access!!,
             expiresIn = System.currentTimeMillis() + (50 * 60 * 1000)
         )
         sessionManager.saveRefreshToken(refresh!!)

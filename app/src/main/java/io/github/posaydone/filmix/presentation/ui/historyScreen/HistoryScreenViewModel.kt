@@ -2,29 +2,31 @@ package io.github.posaydone.filmix.presentation.ui.historyScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.posaydone.filmix.data.entities.ShowDetails
-import io.github.posaydone.filmix.data.repository.FilmixRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.model.ShowDetails
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
-class HistoryScreenViewModel(private val repository: FilmixRepository) : ViewModel() {
+sealed class HistoryScreenUiState {
+    data object Loading : HistoryScreenUiState()
+    data object Error : HistoryScreenUiState()
+    data class Done(
+        val historyList: List<ShowDetails>,
+    ) : HistoryScreenUiState()
+}
 
-    private val TAG: String = "HistoryViewModel"
-    private val _historyItemsList = MutableStateFlow<List<ShowDetails>>(listOf())
-    val historyItemsList: StateFlow<List<ShowDetails>> get() = _historyItemsList
+@HiltViewModel
+class HistoryScreenViewModel @Inject constructor(private val repository: FilmixRepository) :
+    ViewModel() {
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> get() = _error
-
-    init {
-        viewModelScope.launch {
-            try {
-                val result = repository.getLastSeenListFull()
-                _historyItemsList.value = result.items
-            } catch (e: Exception) {
-                _error.value = "Failed to load movies"
-            }
-        }
-    }
+    val uiState = repository.getHistoryListFull().map { list ->
+        HistoryScreenUiState.Done(historyList = list)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = HistoryScreenUiState.Loading
+    )
 }

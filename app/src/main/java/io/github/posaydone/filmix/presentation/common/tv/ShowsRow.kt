@@ -6,6 +6,7 @@ import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,12 +35,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import io.github.posaydone.filmix.data.entities.Show
-import io.github.posaydone.filmix.data.entities.ShowList
+import io.github.posaydone.filmix.core.model.Show
+import io.github.posaydone.filmix.core.model.ShowList
+import io.github.posaydone.filmix.presentation.uiTv.homeScreen.rememberChildPadding
 
 enum class ItemDirection(val aspectRatio: Float) {
     Vertical(10.5f / 16f),
@@ -52,6 +55,8 @@ fun ShowsRow(
     showList: ShowList,
     modifier: Modifier = Modifier,
     itemDirection: ItemDirection = ItemDirection.Vertical,
+    startPadding: Dp = rememberChildPadding().start,
+    endPadding: Dp = rememberChildPadding().end,
     title: String? = null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge.copy(
         fontWeight = FontWeight.Medium,
@@ -72,8 +77,7 @@ fun ShowsRow(
                 style = titleStyle,
                 modifier = Modifier
                     .alpha(1f)
-//                    .padding(start = startPadding, top = 16.dp, bottom = 16.dp)
-                    .padding(top = 16.dp, bottom = 16.dp)
+                    .padding(start = startPadding, top = 16.dp, bottom = 16.dp)
             )
         }
         AnimatedContent(
@@ -81,10 +85,10 @@ fun ShowsRow(
             label = "",
         ) { movieState ->
             LazyRow(
-//                contentPadding = PaddingValues(
-//                    start = startPadding,
-//                    end = endPadding,
-//                ),
+                contentPadding = PaddingValues(
+                    start = startPadding,
+                    end = endPadding,
+                ),
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier
                     .focusRequester(lazyRow)
@@ -227,7 +231,7 @@ private fun MoviesRowItemText(
             textAlign = TextAlign.Center,
             modifier = modifier
                 .alpha(movieNameAlpha)
-                .padding(top = 16.dp),
+                .padding(top = 8.dp),
             softWrap = true,
             maxLines = 2,
             minLines = 2,

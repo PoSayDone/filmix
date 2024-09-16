@@ -2,20 +2,17 @@ package io.github.posaydone.filmix.presentation.ui.searchResults
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import io.github.posaydone.filmix.app.host.Filmix
-import io.github.posaydone.filmix.data.entities.Show
-import io.github.posaydone.filmix.data.repository.FilmixRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.model.Show
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class SearchResultsViewModel(
+@HiltViewModel
+class SearchResultsViewModel @Inject constructor(
     repository: FilmixRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -44,20 +41,6 @@ class SearchResultsViewModel(
                 _error.value = "Failed to load movies"
             } finally {
                 _isLoading.value = false
-            }
-        }
-    }
-
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val savedStateHandle = createSavedStateHandle()
-                val filmixRepository = (this[APPLICATION_KEY] as Filmix).filmixRepository
-                SearchResultsViewModel(
-                    repository = filmixRepository,
-                    savedStateHandle = savedStateHandle
-                )
             }
         }
     }

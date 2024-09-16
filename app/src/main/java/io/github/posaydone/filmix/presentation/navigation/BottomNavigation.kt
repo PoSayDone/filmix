@@ -32,7 +32,6 @@ fun BottomNavigation(navController: NavController) {
 
     if (bottomBarDestination) {
         NavigationBar {
-
             bottomScreens.forEach { screen ->
                 val isSelected =
                     currentDestination?.hierarchy?.any { it.route == screen.route::class.qualifiedName } == true
