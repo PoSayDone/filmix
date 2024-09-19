@@ -20,7 +20,9 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Filmix"
-include(":app")
+include(":app:tv")
+include(":app:mobile")
 include(":core:model")
 include(":core:network")
 include(":core:data")
+include(":core:common")

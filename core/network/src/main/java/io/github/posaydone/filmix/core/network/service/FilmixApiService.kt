@@ -17,16 +17,6 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface FilmixApiService {
-    @GET("post/{movieId}/history")
-    suspend fun fetchShowProgress(
-        @Path("movieId") movieId: Int,
-    ): ShowProgress
-
-    @POST("post/{movieId}/history")
-    suspend fun addShowProgress(
-        @Path("movieId") movieId: Int, @Body showProgressItem: ShowProgressItem,
-    )
-
     @GET("list")
     suspend fun fetchPage(
         @Query("search") search: String? = null,
@@ -76,7 +66,6 @@ interface FilmixApiService {
         @Path("movieId") movieId: Int,
     ): ShowImages
 
-
     @GET("post/{movieId}/trailers")
     suspend fun fetchShowTrailers(
         @Path("movieId") movieId: Int,
@@ -86,4 +75,14 @@ interface FilmixApiService {
     suspend fun fetchShowResource(
         @Path("movieId") movieId: Int,
     ): Response<ResponseBody>
+
+    @GET("post/{movieId}/history")
+    suspend fun fetchShowProgress(
+        @Path("movieId") movieId: Int,
+    ): ShowProgress
+
+    @POST("post/{movieId}/history")
+    suspend fun addShowProgress(
+        @Path("movieId") movieId: Int, @Body showProgressItem: ShowProgressItem,
+    )
 }

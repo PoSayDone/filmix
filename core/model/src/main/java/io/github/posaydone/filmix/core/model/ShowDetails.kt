@@ -15,7 +15,7 @@ data class ShowDetails(
     @SerializedName("max_episode") var maxEpisode: MaxEpisode? = MaxEpisode(),
     @SerializedName("countries") var countries: ArrayList<Country> = arrayListOf(),
     @SerializedName("genres") var genres: ArrayList<Genre> = arrayListOf(),
-    @SerializedName("poster") var poster: String? = null,
+    @SerializedName("poster") var poster: String,
     @SerializedName("rip") var rip: String? = null,
     @SerializedName("quality") var quality: String? = null,
     @SerializedName("votesPos") var votesPos: Int,

@@ -10,7 +10,6 @@ class SessionManagerImpl @Inject constructor(context: Context) : SessionManager 
         context.getSharedPreferences("Filmix", Context.MODE_PRIVATE)
 
     companion object {
-
         const val USER_TOKEN = "user_token"
         const val USER_REFRESH_TOKEN = "user_refresh_token"
         const val USER_TOKEN_EXPIRES_IN = "user_token_expires_in"
