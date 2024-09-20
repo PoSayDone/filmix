@@ -19,7 +19,7 @@ fun NavGraph(
 ) {
     val navController = rememberNavController()
 
-//    NavigationSidebar(navController = navController) {
+    NavigationSidebar(navController = navController) {
     NavHost(
         navController = navController,
         startDestination = Screens.Auth
@@ -28,7 +28,7 @@ fun NavGraph(
         mainGraph(navController)
         playerGraph(navController)
     }
-//    }
+   }
 }
 
 
