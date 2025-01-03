@@ -1,6 +1,9 @@
 package io.github.posaydone.filmix.core.common.di
 
 import android.content.Context
+import androidx.annotation.OptIn
+import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import dagger.Module
 import dagger.Provides
@@ -12,12 +15,15 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 internal object CommonModule {
+    @OptIn(UnstableApi::class)
     @Provides
     @Singleton
     fun providePlayer(
         @ApplicationContext context: Context,
     ): ExoPlayer {
-        return ExoPlayer.Builder(context).build()
+        return ExoPlayer.Builder(context)
+            .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+            .build()
     }
 
 }

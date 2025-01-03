@@ -70,7 +70,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.Player
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.DefaultTimeBar
@@ -132,7 +131,7 @@ fun PlayerScreen(
             when (event) {
                 Lifecycle.Event.ON_STOP -> {
                     viewModel.saveProgress()
-                    viewModel.player.release()
+                    viewModel.player.stop()
                     insetsController.apply {
                         show(WindowInsetsCompat.Type.systemBars())
                     }
@@ -236,6 +235,15 @@ fun PlayerScreen(
             }
         }, modifier = Modifier
             .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, _, zoom, _ ->
+                    if (zoom > 1) {
+                        viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
+                    } else if (zoom < 1) {
+                        viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
+                    }
+                }
+            }
             .combinedClickable(indication = null,
                 interactionSource = remember { MutableInteractionSource() },
                 onClick = { showControls = !showControls },
@@ -371,7 +379,6 @@ private fun BottomControls(
                 if (!isSeekInProgress) {
                     currentTime = player.currentPosition
                     totalDuration = player.duration
-                    Log.d("PlayerScreen", "timer running $currentTime")
                 }
             }
         }

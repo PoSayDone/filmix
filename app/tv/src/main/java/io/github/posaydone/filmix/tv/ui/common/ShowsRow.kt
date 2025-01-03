@@ -153,11 +153,11 @@ private fun MoviesRowItem(
                 }
             }
             .focusProperties {
-                left = if (index == 0) {
-                    FocusRequester.Cancel
-                } else {
-                    FocusRequester.Default
-                }
+//                left = if (index == 0) {
+////                    FocusRequester.Cancel
+//                } else {
+                FocusRequester.Default
+//                }
             }
             .then(modifier)
     ) {

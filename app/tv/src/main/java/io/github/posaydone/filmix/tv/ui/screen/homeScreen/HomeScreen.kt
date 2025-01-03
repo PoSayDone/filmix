@@ -29,7 +29,7 @@ import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
 import io.github.posaydone.filmix.tv.ui.utils.Padding
 
-val ParentPadding = PaddingValues(vertical = 16.dp, horizontal = 58.dp)
+val ParentPadding = PaddingValues(vertical = 16.dp, horizontal = 12.dp)
 
 @Composable
 fun rememberChildPadding(direction: LayoutDirection = LocalLayoutDirection.current): Padding {

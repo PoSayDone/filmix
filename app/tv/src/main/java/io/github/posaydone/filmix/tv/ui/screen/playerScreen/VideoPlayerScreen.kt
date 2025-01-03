@@ -6,6 +6,7 @@
 package io.github.posaydone.filmix.tv.ui.screen.playerScreen
 
 import androidx.annotation.OptIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -128,7 +130,7 @@ fun VideoPlayerScreenContent(
             when (event) {
                 Lifecycle.Event.ON_STOP -> {
                     viewModel.saveProgress()
-                    viewModel.player.release()
+                    viewModel.player.stop()
                 }
 
                 else -> {}
@@ -175,13 +177,19 @@ fun VideoPlayerScreenContent(
             .dPadEvents(
                 player, videoPlayerState, pulseState
             )
+            .fillMaxSize()
+            .background(color = Color.Black)
             .focusable()
     ) {
 
 
         AndroidView(factory = {
             PlayerView(context).apply { useController = false }
-        }, update = { it.player = player }, onRelease = { player.release() })
+        },
+            update = { it.player = player },
+            onRelease = { player.release() },
+            modifier = Modifier.fillMaxSize()
+        )
 
 
         VideoPlayerOverlay(modifier = Modifier.align(Alignment.BottomCenter),

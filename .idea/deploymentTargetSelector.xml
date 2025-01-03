@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app.tv">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-09-17T14:41:37.335031867Z">
+        <DropdownSelection timestamp="2024-09-22T20:01:07.880688057Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=/home/posaydone/.android/avd/Television_1080p_API_30.avd" />
