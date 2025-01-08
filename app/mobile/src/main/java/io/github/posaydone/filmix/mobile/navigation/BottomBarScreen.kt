@@ -22,7 +22,7 @@ sealed class BottomScreens<T>(val name: String, val icon: Int, val route: T) {
 
     @Serializable
     data object History : BottomScreens<Screens.Main.History>(
-        name = "Scheme",
+        name = "History",
         icon = R.drawable.ic_history,
         route = Screens.Main.History
     )

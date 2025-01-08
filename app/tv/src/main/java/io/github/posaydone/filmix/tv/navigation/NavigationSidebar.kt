@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
@@ -46,6 +49,15 @@ fun NavigationSidebar(
             NavigationDrawerScreens.Home,
             NavigationDrawerScreens.Explore,
         )
+    }
+
+    fun getIcon(iconName: String): ImageVector {
+        if (iconName == "Home")
+            return Icons.Default.Home
+        if (iconName == "Explore")
+            return Icons.Default.Explore
+        else
+            return Icons.Default.Error
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -75,7 +87,7 @@ fun NavigationSidebar(
                     Spacer(modifier = Modifier.height(8.dp))
                     items.forEachIndexed { index, item ->
                         val text = item.name
-                        val icon = Icons.Default.Home
+                        val icon = getIcon(item.icon)
 
                         val isSelected =
                             currentDestination?.hierarchy?.any { it.route == item.route::class.qualifiedName } == true

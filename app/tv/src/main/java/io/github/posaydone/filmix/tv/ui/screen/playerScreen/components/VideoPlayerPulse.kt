@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
@@ -44,7 +43,6 @@ object VideoPlayerPulse {
     enum class Type { FORWARD, BACK, NONE }
 }
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun VideoPlayerPulse(
     state: VideoPlayerPulseState = rememberVideoPlayerPulseState(),

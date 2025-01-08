@@ -23,6 +23,8 @@ internal object CommonModule {
     ): ExoPlayer {
         return ExoPlayer.Builder(context)
             .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+            .setSeekForwardIncrementMs(10000)
+            .setSeekBackIncrementMs(10000)
             .build()
     }
 

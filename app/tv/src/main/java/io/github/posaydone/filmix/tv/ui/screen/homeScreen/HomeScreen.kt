@@ -57,7 +57,7 @@ fun HomeScreen(
         }
 
         is HomeScreenUiState.Error -> {
-            Error(modifier = Modifier.fillMaxSize())
+            Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
         }
 
         is HomeScreenUiState.Done -> {

@@ -1,6 +1,9 @@
 package io.github.posaydone.filmix.mobile.ui.utils
 
+import android.content.Context
+import android.content.ContextWrapper
 import android.view.KeyEvent
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -112,4 +115,13 @@ fun Long.toHhMmSs(): String {
             seconds,
         )
     }
+}
+
+internal fun Context.findActivity(): ComponentActivity {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is ComponentActivity) return context
+        context = context.baseContext
+    }
+    throw IllegalStateException("Picture in picture should be called in the context of an Activity")
 }

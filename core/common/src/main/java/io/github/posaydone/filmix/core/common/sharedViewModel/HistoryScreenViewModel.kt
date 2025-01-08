@@ -5,14 +5,19 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.model.ShowDetails
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class HistoryScreenUiState {
     data object Loading : HistoryScreenUiState()
-    data object Error : HistoryScreenUiState()
+    data class Error(val message: String, val onRetry: () -> Unit) : HistoryScreenUiState()
     data class Done(
         val historyList: List<ShowDetails>,
     ) : HistoryScreenUiState()
@@ -21,12 +26,33 @@ sealed class HistoryScreenUiState {
 @HiltViewModel
 class HistoryScreenViewModel @Inject constructor(private val repository: FilmixRepository) :
     ViewModel() {
+    private val retryChannel = Channel<Unit>()
 
-    val uiState = repository.getHistoryListFull().map { list ->
-        HistoryScreenUiState.Done(historyList = list)
+    val uiState = retryChannel.receiveAsFlow().flatMapLatest {
+        repository.getHistoryListFull().map { Result.success(it) }
+            .catch { emit(Result.failure(it)) }
+    }.map { result ->
+        when {
+            result.isSuccess -> HistoryScreenUiState.Done(historyList = result.getOrThrow())
+            result.isFailure -> HistoryScreenUiState.Error(message = result.exceptionOrNull()?.message
+                ?: "Unknown error",
+                onRetry = { retry() })
+
+            else -> HistoryScreenUiState.Loading
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = HistoryScreenUiState.Loading
     )
+
+    init {
+        retry()
+    }
+
+    private fun retry() {
+        viewModelScope.launch {
+            retryChannel.send(Unit)
+        }
+    }
 }

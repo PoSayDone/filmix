@@ -1,5 +1,6 @@
 package io.github.posaydone.filmix.tv.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -49,9 +50,15 @@ private fun NavGraphBuilder.mainGraph(
             HomeScreen(navController = navController)
         }
         composable<Screens.Main.Explore> {
-            ExploreScreen()
+            BackHandler {
+                navController.popBackStack()
+            }
+            ExploreScreen(navController = navController)
         }
         composable<Screens.Main.Details> {
+            BackHandler {
+                navController.popBackStack()
+            }
             val args = it.toRoute<Screens.Main.Details>()
             ShowDetailsScreen(args.showId, navController)
         }

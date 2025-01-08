@@ -5,6 +5,7 @@ package io.github.posaydone.filmix.tv.ui.screen.showDetailsScreen
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,13 +21,16 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -82,7 +86,7 @@ fun ShowDetailsScreen(
         }
 
         is ShowDetailsScreenUiState.Error -> {
-            Error(modifier = Modifier.fillMaxSize())
+            Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
         }
 
         is ShowDetailsScreenUiState.Done -> {
@@ -126,9 +130,7 @@ private fun Details(
             .bringIntoViewRequester(bringIntoViewRequester)
     ) {
         ShowWithGradients(
-            showDetails = showDetails,
-            showImages = showImages,
-            modifier = Modifier.fillMaxSize()
+            showDetails = showDetails, showImages = showImages, modifier = Modifier.fillMaxSize()
         )
 
         Column(modifier = Modifier.fillMaxWidth(0.55f)) {
@@ -146,8 +148,7 @@ private fun Details(
                         description = showDetails.shortStory
                     )
                     DotSeparatedRow(
-                        modifier = Modifier.padding(top = 20.dp),
-                        texts = listOf(
+                        modifier = Modifier.padding(top = 20.dp), texts = listOf(
                             showDetails.mpaa.toString(),
                             showDetails.year.toString(),
                         )
@@ -158,8 +159,7 @@ private fun Details(
                         if (it.isFocused) {
                             coroutineScope.launch { bringIntoViewRequester.bringIntoView() }
                         }
-                    },
-                    goToMoviePlayer = goToMoviePlayer
+                    }, goToMoviePlayer = goToMoviePlayer
                 )
             }
         }
@@ -171,27 +171,34 @@ private fun WatchButton(
     modifier: Modifier = Modifier,
     goToMoviePlayer: () -> Unit,
 ) {
+    val focusRequester = remember { FocusRequester() }
+
     Button(
         onClick = goToMoviePlayer,
-        modifier = modifier.padding(top = 24.dp),
+        modifier = modifier
+            .padding(top = 24.dp)
+            .focusRequester(focusRequester)
+            .focusable(),
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {
         Icon(
-            imageVector = Icons.Rounded.PlayArrow,
-            contentDescription = null
+            imageVector = Icons.Rounded.PlayArrow, contentDescription = null
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            text = stringResource(R.string.playString),
-            style = MaterialTheme.typography.titleSmall
+            text = stringResource(R.string.playString), style = MaterialTheme.typography.titleSmall
         )
+    }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 }
 
 @Composable
 private fun RatingChips(show: ShowDetails) {
-    val ratingFilmix: Double = ((show.votesPos.toDouble()
-        .div((show.votesNeg + show.votesPos).toDouble())) * 10)
+    val ratingFilmix: Double =
+        ((show.votesPos.toDouble().div((show.votesNeg + show.votesPos).toDouble())) * 10)
 
     Row(
         modifier = Modifier
@@ -201,73 +208,59 @@ private fun RatingChips(show: ShowDetails) {
             space = 8.dp
         ),
     ) {
-        if (show.ratingImdb != 0.0)
-            AssistChip(
-                modifier = Modifier
-                    .focusProperties { canFocus = false },
-                leadingIcon = {
-                    Icon(
-                        modifier = Modifier
-                            .size(18.dp),
-                        painter = painterResource(id = R.drawable.ic_imdb),
-                        contentDescription = "Imdb icon"
-                    )
-                }, onClick = {}) {
-                Text(
-                    stringResource(
-                        R.string.score, show.ratingImdb
-                    )
+        if (show.ratingImdb != 0.0) AssistChip(modifier = Modifier.focusProperties {
+            canFocus = false
+        }, leadingIcon = {
+            Icon(
+                modifier = Modifier.size(18.dp),
+                painter = painterResource(id = R.drawable.ic_imdb),
+                contentDescription = "Imdb icon"
+            )
+        }, onClick = {}) {
+            Text(
+                stringResource(
+                    R.string.score, show.ratingImdb
                 )
-            }
-        if (show.ratingKinopoisk != 0.0)
-            AssistChip(
-                modifier = Modifier
-                    .focusProperties { canFocus = false },
-                leadingIcon = {
-                    Icon(
-                        modifier = Modifier
-                            .size(18.dp),
-                        painter = painterResource(id = R.drawable.ic_kp),
-                        contentDescription = "Kinopoisk icon"
-                    )
-                }, onClick = {}) {
+            )
+        }
+        if (show.ratingKinopoisk != 0.0) AssistChip(modifier = Modifier.focusProperties {
+            canFocus = false
+        }, leadingIcon = {
+            Icon(
+                modifier = Modifier.size(18.dp),
+                painter = painterResource(id = R.drawable.ic_kp),
+                contentDescription = "Kinopoisk icon"
+            )
+        }, onClick = {}) {
 
-                Text(
-                    stringResource(
-                        R.string.score, show.ratingKinopoisk
-                    )
+            Text(
+                stringResource(
+                    R.string.score, show.ratingKinopoisk
                 )
-            }
-        if (ratingFilmix != 0.0)
-            AssistChip(
-                modifier = Modifier
-                    .focusProperties { canFocus = false },
-                leadingIcon = {
-                    Icon(
-                        modifier = Modifier
-                            .size(18.dp),
-                        painter = painterResource(id = R.drawable.ic_filmix),
-                        contentDescription = "Filmix icon"
-                    )
-                }, onClick = {}) {
-                Text(
-                    stringResource(R.string.score, ratingFilmix)
-                )
-            }
+            )
+        }
+        if (ratingFilmix != 0.0) AssistChip(modifier = Modifier.focusProperties {
+            canFocus = false
+        }, leadingIcon = {
+            Icon(
+                modifier = Modifier.size(18.dp),
+                painter = painterResource(id = R.drawable.ic_filmix),
+                contentDescription = "Filmix icon"
+            )
+        }, onClick = {}) {
+            Text(
+                stringResource(R.string.score, ratingFilmix)
+            )
+        }
     }
 }
 
 @Composable
 private fun MovieDescription(description: String) {
     Text(
-        text = description,
-        style = MaterialTheme.typography.titleSmall.copy(
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Normal
-        ),
-        modifier = Modifier.padding(top = 8.dp),
-        maxLines = 4,
-        overflow = TextOverflow.Ellipsis
+        text = description, style = MaterialTheme.typography.titleSmall.copy(
+            fontSize = 15.sp, fontWeight = FontWeight.Normal
+        ), modifier = Modifier.padding(top = 8.dp), maxLines = 4, overflow = TextOverflow.Ellipsis
 
     )
 }
@@ -275,12 +268,9 @@ private fun MovieDescription(description: String) {
 @Composable
 private fun MovieLargeTitle(movieTitle: String) {
     Text(
-        text = movieTitle,
-        style = MaterialTheme.typography.displaySmall.copy(
+        text = movieTitle, style = MaterialTheme.typography.displaySmall.copy(
             fontWeight = FontWeight.Bold
-        ),
-        overflow = TextOverflow.Ellipsis,
-        maxLines = 1
+        ), overflow = TextOverflow.Ellipsis, maxLines = 1
     )
 }
 
@@ -303,13 +293,11 @@ private fun ShowWithGradients(
 ) {
 
     Log.d(TAG, "ShowWithGradients: $showImages")
-    val imageUrl =
-        showImages.frames.firstOrNull()?.url ?: showImages.posters.firstOrNull()?.url
-        ?: showDetails.poster
+    val imageUrl = showImages.frames.firstOrNull()?.url ?: showImages.posters.firstOrNull()?.url
+    ?: showDetails.poster
 
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current).data(imageUrl)
-            .crossfade(true).build(),
+    AsyncImage(model = ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
+        .build(),
         contentDescription = "",
 //        contentDescription = StringConstants
 //            .Composable
@@ -320,15 +308,12 @@ private fun ShowWithGradients(
             drawContent()
             drawRect(
                 Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, gradientColor),
-                    startY = 600f
+                    colors = listOf(Color.Transparent, gradientColor), startY = 600f
                 )
             )
             drawRect(
                 Brush.horizontalGradient(
-                    colors = listOf(gradientColor, Color.Transparent),
-                    endX = 1000f,
-                    startX = 300f
+                    colors = listOf(gradientColor, Color.Transparent), endX = 1000f, startX = 300f
                 )
             )
             drawRect(
@@ -338,6 +323,5 @@ private fun ShowWithGradients(
                     end = Offset(x = 1000f, y = 0f)
                 )
             )
-        }
-    )
+        })
 }

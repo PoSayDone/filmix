@@ -1,5 +1,6 @@
 package io.github.posaydone.filmix.mobile.ui.screen.homeScreen
 
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,8 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -23,6 +31,9 @@ import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.Loading
 import io.github.posaydone.filmix.mobile.ui.common.ShowsRow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 
 @Composable
@@ -33,19 +44,20 @@ fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    Log.d("UISTATE", uiState.toString())
 
     when (val s = uiState) {
+
         is HomeScreenUiState.Loading -> {
             Loading(modifier = Modifier.fillMaxSize())
         }
 
         is HomeScreenUiState.Error -> {
-            Error(modifier = Modifier.fillMaxSize())
+            Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
         }
 
         is HomeScreenUiState.Done -> {
-            Body(
-                paddingValues = paddingValues,
+            Body(paddingValues = paddingValues,
                 modifier = Modifier
                     .fillMaxSize()
                     .animateContentSize(),
@@ -55,11 +67,12 @@ fun HomeScreen(
                 popularSeries = s.popularSeries,
                 popularCartoons = s.popularCartoons,
                 navController = navController,
-            )
+                reload = { viewModel.retry() })
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Body(
     paddingValues: PaddingValues,
@@ -70,40 +83,54 @@ private fun Body(
     popularSeries: ShowList,
     popularCartoons: ShowList,
     navController: NavHostController,
+    reload: () -> Unit,
 ) {
+    val refreshState = rememberPullToRefreshState()
+    var isRefreshing by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .padding(paddingValues)
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = 16.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        ShowsRow(
-            lastSeenShows,
-            title = stringResource(R.string.last_seen),
-            navController = navController
-        )
-        ShowsRow(
-            viewingShows,
-            title = stringResource(R.string.watching_now),
-            navController = navController
-        )
-        ShowsRow(
-            popularMovies,
-            title = stringResource(R.string.popular_movies),
-            navController = navController
-        )
-        ShowsRow(
-            popularSeries,
-            title = stringResource(R.string.popular_series),
-            navController = navController
-        )
-        ShowsRow(
-            popularCartoons,
-            title = stringResource(R.string.popular_cartoons),
-            navController = navController
-        )
+    val coroutineScope = rememberCoroutineScope()
+
+    PullToRefreshBox(state = refreshState, isRefreshing = isRefreshing, onRefresh = {
+        coroutineScope.launch {
+            isRefreshing = true
+            reload()
+            delay(1.seconds)
+            isRefreshing = false
+        }
+    }) {
+
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 16.dp), verticalArrangement = Arrangement.Center
+        ) {
+            ShowsRow(
+                lastSeenShows,
+                title = stringResource(R.string.last_seen),
+                navController = navController
+            )
+            ShowsRow(
+                viewingShows,
+                title = stringResource(R.string.watching_now),
+                navController = navController
+            )
+            ShowsRow(
+                popularMovies,
+                title = stringResource(R.string.popular_movies),
+                navController = navController
+            )
+            ShowsRow(
+                popularSeries,
+                title = stringResource(R.string.popular_series),
+                navController = navController
+            )
+            ShowsRow(
+                popularCartoons,
+                title = stringResource(R.string.popular_cartoons),
+                navController = navController
+            )
+        }
     }
 }
 

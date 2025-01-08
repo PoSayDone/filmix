@@ -3,6 +3,9 @@
 package io.github.posaydone.filmix.mobile.ui.screen.playerScreen
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -10,8 +13,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -20,24 +23,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.rounded.Audiotrack
+import androidx.compose.material.icons.rounded.AutoAwesomeMotion
+import androidx.compose.material.icons.rounded.HighQuality
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -56,9 +66,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -81,11 +93,35 @@ import io.github.posaydone.filmix.core.common.sharedViewModel.ShowType
 import io.github.posaydone.filmix.core.model.Episode
 import io.github.posaydone.filmix.core.model.File
 import io.github.posaydone.filmix.core.model.Season
+import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.Translation
 import io.github.posaydone.filmix.core.model.VideoWithQualities
+import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerMediaTitle
+import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerPulse
+import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.rememberPlayerPulseState
 import io.github.posaydone.filmix.mobile.ui.utils.toHhMmSs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+@Composable
+fun LockScreenOrientation(orientation: Int) {
+    val context = LocalContext.current
+    DisposableEffect(orientation) {
+        val activity = context.findActivity() ?: return@DisposableEffect onDispose {}
+        val originalOrientation = activity.requestedOrientation
+        activity.requestedOrientation = orientation
+        onDispose {
+            // restore original orientation when view disappears
+            activity.requestedOrientation = originalOrientation
+        }
+    }
+}
+
+fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 @UnstableApi
 @Composable
@@ -105,6 +141,8 @@ fun PlayerScreen(
     val showType by viewModel.contentType.collectAsState()
     var scale by remember { mutableStateOf(1f) }
 
+    val hasPrevEpisode by viewModel.hasPrevEpisode.collectAsState()
+    val hasNextEpisode by viewModel.hasNextEpisode.collectAsState()
 
     var showControls by rememberSaveable {
         mutableStateOf(false)
@@ -126,15 +164,23 @@ fun PlayerScreen(
 
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 
+    LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+
+    val pulseState = rememberPlayerPulseState()
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_STOP -> {
                     viewModel.saveProgress()
-                    viewModel.player.stop()
+                    viewModel.pause()
                     insetsController.apply {
                         show(WindowInsetsCompat.Type.systemBars())
                     }
+                }
+
+                Lifecycle.Event.ON_DESTROY -> {
+                    viewModel.player.stop()
                 }
 
                 else -> {}
@@ -212,15 +258,16 @@ fun PlayerScreen(
     Box(modifier = Modifier
         .fillMaxSize()
         .background(Color.Black)
+        .focusable()
         .pointerInput(Unit) {
             detectTransformGestures { _, _, zoom, _ ->
-                scale *= zoom
-                viewModel.setResizeMode(if (scale > 1) AspectRatioFrameLayout.RESIZE_MODE_FIT else AspectRatioFrameLayout.RESIZE_MODE_FIT)
+                if (zoom > 1) {
+                    viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
+                } else if (zoom < 1) {
+                    viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
+                }
             }
-        }
-        .focusable()
-    )
-    {
+        }) {
         AndroidView(factory = {
             PlayerView(it).apply {
                 player = viewModel.player
@@ -233,88 +280,152 @@ fun PlayerScreen(
                 resizeMode = playerState.resizeMode
                 keepScreenOn = playerState.isPlaying
             }
-        }, modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, _, zoom, _ ->
-                    if (zoom > 1) {
-                        viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
-                    } else if (zoom < 1) {
-                        viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
-                    }
-                }
-            }
-            .combinedClickable(indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-                onClick = { showControls = !showControls },
-                onDoubleClick = { viewModel.player.seekForward() })
+        }, modifier = Modifier.fillMaxSize()
         )
 
+        Box(
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Row(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Left side for seeking backward
+            Box(modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        showControls = !showControls
+                    }, // Single tap for toggling controls
+                        onDoubleTap = {
+                            viewModel.player.seekBack()
+                            pulseState.setType(PlayerPulse.Type.BACK) // Optional feedback
+                        })
+                })
+
+            // Right side for seeking forward
+            Box(modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        showControls = !showControls
+                    }, // Single tap for toggling controls
+                        onDoubleTap = {
+                            viewModel.player.seekForward()
+                            pulseState.setType(PlayerPulse.Type.FORWARD) // Optional feedback
+                        })
+                })
+        }
+
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PlayerPulse(pulseState)
+        }
+
         AnimatedVisibility(
-            showControls, enter = fadeIn(), exit = fadeOut()
+            visible = showControls, enter = fadeIn(), exit = fadeOut()
         ) {
             MiddleControls(
                 isPlaying = playerState.isPlaying,
                 onPlayPauseClick = {
                     viewModel.onPlayPauseClick()
                 },
+                hasPrevEpisode = hasPrevEpisode,
+                hasNextEpisode = hasNextEpisode,
+                onPrevEpisodeClick = { viewModel.goToPrevEpisode() },
+                onNextEpisodeClick = { viewModel.goToNextEpisode() },
             )
         }
 
         AnimatedVisibility(
             visible = showControls, enter = fadeIn(), exit = fadeOut()
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                TopControls(showTitle = details?.title ?: "",
-                    onMoreClick = { isQualitySheetOpen = true })
-                Spacer(modifier = Modifier.weight(1f))
-                BottomControls(
-                    viewModel.player,
+            Column(modifier = Modifier.fillMaxSize()) {
+                TopControls(
                     showType = showType,
+                    showDetails = details,
+                    onMoreClick = { isQualitySheetOpen = true },
                     onAudioClick = { isAudioSheetOpen = true },
                     onEpisodeClick = { isEpisodeBottomSheetOpen = true },
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                BottomControls(player = viewModel.player)
             }
         }
     }
-//    DisposableEffect(key1 = Unit) {
-//        onDispose {
-//            viewModel.saveProgress()
-//            viewModel.player.release()
-//            insetsController.apply {
-//                show(WindowInsetsCompat.Type.systemBars())
-//            }
-//        }
-//    }
 }
 
 
 @Composable
 private fun MiddleControls(
-    isPlaying: Boolean, onPlayPauseClick: () -> Unit,
+    isPlaying: Boolean,
+    onPlayPauseClick: () -> Unit,
+    hasNextEpisode: Boolean,
+    onNextEpisodeClick: () -> Unit,
+    hasPrevEpisode: Boolean,
+    onPrevEpisodeClick: () -> Unit,
+    interactionSource: MutableInteractionSource? = null,
 ) {
     Row(
-        modifier = Modifier
-            .background(Color.Black.copy(alpha = 0.3f))
-            .fillMaxSize(),
-        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(
+            space = 48.dp, alignment = Alignment.CenterHorizontally
+        ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(
-            onClick = onPlayPauseClick,
-            modifier = Modifier
-                .size(64.dp)
-                .clip(shape = RoundedCornerShape(32.dp))
-                .background(Color.Black.copy(alpha = 0.3f))
-                .focusable(),
+        if (hasPrevEpisode) Box(
+            modifier = Modifier.clickable(
+                onClick = onPrevEpisodeClick,
+                role = Role.Button,
+                interactionSource = interactionSource,
+                indication = ripple(bounded = false, radius = 24.dp)
+            ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Default.SkipPrevious,
+                contentDescription = "Previous episode",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier.clickable(
+                onClick = onPlayPauseClick,
+                role = Role.Button,
+                interactionSource = interactionSource,
+                indication = ripple(bounded = false, radius = 32.dp)
+            ),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
                 contentDescription = "Pause",
                 tint = Color.White,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(48.dp)
+            )
+        }
+
+        if (hasNextEpisode) Box(
+            modifier = Modifier.clickable(
+                onClick = onNextEpisodeClick,
+                role = Role.Button,
+                interactionSource = interactionSource,
+                indication = ripple(bounded = false, radius = 24.dp)
+            ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Default.SkipNext,
+                contentDescription = "Next episode",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
             )
         }
     }
@@ -322,27 +433,48 @@ private fun MiddleControls(
 
 @Composable
 private fun TopControls(
-    showTitle: String,
+    showType: ShowType?,
+    showDetails: ShowDetails?,
     onMoreClick: () -> Unit,
+    onAudioClick: () -> Unit,
+    onEpisodeClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxWidth(),
     ) {
-        Text(
-            text = showTitle,
-            style = MaterialTheme.typography.titleLarge,
-            color = Color.White,
-            modifier = Modifier.align(Alignment.CenterVertically)
+        PlayerMediaTitle(
+            title = showDetails?.title ?: "",
+            secondaryText = showDetails?.originalTitle ?: "",
+            tertiaryText = "",
+            modifier = Modifier.weight(1f)
         )
-        Spacer(modifier = Modifier.weight(1f))
+        if (showType == ShowType.SERIES) {
+            IconButton(
+                modifier = Modifier.focusable(), onClick = onEpisodeClick
+            ) {
+                Icon(
+                    Icons.Rounded.AutoAwesomeMotion,
+                    contentDescription = "Pause",
+                    tint = Color.White,
+                )
+            }
+        }
         IconButton(
-            modifier = Modifier.focusable(),
-            onClick = onMoreClick
+            modifier = Modifier.focusable(), onClick = onAudioClick
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_more),
+                Icons.Rounded.Audiotrack,
+                contentDescription = "Pause",
+                tint = Color.White,
+            )
+        }
+        IconButton(
+            modifier = Modifier.focusable(), onClick = onMoreClick
+        ) {
+            Icon(
+                Icons.Rounded.HighQuality,
                 contentDescription = "Pause",
                 tint = Color.White,
             )
@@ -354,9 +486,6 @@ private fun TopControls(
 @Composable
 private fun BottomControls(
     player: Player,
-    showType: ShowType?,
-    onAudioClick: () -> Unit,
-    onEpisodeClick: () -> Unit,
 ) {
     var currentTime by rememberSaveable {
         mutableLongStateOf(player.currentPosition)
@@ -386,65 +515,40 @@ private fun BottomControls(
 
     Row(
         modifier = Modifier
-            .padding(horizontal = 24.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        if (totalDuration > 0L) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Text(text = currentTime.toHhMmSs(), color = Color.White)
-                Text(text = "/", color = Color.White)
-                Text(text = totalDuration.toHhMmSs(), color = Color.White)
-            }
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (showType == ShowType.SERIES) {
-                OutlinedButton(
-                    modifier = Modifier.focusable(),
-                    onClick = onEpisodeClick, colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        stringResource(R.string.episodesString)
-                    )
-                }
-            }
-            OutlinedButton(
-                modifier = Modifier.focusable(),
-                onClick = onAudioClick, colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color.White
-                )
-            ) {
-                Text(
-                    stringResource(R.string.audioString)
-                )
-            }
-        }
-    }
-    Row(
-        modifier = Modifier
             .padding(bottom = 32.dp, start = 16.dp, end = 16.dp)
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        CustomSeekBar(
-            player = player,
-            isSeekInProgress = { isInProgress ->
-                isSeekInProgress = isInProgress
-            },
+        Box(
+            modifier = Modifier.width(72.dp)
+        ) {
+            Text(
+                text = currentTime.toHhMmSs(),
+                color = Color.White,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+        CustomSeekBar(isSeekInProgress = { isInProgress ->
+            isSeekInProgress = isInProgress
+        },
             onSeekBarMove = { position ->
                 currentTime = position
             },
             totalDuration = totalDuration,
             currentTime = currentTime,
+            onSeekStop = { position -> player.seekTo(position) },
+            modifier = Modifier.weight(1f)
         )
+        Box(
+            modifier = Modifier.width(72.dp)
+        ) {
+            Text(
+                text = totalDuration.toHhMmSs(),
+                color = Color.White,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
     }
 }
 
@@ -467,11 +571,11 @@ private fun EpisodeBottomSheet(
             )
         }
 
-        ScrollableTabRow(
-            selectedTabIndex = tabIndex,
+        ScrollableTabRow(selectedTabIndex = tabIndex,
+            edgePadding = 0.dp,
             modifier = Modifier.fillMaxWidth(),
-            containerColor = Color.Transparent
-        ) {
+            containerColor = Color.Transparent,
+            divider = {}) {
             seasons.forEachIndexed { index, season ->
                 Tab(
                     modifier = Modifier.padding(8.dp),
@@ -584,15 +688,14 @@ fun <T> SingleSelectionCard(selectionOption: T, selectedOption: T?, onOptionClic
     }
 }
 
-
 @UnstableApi
 @Composable
 fun CustomSeekBar(
-    player: Player,
-    isSeekInProgress: (Boolean) -> Unit,
-    onSeekBarMove: (Long) -> Unit,
     currentTime: Long,
     totalDuration: Long,
+    isSeekInProgress: (Boolean) -> Unit,
+    onSeekBarMove: (Long) -> Unit,
+    onSeekStop: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -612,13 +715,12 @@ fun CustomSeekBar(
 
             override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
                 if (canceled) {
-                    player.seekTo(previousScrubPosition)
+                    onSeekStop(previousScrubPosition)
                 } else {
-                    player.seekTo(position)
+                    onSeekStop(position)
                 }
                 isSeekInProgress(false)
             }
-
         }
 
         DefaultTimeBar(context).apply {
@@ -627,14 +729,9 @@ fun CustomSeekBar(
             setUnplayedColor(primaryColor.copy(0.3f).toArgb())
             addListener(listener)
             setDuration(totalDuration)
-            setPosition(player.currentPosition)
-        }
-    }, update = {
-        it.apply {
             setPosition(currentTime)
         }
-    },
-
-        modifier = modifier
-    )
+    }, update = {
+        it.setPosition(currentTime)
+    }, modifier = modifier)
 }

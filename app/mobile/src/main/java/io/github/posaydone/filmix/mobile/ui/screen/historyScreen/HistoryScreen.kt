@@ -36,7 +36,7 @@ fun HistoryScreen(
         }
 
         is HistoryScreenUiState.Error -> {
-            Error(modifier = Modifier.fillMaxSize())
+            Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
         }
 
         is HistoryScreenUiState.Done -> {

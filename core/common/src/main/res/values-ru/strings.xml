@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="season">Сезон %1$x</string>
-    <string name="episode">Эпизод %1$x</string>
+    <string name="season">Сезон %1$d</string>
+    <string name="episode">Эпизод %1$d</string>
     <string name="continueWatchingMovie">Продолжить</string>
-    <string name="continueWatchingSeries">Сеозн %1$x, Эпизод %2$x</string>
+    <string name="continueWatchingSeries">Сеозн %1$d, Эпизод %2$d</string>
     <string name="history">История</string>
     <string name="movie">Фильм</string>
-    <string name="seasonsCountString">%1$x сезонов</string>
+    <string name="seasonsCountString">%1$d сезонов</string>
     <string name="playString">Смотреть</string>
     <string name="episodesString">Эпизоды</string>
     <string name="audioString">Озвучка</string>

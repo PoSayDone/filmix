@@ -20,8 +20,11 @@ import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.Translation
 import io.github.posaydone.filmix.core.model.VideoWithQualities
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -90,6 +93,19 @@ class PlayerScreenViewModel @Inject constructor(
     private val _videoUrl = MutableStateFlow<String?>(null)
     val videoUrl = _videoUrl.asStateFlow()
 
+    val hasNextEpisode: StateFlow<Boolean> = selectedEpisode.map { episode ->
+        val currentSeason = selectedSeason.value
+        currentSeason?.episodes?.indexOf(episode)?.let { index ->
+            index < (currentSeason.episodes.size - 1)
+        } ?: false
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val hasPrevEpisode: StateFlow<Boolean> = selectedEpisode.map { episode ->
+        val currentSeason = selectedSeason.value
+        currentSeason?.episodes?.indexOf(episode)?.let { index ->
+            index > 0
+        } ?: false
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private lateinit var series: Series
     private lateinit var movie: List<VideoWithQualities>
@@ -359,6 +375,64 @@ class PlayerScreenViewModel @Inject constructor(
             player.play().also {
                 _playerState.update {
                     it.copy(isPlaying = true)
+                }
+            }
+        }
+    }
+
+    fun pause() {
+        player.pause().also {
+            _playerState.update {
+                it.copy(isPlaying = false)
+            }
+        }
+    }
+
+    fun play() {
+        player.play().also {
+            _playerState.update {
+                it.copy(isPlaying = true)
+            }
+        }
+    }
+
+    fun goToPrevEpisode() {
+        val currentSeason = selectedSeason.value
+        val currentEpisode = selectedEpisode.value
+        if (currentSeason != null && currentEpisode != null) {
+            val currentIndex = currentSeason.episodes.indexOf(currentEpisode)
+            if (currentIndex > 0) {
+                setEpisode(currentSeason.episodes[currentIndex - 1])
+            } else {
+                // Handle moving to the previous season if necessary
+                val prevSeasonIndex = _seasons.value?.indexOf(currentSeason)?.minus(1) ?: return
+                if (prevSeasonIndex >= 0) {
+                    val prevSeason = _seasons.value?.get(prevSeasonIndex)
+                    if (!prevSeason?.episodes.isNullOrEmpty()) {
+                        setSeason(prevSeason!!)
+                        setEpisode(prevSeason.episodes.last())
+                    }
+                }
+            }
+        }
+    }
+
+    fun goToNextEpisode() {
+        val currentSeason = selectedSeason.value
+        val currentEpisode = selectedEpisode.value
+        if (currentSeason != null && currentEpisode != null) {
+            val currentIndex = currentSeason.episodes.indexOf(currentEpisode)
+            if (currentIndex < currentSeason.episodes.size - 1) {
+                setEpisode(currentSeason.episodes[currentIndex + 1])
+            } else {
+                // Handle moving to the next season if necessary
+                val nextSeasonIndex = _seasons.value?.indexOf(currentSeason)?.plus(1) ?: return
+                if (nextSeasonIndex < (_seasons.value?.size ?: 0)) {
+                    val nextSeason = _seasons.value?.get(nextSeasonIndex)
+                    if (!nextSeason?.episodes.isNullOrEmpty()) {
+                        setSeason(nextSeason!!)
+                        setEpisode(nextSeason.episodes.first())
+                    }
                 }
             }
         }

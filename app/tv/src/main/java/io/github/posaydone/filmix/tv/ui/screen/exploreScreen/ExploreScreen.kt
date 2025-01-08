@@ -32,12 +32,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import androidx.tv.material3.Border
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
+import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.ShowsGrid
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
 import io.github.posaydone.filmix.tv.ui.theme.FilmixCardShape
@@ -45,6 +47,7 @@ import io.github.posaydone.filmix.tv.ui.theme.FilmixCardShape
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ExploreScreen(
+    navController: NavHostController,
     viewModel: ExploreScreenViewModel = hiltViewModel(),
 ) {
     val searchState by viewModel.searchState.collectAsStateWithLifecycle()
@@ -167,8 +170,14 @@ fun ExploreScreen(
                 ShowsGrid(
                     modifier = Modifier
                         .padding(horizontal = childPadding.start),
-                    showList = showList
-                ) {}
+                    showList = showList,
+                    onShowClick = { showId ->
+                        navController.navigate(Screens.Main.Details(showId)) {
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
             }
         }
     }

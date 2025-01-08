@@ -1,6 +1,5 @@
 @file:kotlin.OptIn(
-    ExperimentalComposeUiApi::class,
-    ExperimentalTvMaterial3Api::class
+    ExperimentalComposeUiApi::class, ExperimentalTvMaterial3Api::class
 )
 
 package io.github.posaydone.filmix.tv.ui.screen.playerScreen
@@ -20,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.AutoAwesomeMotion
 import androidx.compose.runtime.Composable
@@ -52,15 +52,19 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
+import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.PlayerScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.PlayerState
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowType
 import io.github.posaydone.filmix.core.model.Episode
 import io.github.posaydone.filmix.core.model.File
@@ -97,8 +101,8 @@ fun VideoPlayerScreen(
     showId: Int,
     viewModel: PlayerScreenViewModel = hiltViewModel(),
 ) {
-
     val showDetails by viewModel.details.collectAsState()
+    val playerState by viewModel.playerState.collectAsState()
 
     when (showDetails) {
         null -> {
@@ -107,7 +111,7 @@ fun VideoPlayerScreen(
 
         else -> {
             VideoPlayerScreenContent(
-                viewModel.player, viewModel, showDetails!!
+                viewModel.player, viewModel, playerState, showDetails!!
             )
         }
     }
@@ -118,9 +122,14 @@ fun VideoPlayerScreen(
 fun VideoPlayerScreenContent(
     player: ExoPlayer,
     viewModel: PlayerScreenViewModel,
+    playerState: PlayerState,
     showDetails: ShowDetails,
 ) {
     val showType by viewModel.contentType.collectAsState()
+
+    val hasPrevEpisode by viewModel.hasPrevEpisode.collectAsState()
+    val hasNextEpisode by viewModel.hasNextEpisode.collectAsState()
+
     val context = LocalContext.current
 
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
@@ -130,6 +139,10 @@ fun VideoPlayerScreenContent(
             when (event) {
                 Lifecycle.Event.ON_STOP -> {
                     viewModel.saveProgress()
+                    viewModel.player.pause()
+                }
+
+                Lifecycle.Event.ON_DESTROY -> {
                     viewModel.player.stop()
                 }
 
@@ -169,7 +182,6 @@ fun VideoPlayerScreenContent(
     }
 
     val pulseState = rememberVideoPlayerPulseState()
-
     val focusRequester = remember { FocusRequester() }
 
     Box(
@@ -183,12 +195,17 @@ fun VideoPlayerScreenContent(
     ) {
 
 
-        AndroidView(factory = {
-            PlayerView(context).apply { useController = false }
-        },
-            update = { it.player = player },
-            onRelease = { player.release() },
-            modifier = Modifier.fillMaxSize()
+        AndroidView(
+            factory = {
+                PlayerView(context).apply { useController = false }
+            },
+            update = {
+                it.player = player
+                it.apply {
+                    resizeMode = playerState.resizeMode
+                    keepScreenOn = playerState.isPlaying
+                }
+            }, modifier = Modifier.fillMaxSize()
         )
 
 
@@ -200,18 +217,23 @@ fun VideoPlayerScreenContent(
             centerButton = { VideoPlayerPulse(pulseState) },
             subtitles = { /* TODO Implement subtitles */ },
             controls = {
-                VideoPlayerControls(
-                    showDetails,
+                VideoPlayerControls(showDetails,
                     isPlaying,
                     showType,
                     contentCurrentPosition,
                     player,
                     videoPlayerState,
                     focusRequester,
+                    changeSizing = {
+                        viewModel.setResizeMode(if (playerState.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_FIT) AspectRatioFrameLayout.RESIZE_MODE_ZOOM else AspectRatioFrameLayout.RESIZE_MODE_FIT)
+                    },
                     openEpisodeSheet = { isEpisodeDialogOpen = true },
                     openAudioSheet = { isAudioDialogOpen = true },
                     openQualitySheet = { isQualityDialogOpen = true },
-                )
+                    hasNextEpisode = hasNextEpisode,
+                    hasPrevEpisode = hasPrevEpisode,
+                    onPrevEpisodeClick = { viewModel.goToPrevEpisode() },
+                    onNextEpisodeClick = { viewModel.goToNextEpisode() })
             })
 
 
@@ -237,9 +259,14 @@ fun VideoPlayerControls(
     exoPlayer: ExoPlayer,
     state: VideoPlayerState,
     focusRequester: FocusRequester,
+    changeSizing: () -> Unit,
     openEpisodeSheet: () -> Unit,
     openAudioSheet: () -> Unit,
     openQualitySheet: () -> Unit,
+    onPrevEpisodeClick: () -> Unit,
+    onNextEpisodeClick: () -> Unit,
+    hasNextEpisode: Boolean,
+    hasPrevEpisode: Boolean,
 ) {
     val onPlayPauseToggle = { shouldPlay: Boolean ->
         if (shouldPlay) {
@@ -281,6 +308,14 @@ fun VideoPlayerControls(
             )
             VideoPlayerControlsIcon(
                 modifier = Modifier.padding(start = 12.dp),
+                icon = Icons.Default.Crop,
+                state = state,
+                isPlaying = isPlaying,
+                contentDescription = "Video crop button",
+                onClick = changeSizing
+            )
+            VideoPlayerControlsIcon(
+                modifier = Modifier.padding(start = 12.dp),
                 icon = Icons.Default.Settings,
                 state = state,
                 isPlaying = isPlaying,
@@ -294,6 +329,10 @@ fun VideoPlayerControls(
             state,
             isPlaying,
             onPlayPauseToggle,
+            onPrevEpisodeClick = onPrevEpisodeClick,
+            onNextEpisodeClick = onNextEpisodeClick,
+            hasPrevEpisode = hasPrevEpisode,
+            hasNextEpisode = hasNextEpisode,
             onSeek = { exoPlayer.seekTo(exoPlayer.duration.times(it).toLong()) },
             contentProgress = contentCurrentPosition.milliseconds,
             contentDuration = exoPlayer.duration.milliseconds
@@ -341,10 +380,10 @@ private fun EpisodeDialog(
                 seasons.forEachIndexed { index, season ->
                     key(index) {
                         Tab(modifier = Modifier.padding(8.dp),
+//                            colors = TabDefaults.pillIndicatorTabColors(focusedSelectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer),
                             selected = index == tabIndex,
                             onFocus = { tabIndex = index },
-                            onClick = { tabIndex = index })
-                        {
+                            onClick = { tabIndex = index }) {
                             Text(stringResource(R.string.season, season.season))
                         }
                     }
@@ -449,16 +488,14 @@ private fun QualityDialog(
 
 @Composable
 fun <T> SingleSelectionCard(selectionOption: T, selectedOption: T?, onOptionClicked: (T) -> Unit) {
-    ListItem(
-        headlineContent = { Text(text = selectionOption.toString()) },
+    ListItem(headlineContent = { Text(text = selectionOption.toString()) },
         selected = false,
         onClick = { onOptionClicked(selectionOption) },
         trailingContent = {
             if (selectedOption == selectionOption) {
                 Icon(Icons.Default.Check, contentDescription = "Check")
             }
-        }
-    )
+        })
 }
 
 @OptIn(UnstableApi::class)
@@ -546,13 +583,12 @@ private fun Modifier.dPadEvents(
     exoPlayer: ExoPlayer,
     videoPlayerState: VideoPlayerState,
     pulseState: VideoPlayerPulseState,
-): Modifier = this.handleDPadKeyEvents(
-    onLeft = {
-        if (!videoPlayerState.controlsVisible) {
-            exoPlayer.seekBack()
-            pulseState.setType(VideoPlayerPulse.Type.BACK)
-        }
-    },
+): Modifier = this.handleDPadKeyEvents(onLeft = {
+    if (!videoPlayerState.controlsVisible) {
+        exoPlayer.seekBack()
+        pulseState.setType(VideoPlayerPulse.Type.BACK)
+    }
+},
     onRight = {
         if (!videoPlayerState.controlsVisible) {
             exoPlayer.seekForward()

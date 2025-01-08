@@ -34,7 +34,9 @@ fun transformSeries(filmixSeries: FilmixSeries): Series {
                 }
                 val tranlationWithFiles = Translation(
                     translationKey,
-                    episodeValue.files.map { file ->
+                    episodeValue.files
+                        .sortedByDescending { it.quality } // Sort qualities descending here
+                        .map { file ->
                         File(
                             url = file.url,
                             quality = file.quality,

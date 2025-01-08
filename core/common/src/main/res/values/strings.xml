@@ -1,12 +1,12 @@
 <resources>
     <string name="app_name" translatable="false">Filmix</string>
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="season">Season %1$x</string>
-    <string name="episode">Episode %1$x</string>
+    <string name="season">Season %1$d</string>
+    <string name="episode">Episode %1$d</string>
     <string name="episodesString">Episodes</string>
     <string name="audioString">Tracks</string>
     <string name="continueWatchingMovie">Continue</string>
-    <string name="continueWatchingSeries">Season %1$x, Episode %2$x</string>
+    <string name="continueWatchingSeries">Season %1$d, Episode %2$d</string>
     <string name="history">History</string>
     <string name="score" translatable="false">%.1f</string>
     <string name="movie">Movie</string>
@@ -15,7 +15,7 @@
     <string name="search">Search</string>
     <string name="retry_error">Oops, failed to load the movies, try again</string>
     <string name="retry">Retry</string>
-    <string name="seasonsCountString">%1$x seasons</string>
+    <string name="seasonsCountString">%1$d seasons</string>
     <string name="playString">Play</string>
     <string name="last_seen">Last seen</string>
     <string name="watching_now">Watching now</string>

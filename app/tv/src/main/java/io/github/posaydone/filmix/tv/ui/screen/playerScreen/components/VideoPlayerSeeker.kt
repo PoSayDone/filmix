@@ -16,15 +16,19 @@
 
 package io.github.posaydone.filmix.tv.ui.screen.playerScreen.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.unit.dp
 import kotlin.time.Duration
 
 @Composable
@@ -36,43 +40,62 @@ fun VideoPlayerSeeker(
     onSeek: (Float) -> Unit,
     contentProgress: Duration,
     contentDuration: Duration,
+    hasPrevEpisode: Boolean,
+    hasNextEpisode: Boolean,
+    onPrevEpisodeClick: () -> Unit,
+    onNextEpisodeClick: () -> Unit,
 ) {
-    val contentProgressString =
-        contentProgress.toComponents { h, m, s, _ ->
-            if (h > 0) {
-                "$h:${m.padStartWith0()}:${s.padStartWith0()}"
-            } else {
-                "${m.padStartWith0()}:${s.padStartWith0()}"
-            }
+    val contentProgressString = contentProgress.toComponents { h, m, s, _ ->
+        if (h > 0) {
+            "$h:${m.padStartWith0()}:${s.padStartWith0()}"
+        } else {
+            "${m.padStartWith0()}:${s.padStartWith0()}"
         }
-    val contentDurationString =
-        contentDuration.toComponents { h, m, s, _ ->
-            if (h > 0) {
-                "$h:${m.padStartWith0()}:${s.padStartWith0()}"
-            } else {
-                "${m.padStartWith0()}:${s.padStartWith0()}"
-            }
+    }
+    val contentDurationString = contentDuration.toComponents { h, m, s, _ ->
+        if (h > 0) {
+            "$h:${m.padStartWith0()}:${s.padStartWith0()}"
+        } else {
+            "${m.padStartWith0()}:${s.padStartWith0()}"
         }
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
-        VideoPlayerControlsIcon(
-            modifier = Modifier.focusRequester(focusRequester),
-            icon = if (!isPlaying) Icons.Default.PlayArrow else Icons.Default.Pause,
-            onClick = { onPlayPauseToggle(!isPlaying) },
-            state = state,
-            isPlaying = isPlaying,
-            contentDescription = "Play pause button"
-//            contentDescription = StringConstants
-//                .Composable
-//                .VideoPlayerControlPlayPauseButton
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(
+                space = 12.dp, alignment = Alignment.CenterHorizontally
+            ),
+        ) {
+            if (hasPrevEpisode) VideoPlayerControlsIcon(
+//                modifier = Modifier.focusRequester(focusRequester),
+                icon = Icons.Default.SkipPrevious,
+                onClick = onPrevEpisodeClick,
+                state = state,
+                isPlaying = isPlaying,
+                contentDescription = "Previous episode button"
+            )
+            VideoPlayerControlsIcon(
+                modifier = Modifier.focusRequester(focusRequester),
+                icon = if (!isPlaying) Icons.Default.PlayArrow else Icons.Default.Pause,
+                onClick = { onPlayPauseToggle(!isPlaying) },
+                state = state,
+                isPlaying = isPlaying,
+                contentDescription = "Play pause button"
+            )
+            if (hasNextEpisode) VideoPlayerControlsIcon(
+//                modifier = Modifier.focusRequester(focusRequester),
+                icon = Icons.Default.SkipNext,
+                onClick = onNextEpisodeClick,
+                state = state,
+                isPlaying = isPlaying,
+                contentDescription = "Next episode button"
+            )
+        }
         VideoPlayerControllerText(text = contentProgressString)
         VideoPlayerControllerIndicator(
-            progress = (contentProgress / contentDuration).toFloat(),
-            onSeek = onSeek,
-            state = state
+            progress = (contentProgress / contentDuration).toFloat(), onSeek = onSeek, state = state
         )
         VideoPlayerControllerText(text = contentDurationString)
     }

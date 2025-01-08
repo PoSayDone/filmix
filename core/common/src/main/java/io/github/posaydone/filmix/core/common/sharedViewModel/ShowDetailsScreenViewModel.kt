@@ -9,15 +9,19 @@ import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowTrailers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
 sealed class ShowDetailsScreenUiState {
     data object Loading : ShowDetailsScreenUiState()
-    data object Error : ShowDetailsScreenUiState()
+    data class Error(val message: String, val onRetry: () -> Unit) : ShowDetailsScreenUiState()
     data class Done(
         val showDetails: ShowDetails,
         val showImages: ShowImages,
@@ -31,27 +35,44 @@ class ShowDetailsScreenViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     repository: FilmixRepository,
 ) : ViewModel() {
-    val uiState = savedStateHandle
-        .getStateFlow<Int?>("showId", null)
-        .map { showId ->
-            if (showId == null) {
-                ShowDetailsScreenUiState.Error
-            } else {
-                val details = repository.getShowDetails(showId)
-                val images = repository.getShowImages(showId)
-                val trailers = repository.getShowTrailers(showId)
-                val history = repository.getShowProgress(showId)
-                ShowDetailsScreenUiState.Done(
-                    showDetails = details,
-                    showImages = images,
-                    showTrailers = trailers,
-                    showProgress = history,
+    private val retryChannel = Channel<Unit>(Channel.RENDEZVOUS)
 
+    val uiState = retryChannel.receiveAsFlow().flatMapLatest {
+        savedStateHandle.getStateFlow<Int?>("showId", null).map { showId ->
+            if (showId == null) {
+                ShowDetailsScreenUiState.Error(
+                    message = "Show id is invalid",
+                    onRetry = { retry() })
+            } else {
+                try {
+                    val details = repository.getShowDetails(showId)
+                    val images = repository.getShowImages(showId)
+                    val trailers = repository.getShowTrailers(showId)
+                    val history = repository.getShowProgress(showId)
+                    ShowDetailsScreenUiState.Done(
+                        showDetails = details,
+                        showImages = images,
+                        showTrailers = trailers,
+                        showProgress = history,
                     )
+                } catch (error: Exception) {
+                    ShowDetailsScreenUiState.Error(message = "Unknown error", onRetry = { retry() })
+                }
             }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ShowDetailsScreenUiState.Loading
-        )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ShowDetailsScreenUiState.Loading
+    )
+
+    init {
+        retry()
+    }
+
+    private fun retry() {
+        viewModelScope.launch {
+            retryChannel.send(Unit)
+        }
+    }
 }

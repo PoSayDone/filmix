@@ -80,7 +80,7 @@ fun ShowDetailsScreen(
         }
 
         is ShowDetailsScreenUiState.Error -> {
-            Error(modifier = Modifier.fillMaxSize())
+            Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
         }
 
         is ShowDetailsScreenUiState.Done -> {

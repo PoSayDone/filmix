@@ -92,9 +92,7 @@ fun ShowsRow(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier
                     .focusRequester(lazyRow)
-                    .focusRestorer {
-                        firstItem
-                    }
+                    .focusRestorer()
             ) {
                 itemsIndexed(movieState, key = { _, show -> show.id }) { index, show ->
                     val itemModifier = if (index == 0) {
@@ -153,11 +151,11 @@ private fun MoviesRowItem(
                 }
             }
             .focusProperties {
-//                left = if (index == 0) {
-////                    FocusRequester.Cancel
-//                } else {
-                FocusRequester.Default
-//                }
+                left = if (index == 0) {
+                    FocusRequester.Cancel
+                } else {
+                    FocusRequester.Default
+                }
             }
             .then(modifier)
     ) {
