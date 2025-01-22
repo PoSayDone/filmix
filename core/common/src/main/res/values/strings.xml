@@ -22,6 +22,11 @@
     <string name="popular_movies">Popular movies</string>
     <string name="popular_series">Popular series</string>
     <string name="popular_cartoons">Popular cartoons</string>
-    <string name="ad">Ad</string>
-    <string name="live">Live</string>
+    <string name="mpaa_rating">MPAA Rating</string>
+    <string name="duration">Duration</string>
+    <string name="movie_duration">%1$s min.</string>
+    <string name="show_duration">%1$s Episodes</string>
+    <string name="release_year">Release year</string>
+    <string name="ad" translatable="false">Ad</string>
+    <string name="live" translatable="false">Live</string>
 </resources>

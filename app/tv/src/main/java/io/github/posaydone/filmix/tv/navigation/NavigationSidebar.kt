@@ -52,76 +52,66 @@ fun NavigationSidebar(
     }
 
     fun getIcon(iconName: String): ImageVector {
-        if (iconName == "Home")
-            return Icons.Default.Home
-        if (iconName == "Explore")
-            return Icons.Default.Explore
-        else
-            return Icons.Default.Error
+        if (iconName == "Home") return Icons.Default.Home
+        if (iconName == "Explore") return Icons.Default.Explore
+        else return Icons.Default.Error
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val destination =
-        items.any { it.route::class.qualifiedName == currentDestination?.route }
+    val destination = items.any { it.route::class.qualifiedName == currentDestination?.route }
 
 
     val closeDrawerWidth = 80.dp
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    if (destination)
-        ModalNavigationDrawer(
-            drawerState = drawerState, drawerContent = { drawer ->
+    if (destination) ModalNavigationDrawer(
+        drawerState = drawerState, drawerContent = { drawer ->
+            Column(
+                Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .fillMaxHeight()
+                    .padding(12.dp)
+                    .selectableGroup(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(
+                    8.dp, alignment = Alignment.CenterVertically
+                ),
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+                items.forEachIndexed { index, item ->
+                    val text = item.name
+                    val icon = getIcon(item.icon)
 
-                Column(
-                    Modifier
-                        .background(MaterialTheme.colorScheme.surface)
-                        .fillMaxHeight()
-                        .padding(12.dp)
-                        .selectableGroup(),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(
-                        8.dp, alignment = Alignment.CenterVertically
-                    ),
-                ) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    items.forEachIndexed { index, item ->
-                        val text = item.name
-                        val icon = getIcon(item.icon)
+                    val isSelected =
+                        currentDestination?.hierarchy?.any { it.route == item.route::class.qualifiedName } == true
 
-                        val isSelected =
-                            currentDestination?.hierarchy?.any { it.route == item.route::class.qualifiedName } == true
-
-                        NavigationDrawerItem(
-                            selected = isSelected,
-                            onClick = {
-                                navController.navigate(item.route)
-                                drawerState.setValue(DrawerValue.Closed)
-                            },
-                            leadingContent = {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                )
-                            }
-                        ) {
-                            Text(text)
-                        }
+                    NavigationDrawerItem(selected = isSelected, onClick = {
+                        navController.navigate(item.route)
+                        drawerState.setValue(DrawerValue.Closed)
+                    }, leadingContent = {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                        )
+                    }) {
+                        Text(text)
                     }
                 }
-            }, scrimBrush = Brush.horizontalGradient(
-                listOf(
-                    MaterialTheme.colorScheme.surface, Color.Transparent
-                )
-            )
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = closeDrawerWidth)
-            ) {
-                content()
             }
+        }, scrimBrush = Brush.horizontalGradient(
+            listOf(
+                MaterialTheme.colorScheme.surface, Color.Transparent
+            )
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = closeDrawerWidth)
+        ) {
+            content()
         }
+    }
     else content()
 }

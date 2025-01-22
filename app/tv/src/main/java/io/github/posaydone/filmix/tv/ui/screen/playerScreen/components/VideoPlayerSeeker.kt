@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import io.github.posaydone.filmix.core.common.sharedViewModel.ShowType
 import kotlin.time.Duration
 
 @Composable
@@ -37,6 +38,7 @@ fun VideoPlayerSeeker(
     state: VideoPlayerState,
     isPlaying: Boolean,
     onPlayPauseToggle: (Boolean) -> Unit,
+    showType: ShowType?,
     onSeek: (Float) -> Unit,
     contentProgress: Duration,
     contentDuration: Duration,
@@ -68,13 +70,13 @@ fun VideoPlayerSeeker(
                 space = 12.dp, alignment = Alignment.CenterHorizontally
             ),
         ) {
-            if (hasPrevEpisode) VideoPlayerControlsIcon(
-//                modifier = Modifier.focusRequester(focusRequester),
+            if (showType != ShowType.MOVIE) VideoPlayerControlsIcon(
                 icon = Icons.Default.SkipPrevious,
                 onClick = onPrevEpisodeClick,
                 state = state,
                 isPlaying = isPlaying,
-                contentDescription = "Previous episode button"
+                contentDescription = "Previous episode button",
+                disabled = !hasPrevEpisode
             )
             VideoPlayerControlsIcon(
                 modifier = Modifier.focusRequester(focusRequester),
@@ -84,13 +86,13 @@ fun VideoPlayerSeeker(
                 isPlaying = isPlaying,
                 contentDescription = "Play pause button"
             )
-            if (hasNextEpisode) VideoPlayerControlsIcon(
-//                modifier = Modifier.focusRequester(focusRequester),
+            if (showType != ShowType.MOVIE) VideoPlayerControlsIcon(
                 icon = Icons.Default.SkipNext,
                 onClick = onNextEpisodeClick,
                 state = state,
                 isPlaying = isPlaying,
-                contentDescription = "Next episode button"
+                contentDescription = "Next episode button",
+                disabled = !hasNextEpisode
             )
         }
         VideoPlayerControllerText(text = contentProgressString)

@@ -18,4 +18,9 @@
     <string name="popular_movies">Популярные фильмы</string>
     <string name="popular_series">Популярные сериалы</string>
     <string name="popular_cartoons">Популярные мультфильмы</string>
+    <string name="mpaa_rating">Возраст</string>
+    <string name="show_duration">%1$s Эпизодов</string>
+    <string name="release_year">Год выхода</string>
+    <string name="duration">Длительность</string>
+    <string name="movie_duration">%1$s мин.</string>
 </resources>

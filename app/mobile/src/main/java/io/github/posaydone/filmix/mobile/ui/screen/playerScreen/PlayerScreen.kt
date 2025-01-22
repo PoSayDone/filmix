@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -170,17 +171,14 @@ fun PlayerScreen(
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
+            Log.d("Lifecycle", event.name)
             when (event) {
-                Lifecycle.Event.ON_STOP -> {
+                Lifecycle.Event.ON_PAUSE -> {
                     viewModel.saveProgress()
                     viewModel.pause()
                     insetsController.apply {
                         show(WindowInsetsCompat.Type.systemBars())
                     }
-                }
-
-                Lifecycle.Event.ON_DESTROY -> {
-                    viewModel.player.stop()
                 }
 
                 else -> {}
@@ -190,6 +188,8 @@ fun PlayerScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose {
+            viewModel.saveProgress()
+            viewModel.player.stop()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -331,6 +331,7 @@ fun PlayerScreen(
             visible = showControls, enter = fadeIn(), exit = fadeOut()
         ) {
             MiddleControls(
+                showType = showType,
                 isPlaying = playerState.isPlaying,
                 onPlayPauseClick = {
                     viewModel.onPlayPauseClick()
@@ -363,6 +364,7 @@ fun PlayerScreen(
 
 @Composable
 private fun MiddleControls(
+    showType: ShowType?,
     isPlaying: Boolean,
     onPlayPauseClick: () -> Unit,
     hasNextEpisode: Boolean,
@@ -378,7 +380,7 @@ private fun MiddleControls(
         ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (hasPrevEpisode) Box(
+        if (showType != ShowType.MOVIE) Box(
             modifier = Modifier.clickable(
                 onClick = onPrevEpisodeClick,
                 role = Role.Button,
@@ -412,7 +414,7 @@ private fun MiddleControls(
             )
         }
 
-        if (hasNextEpisode) Box(
+        if (showType != ShowType.MOVIE) Box(
             modifier = Modifier.clickable(
                 onClick = onNextEpisodeClick,
                 role = Role.Button,
@@ -520,7 +522,7 @@ private fun BottomControls(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+        if (totalDuration > 0L) Box(
             modifier = Modifier.width(72.dp)
         ) {
             Text(
@@ -529,9 +531,10 @@ private fun BottomControls(
                 modifier = Modifier.align(Alignment.Center)
             )
         }
-        CustomSeekBar(isSeekInProgress = { isInProgress ->
-            isSeekInProgress = isInProgress
-        },
+        CustomSeekBar(
+            isSeekInProgress = { isInProgress ->
+                isSeekInProgress = isInProgress
+            },
             onSeekBarMove = { position ->
                 currentTime = position
             },
@@ -540,7 +543,7 @@ private fun BottomControls(
             onSeekStop = { position -> player.seekTo(position) },
             modifier = Modifier.weight(1f)
         )
-        Box(
+        if (totalDuration > 0L) Box(
             modifier = Modifier.width(72.dp)
         ) {
             Text(
@@ -732,6 +735,7 @@ fun CustomSeekBar(
             setPosition(currentTime)
         }
     }, update = {
+        it.setDuration(totalDuration)
         it.setPosition(currentTime)
     }, modifier = modifier)
 }

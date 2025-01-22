@@ -14,13 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ClickableSurfaceDefaults
-import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun VideoPlayerControlsIcon(
     modifier: Modifier = Modifier,
@@ -28,6 +26,7 @@ fun VideoPlayerControlsIcon(
     isPlaying: Boolean,
     icon: ImageVector,
     contentDescription: String? = null,
+    disabled: Boolean = false,
     onClick: () -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -44,10 +43,11 @@ fun VideoPlayerControlsIcon(
         onClick = onClick,
         shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+            containerColor = if (disabled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
         ),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.05f),
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
+        enabled = !disabled
     ) {
         Icon(
             icon,

@@ -32,6 +32,7 @@ import javax.inject.Inject
 @androidx.media3.common.util.UnstableApi
 data class PlayerState(
     val isPlaying: Boolean = false,
+    val isLoading: Boolean = true,
     val totalTime: Long = 0L,
     val resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_FIT,
     val orientation: Int = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE,
@@ -74,14 +75,12 @@ class PlayerScreenViewModel @Inject constructor(
     private val _seasons = MutableStateFlow<List<Season>?>(null)
     val seasons: StateFlow<List<Season>?> = _seasons.asStateFlow()
 
-
     private val _moviePieces = MutableStateFlow<List<VideoWithQualities>?>(null)
     val moviePieces: StateFlow<List<VideoWithQualities>?> = _moviePieces.asStateFlow()
 
     private val _selectedMovieTranslation = MutableStateFlow<VideoWithQualities?>(null)
     val selectedMovieTranslation: StateFlow<VideoWithQualities?> =
         _selectedMovieTranslation.asStateFlow()
-
 
     private val _details = MutableStateFlow<ShowDetails?>(null)
     val details = _details.asStateFlow()
@@ -274,43 +273,40 @@ class PlayerScreenViewModel @Inject constructor(
 
     // Function to set the selected translation
     fun setTranslation(translation: Translation) {
+        val currentTime = player.currentPosition / 1000
         val oldQuality = selectedQuality.value?.quality
         _selectedTranslation.value = translation
 
-        val oldQualityInNewEpisode =
-            selectedTranslation.value?.files?.find { it.quality == oldQuality }
-        if (oldQualityInNewEpisode != null) {
-            _selectedQuality.value = oldQualityInNewEpisode
-        } else {
-            _selectedQuality.value = selectedTranslation.value?.files?.get(0)
-        }
-        _videoUrl.value = selectedQuality.value?.url
+        val oldQualityInNewTranslation =
+            translation.files.find { it.quality == oldQuality }
+        _selectedQuality.value = oldQualityInNewTranslation ?: translation.files.firstOrNull()
+
+        _videoUrl.value = _selectedQuality.value?.url
+        playVideo(currentTime)
         saveProgress()
-        playVideo()
     }
 
     fun setMovieTranslation(movieTranslation: VideoWithQualities) {
+        val currentTime = player.currentPosition / 1000
         val oldQuality = selectedQuality.value?.quality
         _selectedMovieTranslation.value = movieTranslation
 
-        val oldQualityInNewEpisode =
-            selectedTranslation.value?.files?.find { it.quality == oldQuality }
-        if (oldQualityInNewEpisode != null) {
-            _selectedQuality.value = oldQualityInNewEpisode
-        } else {
-            _selectedQuality.value = selectedMovieTranslation.value?.files?.get(0)
-        }
-        _videoUrl.value = selectedQuality.value?.url
+        val oldQualityInNewTranslation =
+            movieTranslation.files.find { it.quality == oldQuality }
+        _selectedQuality.value = oldQualityInNewTranslation ?: movieTranslation.files.firstOrNull()
+
+        _videoUrl.value = _selectedQuality.value?.url
+        playVideo(currentTime)
         saveProgress()
-        playVideo()
     }
 
     // Function to set the selected quality
     fun setQuality(qualityFile: File) {
+        val currentTime = player.currentPosition / 1000
         _selectedQuality.value = qualityFile
         _videoUrl.value = selectedQuality.value?.url
+        playVideo(currentTime)
         saveProgress()
-        playVideo()
     }
 
 
@@ -321,7 +317,7 @@ class PlayerScreenViewModel @Inject constructor(
             player.prepare()
             player.play()
             if (time != 0L) {
-                player.seekTo(time)
+                player.seekTo(time * 1000)
             }
             _playerState.update {
                 it.copy(
@@ -337,7 +333,7 @@ class PlayerScreenViewModel @Inject constructor(
         val translation = _selectedTranslation.value
         val movieTranslation = _selectedMovieTranslation.value
         val qualityFile = _selectedQuality.value
-        val time = player.currentPosition
+        val time = player.currentPosition / 1000
 
         if (contentType.value == ShowType.MOVIE) {
             if (movieTranslation != null && qualityFile != null) viewModelScope.launch {

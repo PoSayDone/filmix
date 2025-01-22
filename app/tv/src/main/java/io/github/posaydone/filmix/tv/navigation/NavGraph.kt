@@ -21,15 +21,14 @@ fun NavGraph(
     val navController = rememberNavController()
 
     NavigationSidebar(navController = navController) {
-    NavHost(
-        navController = navController,
-        startDestination = Screens.Auth
-    ) {
-        authGraph(navController)
-        mainGraph(navController)
-        playerGraph(navController)
+        NavHost(
+            navController = navController, startDestination = Screens.Auth
+        ) {
+            authGraph(navController)
+            mainGraph(navController)
+            playerGraph(navController)
+        }
     }
-   }
 }
 
 

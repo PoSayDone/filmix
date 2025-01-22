@@ -1,6 +1,7 @@
 package io.github.posaydone.filmix.tv.ui.screen.homeScreen
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -93,10 +94,10 @@ private fun Body(
     goToDetails: (showId: Int) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
+
     LazyColumn(
         state = lazyListState,
         contentPadding = PaddingValues(bottom = 108.dp),
-        modifier = modifier,
     ) {
         item(contentType = "LastSeenRow") {
             ShowsRow(

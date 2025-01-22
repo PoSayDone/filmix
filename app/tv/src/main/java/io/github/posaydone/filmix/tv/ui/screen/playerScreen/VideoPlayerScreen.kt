@@ -27,7 +27,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +38,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -54,13 +52,11 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import androidx.tv.material3.Button
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Tab
-import androidx.tv.material3.TabDefaults
-import androidx.tv.material3.TabRow
+import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.Text
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.PlayerScreenViewModel
@@ -74,6 +70,7 @@ import io.github.posaydone.filmix.core.model.Translation
 import io.github.posaydone.filmix.core.model.VideoWithQualities
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.PlayerDialog
+import io.github.posaydone.filmix.tv.ui.screen.playerScreen.components.ScrollableTabRow
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.components.VideoPlayerControlsIcon
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.components.VideoPlayerMainFrame
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.components.VideoPlayerMediaTitle
@@ -153,6 +150,8 @@ fun VideoPlayerScreenContent(
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose {
+            viewModel.saveProgress()
+            viewModel.player.stop()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -187,7 +186,7 @@ fun VideoPlayerScreenContent(
     Box(
         Modifier
             .dPadEvents(
-                player, videoPlayerState, pulseState
+                player, isEpisodeDialogOpen, videoPlayerState, pulseState
             )
             .fillMaxSize()
             .background(color = Color.Black)
@@ -195,17 +194,15 @@ fun VideoPlayerScreenContent(
     ) {
 
 
-        AndroidView(
-            factory = {
-                PlayerView(context).apply { useController = false }
-            },
-            update = {
-                it.player = player
-                it.apply {
-                    resizeMode = playerState.resizeMode
-                    keepScreenOn = playerState.isPlaying
-                }
-            }, modifier = Modifier.fillMaxSize()
+        AndroidView(factory = {
+            PlayerView(context).apply { useController = false }
+        }, update = {
+            it.player = player
+            it.apply {
+                resizeMode = playerState.resizeMode
+                keepScreenOn = playerState.isPlaying
+            }
+        }, modifier = Modifier.fillMaxSize()
         )
 
 
@@ -227,7 +224,9 @@ fun VideoPlayerScreenContent(
                     changeSizing = {
                         viewModel.setResizeMode(if (playerState.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_FIT) AspectRatioFrameLayout.RESIZE_MODE_ZOOM else AspectRatioFrameLayout.RESIZE_MODE_FIT)
                     },
-                    openEpisodeSheet = { isEpisodeDialogOpen = true },
+                    openEpisodeSheet = {
+                        player.pause(); videoPlayerState.hideControls(); isEpisodeDialogOpen = true
+                    },
                     openAudioSheet = { isAudioDialogOpen = true },
                     openQualitySheet = { isQualityDialogOpen = true },
                     hasNextEpisode = hasNextEpisode,
@@ -325,10 +324,11 @@ fun VideoPlayerControls(
         }
     }, seeker = {
         VideoPlayerSeeker(
-            focusRequester,
-            state,
-            isPlaying,
-            onPlayPauseToggle,
+            focusRequester = focusRequester,
+            state = state,
+            isPlaying = isPlaying,
+            onPlayPauseToggle = onPlayPauseToggle,
+            showType = showType,
             onPrevEpisodeClick = onPrevEpisodeClick,
             onNextEpisodeClick = onNextEpisodeClick,
             hasPrevEpisode = hasPrevEpisode,
@@ -341,7 +341,6 @@ fun VideoPlayerControls(
     )
 }
 
-
 @UnstableApi
 @Composable
 private fun EpisodeDialog(
@@ -353,44 +352,33 @@ private fun EpisodeDialog(
     isEpisodeDialogOpen: Boolean,
     onDismiss: () -> Unit,
 ) {
-    var tabIndex by rememberSaveable {
+    val seasonsList = seasons.map { season ->
+        stringResource(R.string.season, season.season)
+    }
+
+    var selectedTab by remember {
         mutableIntStateOf(
             selectedSeason!!.season.minus(1)
         )
     }
 
     PlayerDialog(
-        modifier = Modifier.focusRequester(focusRequester),
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .padding(12.dp),
         showDialog = isEpisodeDialogOpen,
-        onDismissRequest = onDismiss
-    ) {
-        Column(
-            modifier = Modifier.handleDPadKeyEvents(onLeft = {
-                tabIndex = (tabIndex - 1).coerceAtLeast(0)
-            }, onRight = {
-                tabIndex = (tabIndex + 1).coerceAtMost(seasons.size - 1)
-            })
-        ) {
-            TabRow(
-                selectedTabIndex = tabIndex,
-                modifier = Modifier
-                    .focusRestorer()
-                    .fillMaxWidth(),
-            ) {
-                seasons.forEachIndexed { index, season ->
-                    key(index) {
-                        Tab(modifier = Modifier.padding(8.dp),
-//                            colors = TabDefaults.pillIndicatorTabColors(focusedSelectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer),
-                            selected = index == tabIndex,
-                            onFocus = { tabIndex = index },
-                            onClick = { tabIndex = index }) {
-                            Text(stringResource(R.string.season, season.season))
-                        }
-                    }
-                }
-            }
+        onDismissRequest = onDismiss,
 
-            val selectedSeasonEpisodes = seasons[tabIndex].episodes
+        ) {
+        Column {
+            ScrollableTabRow(
+                items = seasonsList,
+                selectedTabIndex = selectedTab,
+                onTabSelected = { selectedTab = it },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            val selectedSeasonEpisodes = seasons[selectedTab].episodes
 
             LazyColumn(
                 modifier = Modifier.focusRequester(focusRequester),
@@ -400,7 +388,7 @@ private fun EpisodeDialog(
                     SingleSelectionCard(
                         selectionOption = episode, selectedEpisode
                     ) {
-                        viewModel.setSeason(seasons[tabIndex])
+                        viewModel.setSeason(seasons[selectedTab])
                         viewModel.setEpisode(episode)
                         onDismiss()
                     }
@@ -408,7 +396,6 @@ private fun EpisodeDialog(
             }
         }
     }
-
 }
 
 
@@ -489,6 +476,7 @@ private fun QualityDialog(
 @Composable
 fun <T> SingleSelectionCard(selectionOption: T, selectedOption: T?, onOptionClicked: (T) -> Unit) {
     ListItem(headlineContent = { Text(text = selectionOption.toString()) },
+        scale = ListItemDefaults.scale(focusedScale = 1.02f),
         selected = false,
         onClick = { onOptionClicked(selectionOption) },
         trailingContent = {
@@ -581,23 +569,26 @@ private fun Dialogs(
 
 private fun Modifier.dPadEvents(
     exoPlayer: ExoPlayer,
+    isEpisodeSheetOpen: Boolean,
     videoPlayerState: VideoPlayerState,
     pulseState: VideoPlayerPulseState,
 ): Modifier = this.handleDPadKeyEvents(onLeft = {
-    if (!videoPlayerState.controlsVisible) {
+    if (!videoPlayerState.controlsVisible && !isEpisodeSheetOpen) {
         exoPlayer.seekBack()
         pulseState.setType(VideoPlayerPulse.Type.BACK)
     }
-},
-    onRight = {
-        if (!videoPlayerState.controlsVisible) {
-            exoPlayer.seekForward()
-            pulseState.setType(VideoPlayerPulse.Type.FORWARD)
-        }
-    },
-    onUp = { videoPlayerState.showControls() },
-    onDown = { videoPlayerState.showControls() },
-    onEnter = {
+}, onRight = {
+    if (!videoPlayerState.controlsVisible && !isEpisodeSheetOpen) {
+        exoPlayer.seekForward()
+        pulseState.setType(VideoPlayerPulse.Type.FORWARD)
+    }
+}, onUp = {
+    if (!isEpisodeSheetOpen) videoPlayerState.showControls()
+}, onDown = {
+    if (!isEpisodeSheetOpen) videoPlayerState.showControls()
+}, onEnter = {
+    if (!isEpisodeSheetOpen) {
         exoPlayer.pause()
         videoPlayerState.showControls()
-    })
+    }
+})

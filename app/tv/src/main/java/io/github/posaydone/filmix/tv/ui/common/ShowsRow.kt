@@ -45,8 +45,7 @@ import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
 
 enum class ItemDirection(val aspectRatio: Float) {
-    Vertical(10.5f / 16f),
-    Horizontal(16f / 9f);
+    Vertical(10.5f / 16f), Horizontal(16f / 9f);
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -59,8 +58,7 @@ fun ShowsRow(
     endPadding: Dp = rememberChildPadding().end,
     title: String? = null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge.copy(
-        fontWeight = FontWeight.Medium,
-        fontSize = 30.sp
+        fontWeight = FontWeight.Medium, fontSize = 30.sp
     ),
     showItemTitle: Boolean = true,
     showIndexOverImage: Boolean = false,
@@ -84,16 +82,14 @@ fun ShowsRow(
             targetState = showList,
             label = "",
         ) { movieState ->
-            LazyRow(
-                contentPadding = PaddingValues(
-                    start = startPadding,
-                    end = endPadding,
-                ),
+            LazyRow(contentPadding = PaddingValues(
+                start = startPadding,
+                end = endPadding,
+            ),
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier
                     .focusRequester(lazyRow)
-                    .focusRestorer()
-            ) {
+                    .focusRestorer { firstItem }) {
                 itemsIndexed(movieState, key = { _, show -> show.id }) { index, show ->
                     val itemModifier = if (index == 0) {
                         Modifier.focusRequester(firstItem)
@@ -133,32 +129,26 @@ private fun MoviesRowItem(
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
-    ShowCard(
-        onClick = { onMovieSelected(show) },
-        title = {
-            MoviesRowItemText(
-                showItemTitle = showItemTitle,
-                isItemFocused = isFocused,
-                show = show
-            )
-        },
-        modifier = Modifier
-            .width(148.dp)
-            .onFocusChanged {
-                isFocused = it.isFocused
-                if (it.isFocused) {
-                    onMovieFocused(show)
-                }
+    ShowCard(onClick = { onMovieSelected(show) }, title = {
+        MoviesRowItemText(
+            showItemTitle = showItemTitle, isItemFocused = isFocused, show = show
+        )
+    }, modifier = Modifier
+        .width(148.dp)
+        .onFocusChanged {
+            isFocused = it.isFocused
+            if (it.isFocused) {
+                onMovieFocused(show)
             }
-            .focusProperties {
-                left = if (index == 0) {
-                    FocusRequester.Cancel
-                } else {
-                    FocusRequester.Default
-                }
-            }
-            .then(modifier)
-    ) {
+        }
+//        .focusProperties {
+//            left = if (index == 0) {
+//                FocusRequester.Cancel
+//            } else {
+//                FocusRequester.Default
+//            }
+//        }
+        .then(modifier)) {
         MoviesRowItemImage(
             modifier = Modifier.aspectRatio(itemDirection.aspectRatio),
             showIndexOverImage = showIndexOverImage,
@@ -195,14 +185,11 @@ private fun MoviesRowItemImage(
             Text(
                 modifier = Modifier.padding(16.dp),
                 text = "#${index.inc()}",
-                style = MaterialTheme.typography.displayLarge
-                    .copy(
-                        shadow = Shadow(
-                            offset = Offset(0.5f, 0.5f),
-                            blurRadius = 5f
-                        ),
-                        color = Color.White
-                    ),
+                style = MaterialTheme.typography.displayLarge.copy(
+                    shadow = Shadow(
+                        offset = Offset(0.5f, 0.5f), blurRadius = 5f
+                    ), color = Color.White
+                ),
                 fontWeight = FontWeight.SemiBold
             )
         }

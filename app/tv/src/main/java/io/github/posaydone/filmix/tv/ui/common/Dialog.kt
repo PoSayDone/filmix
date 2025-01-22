@@ -34,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
@@ -329,10 +328,10 @@ fun FullScreenDialog(
 @ExperimentalTvMaterial3Api
 @Composable
 fun PlayerDialog(
+    modifier: Modifier = Modifier,
     showDialog: Boolean,
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    properties: DialogProperties = DialogProperties(),
+    properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     backgroundColor: Color = FullScreenDialogDefaults.backgroundColor,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -343,12 +342,9 @@ fun PlayerDialog(
     ) {
         Box(
             modifier = Modifier
-                .heightIn(0.dp, 300.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .drawBehind { drawRect(color = backgroundColor) }
+                .fillMaxSize()
                 .dialogFocusable(),
-
-            contentAlignment = Alignment.Center,
+            contentAlignment = Alignment.TopStart,
         ) {
             Column(
                 modifier = Modifier
