@@ -1,7 +1,6 @@
 package io.github.posaydone.filmix.tv.ui.screen.homeScreen
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -11,8 +10,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
@@ -23,9 +25,11 @@ import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenViewModel
+import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.Error
+import io.github.posaydone.filmix.tv.ui.common.ImmersiveShowsRow
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
 import io.github.posaydone.filmix.tv.ui.utils.Padding
@@ -77,6 +81,7 @@ fun HomeScreen(
                         restoreState = true
                     }
                 },
+                getShowImages = s.getShowImages
             )
         }
     }
@@ -92,19 +97,26 @@ private fun Body(
     popularSeries: ShowList,
     popularCartoons: ShowList,
     goToDetails: (showId: Int) -> Unit,
+    getShowImages: suspend (showId: Int) -> ShowImages
 ) {
     val lazyListState = rememberLazyListState()
+    var immersiveListHasFocus by remember { mutableStateOf(false) }
 
     LazyColumn(
         state = lazyListState,
         contentPadding = PaddingValues(bottom = 108.dp),
     ) {
         item(contentType = "LastSeenRow") {
-            ShowsRow(
-                modifier = Modifier.padding(top = 8.dp),
+            ImmersiveShowsRow(
+                modifier = Modifier.onFocusChanged {
+                    immersiveListHasFocus = it.hasFocus
+
+                },
+                showItemTitle = false,
                 showList = lastSeenShows,
-                title = stringResource(R.string.last_seen),
-                onMovieSelected = { show ->
+                title = stringResource(R.string.continue_watching),
+                getShowImages = getShowImages,
+                onShowSelected = { show ->
                     goToDetails(show.id)
                 }
             )
@@ -114,7 +126,7 @@ private fun Body(
                 modifier = Modifier.padding(top = 16.dp),
                 showList = viewingShows,
                 title = stringResource(R.string.watching_now),
-                onMovieSelected = { show ->
+                onShowSelected = { show ->
                     goToDetails(show.id)
                 }
             )
@@ -124,7 +136,7 @@ private fun Body(
                 modifier = Modifier.padding(top = 16.dp),
                 showList = popularMovies,
                 title = stringResource(R.string.popular_movies),
-                onMovieSelected = { show ->
+                onShowSelected = { show ->
                     goToDetails(show.id)
                 }
             )
@@ -134,7 +146,7 @@ private fun Body(
                 modifier = Modifier.padding(top = 16.dp),
                 showList = popularSeries,
                 title = stringResource(R.string.popular_series),
-                onMovieSelected = { show ->
+                onShowSelected = { show ->
                     goToDetails(show.id)
                 }
             )
@@ -144,7 +156,7 @@ private fun Body(
                 modifier = Modifier.padding(top = 16.dp),
                 showList = popularCartoons,
                 title = stringResource(R.string.popular_cartoons),
-                onMovieSelected = { show ->
+                onShowSelected = { show ->
                     goToDetails(show.id)
                 }
             )

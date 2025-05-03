@@ -18,7 +18,9 @@ import io.github.posaydone.filmix.core.network.service.FilmixApiService
 import io.github.posaydone.filmix.core.network.utils.transformSeries
 import javax.inject.Inject
 
-class FilmixRemoteDataSource @Inject constructor(private val filmixApiService: FilmixApiService) {
+class FilmixRemoteDataSource @Inject constructor(
+    private val filmixApiService: FilmixApiService,
+) {
     suspend fun fetchPage(
         limit: Int = 48,
         page: Int? = null,

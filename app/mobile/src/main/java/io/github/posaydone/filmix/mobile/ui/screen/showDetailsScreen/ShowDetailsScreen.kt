@@ -53,6 +53,7 @@ import coil.request.ImageRequest
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenViewModel
+import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
@@ -99,6 +100,7 @@ fun ShowDetailsScreen(
                 goBack = {
                     navController.navigateUp()
                 },
+                sessionManager = s.sessionManager,
                 modifier = Modifier
                     .fillMaxSize()
                     .animateContentSize()
@@ -118,6 +120,7 @@ private fun Details(
     goToMoviePlayer: () -> Unit,
     goBack: () -> Unit,
     modifier: Modifier = Modifier,
+    sessionManager: SessionManager,
 ) {
     val gradient = Brush.verticalGradient(
         colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background),
@@ -196,6 +199,27 @@ private fun Details(
                 }
             }
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+//                Button(onClick = {
+//                    sessionManager.saveAccessToken(
+//                        sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000000
+//                    )
+//                }) {
+//                    Text("clear expiration time")
+//                }
+//                Button(onClick = {
+//                    sessionManager.saveAccessToken(
+//                        null, System.currentTimeMillis() - 1000
+//                    )
+//                }) {
+//                    Text("remove token")
+//                }
+//                Button(onClick = {
+//                    sessionManager.saveAccessToken(
+//                        "penisini", sessionManager.fetchTokenExpiresIn()
+//                    )
+//                }) {
+//                    Text("save wrong token")
+//                }
                 Button(
                     onClick = goToMoviePlayer, modifier = Modifier
                         .fillMaxWidth()

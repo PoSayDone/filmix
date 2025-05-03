@@ -1,102 +1,193 @@
 package io.github.posaydone.filmix.tv.ui.screen.authScreen
 
-import android.graphics.Bitmap
-import android.view.ViewGroup
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.util.Base64
+import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.tv.material3.Button
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
+import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenViewModel
-import io.github.posaydone.filmix.core.model.SessionManager
+import io.github.posaydone.filmix.core.model.AuthRequestBody
 import io.github.posaydone.filmix.tv.navigation.Screens
+import io.github.posaydone.filmix.tv.ui.common.TextField
+import kotlinx.coroutines.launch
 
+private var TAG = "AuthScreen"
 private var access: String? = null
 private var refresh: String? = null
+private var hash: String? = null
+
+fun decodeBase64Svg(base64String: String): ByteArray {
+    // Remove the data URI prefix if present
+    val cleanBase64 = base64String.replace("data:image/svg+xml;base64,", "")
+    return Base64.decode(cleanBase64, Base64.DEFAULT)
+}
 
 @Composable
 fun AuthScreen(
     navController: NavHostController,
     viewModel: AuthScreenViewModel = hiltViewModel(),
 ) {
-    val sessionManager = viewModel.sessionManager
+    val context = LocalContext.current
     val navigateToHome = {
         navController.navigate(Screens.Main) {
-            popUpTo<Screens.Auth> {
-                inclusive = true
+            popUpTo<Screens.Auth> { inclusive = true }
+        }
+    }
+
+    val scope = rememberCoroutineScope()
+    var hash by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var qrCode by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    if (viewModel.areTokensSaved()) {
+        navigateToHome()
+    }
+
+    LaunchedEffect(key1 = Unit) { // Runs once when AuthScreen enters composition
+        // --- Improvement: Check token status once as an effect ---
+        if (viewModel.areTokensSaved()) {
+            Log.d("AuthScreen", "Tokens already saved, navigating to home.")
+            navigateToHome()
+        } else {
+            // --- Fetch hash only if not already logged in ---
+            Log.d("AuthScreen", "Tokens not saved, requesting hash.")
+            loading = true
+            errorMessage = null // Clear previous errors
+            try {
+                // Directly call the suspend function
+                val fetchedHash = viewModel.requestHash()
+                hash = fetchedHash.token // Update state AFTER the suspend function completes
+
+                // You might generate the QR code here if it depends on the hash
+                qrCode = viewModel.requestQrCode(hash).image
+
+                Log.d("AuthScreen", "Successfully fetched hash: $fetchedHash")
+
+            } catch (e: Exception) {
+                Log.e("AuthScreen", "Error fetching hash", e)
+                errorMessage = "Failed to initialize authentication: ${e.message}"
+                // Decide what to do with hash on error, maybe clear it?
+                hash = ""
+            } finally {
+                // Ensure loading is set to false regardless of success/failure
+                loading = false
+                Log.d("AuthScreen", "Finished hash request attempt.")
             }
         }
     }
 
-    val mUrl = "https://filmix.tv/auth/login"
-    val savedToken = sessionManager.fetchAccessToken()
-    val savedRefresh = sessionManager.fetchRefreshToken()
 
-    if (savedToken != null && savedRefresh != null) {
-        navigateToHome()
-    }
-
-    AndroidView(factory = {
-        WebView(it).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+    Row {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(32.dp)
+                .weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = "Sign in", style = MaterialTheme.typography.headlineLarge)
+            Spacer(Modifier.height(18.dp))
+            TextField(value = email, onValueChange = { email = it }, placeholderText = "Email")
+            Spacer(Modifier.height(12.dp))
+            TextField(
+                value = password, onValueChange = { password = it }, placeholderText = "Password"
             )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = {
+                    scope.launch {
+                        loading = true
+                        errorMessage = null
+                        try {
+                            // Step 2: Authorize
+                            val authResponse = viewModel.authorizeUser(
+                                hash = hash, body = AuthRequestBody(
+                                    user_name = email, user_passw = password, session = true
+                                )
+                            )
 
-            this.settings.javaScriptEnabled = true
-            this.settings.domStorageEnabled = true
-            this.webViewClient = CustomWebViewClient(sessionManager, navigateToHome)
+                            viewModel.saveTokens(
+                                access = authResponse.accessToken,
+                                refresh = authResponse.refreshToken,
+                                hash = hash,
+                                expiresInMs = 50 * 60 * 1000
+                            )
+
+                            navigateToHome()
+                        } catch (e: Exception) {
+                            errorMessage = "Authorization failed: ${e.localizedMessage}"
+                        } finally {
+                            loading = false
+                        }
+                    }
+                }, enabled = !loading && hash.isNotEmpty()
+            ) { Text("Login") }
         }
-    }, update = {
-        it.loadUrl(mUrl)
-    })
-}
-
-class CustomWebViewClient(
-    private val sessionManager: SessionManager,
-    private val navigateToHome: () -> Unit,
-) : WebViewClient() {
-    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-        super.onPageStarted(view, url, favicon)
-        handleToken(url.toString(), view, sessionManager, navigateToHome)
-    }
-
-    override fun onPageFinished(view: WebView?, url: String?) {
-        super.onPageFinished(view, url)
-        handleToken(url.toString(), view, sessionManager, navigateToHome)
-    }
-}
-
-private fun handleToken(
-    url: String,
-    view: WebView?,
-    sessionManager: SessionManager,
-    navigateToHome: () -> Unit,
-) {
-    if (view != null) {
-        view.evaluateJavascript(
-            "(function()" + "{ return localStorage.getItem(\"token\"); })();"
+        Spacer(Modifier.width(32.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            access = it.replace("\"", "")
+
+            if (qrCode.isNotEmpty()) {
+                val byteArray = decodeBase64Svg(qrCode)
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12))
+                        .background(Color.White)
+                        .size(300.dp, 300.dp)
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context).data(byteArray)
+                            .decoderFactory(SvgDecoder.Factory()).build(),
+                        contentDescription = "QR Code",
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(12.dp)
+                    )
+                }
+            }
         }
-        view.evaluateJavascript(
-            "(function()" + " { return localStorage.getItem(\"refresh\"); })();"
-        ) {
-            refresh = it.replace("\"", "")
-        }
-        if (access == "null" || access == "") access = null
-        if (refresh == "null" || refresh == "") refresh = null
+
     }
-    checkAndStoreTokens(sessionManager, navigateToHome)
 }
 
-
-private fun checkAndStoreTokens(sessionManager: SessionManager, navigateToHome: () -> Unit) {
-    if (access != null && refresh != null) {
-        sessionManager.saveAccessToken(
-            access!!, expiresIn = System.currentTimeMillis() + (50 * 60 * 1000)
-        )
-        sessionManager.saveRefreshToken(refresh!!)
-        navigateToHome()
-    }
-}

@@ -35,16 +35,18 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:network"))
+    implementation(project(":core:model"))
+
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-    implementation(project(":core:model"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(project(":core:network"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.jwtdecode)
 }
 kapt {
     correctErrorTypes = true

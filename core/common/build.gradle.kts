@@ -43,6 +43,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.media3.session)
     kapt(libs.hilt.android.compiler)
 
     implementation(libs.androidx.media3.ui)

@@ -1,11 +1,17 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
 import android.content.pm.ActivityInfo
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +20,9 @@ import io.github.posaydone.filmix.core.model.Episode
 import io.github.posaydone.filmix.core.model.File
 import io.github.posaydone.filmix.core.model.Season
 import io.github.posaydone.filmix.core.model.Series
+import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowDetails
+import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.Translation
@@ -49,6 +57,7 @@ sealed class VideoPlayerScreenUiState {
 @HiltViewModel
 class PlayerScreenViewModel @Inject constructor(
     val player: ExoPlayer,
+    val sessionManager: SessionManager,
     private val repository: FilmixRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -88,6 +97,8 @@ class PlayerScreenViewModel @Inject constructor(
     private val _contentType = MutableStateFlow<ShowType?>(null)
     val contentType: StateFlow<ShowType?> = _contentType.asStateFlow()
 
+    private lateinit var savedProgress: ShowProgress
+
     // StateFlow for the final video URL
     private val _videoUrl = MutableStateFlow<String?>(null)
     val videoUrl = _videoUrl.asStateFlow()
@@ -106,17 +117,58 @@ class PlayerScreenViewModel @Inject constructor(
         } ?: false
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+
+    val audioAttributes = AudioAttributes.Builder()
+        .setUsage(C.USAGE_MEDIA)
+        .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+        .build()
+
     private lateinit var series: Series
     private lateinit var movie: List<VideoWithQualities>
 
     init {
         player.prepare()
+
+        // Pause on Audio Focus Loss
+        player.setAudioAttributes(audioAttributes, true)
+        player.setHandleAudioBecomingNoisy(true)
+
+        // Retry on playback error
+        player.addListener(object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                if (shouldRetry(error)) {
+                    retryPlay()
+                }
+            }
+        })
+
+        // Return isLoading in PlayerState
+        player.addListener(object : Player.Listener {
+            override fun onIsLoadingChanged(isLoading: Boolean) {
+                _playerState.update { it.copy(isLoading = isLoading) }
+            }
+        })
+
         initialize()
+    }
+
+    fun shouldRetry(error: PlaybackException): Boolean {
+        return error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
+                error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+    }
+
+    fun retryPlay(retryCount: Int = 3) {
+        if (retryCount > 0) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                playVideo(player.currentPosition / 1000) // retry from current time
+            }, 2000)
+        }
     }
 
     // Инициализация данных
     private fun initialize() {
         viewModelScope.launch {
+            savedProgress = repository.getShowProgress(showId)
             when (val response = repository.getShowResource(showId)) {
                 is ShowResourceResponse.MovieResourceResponse -> {
                     movie = response.movies
@@ -140,10 +192,8 @@ class PlayerScreenViewModel @Inject constructor(
 
     private fun restoreMovieProgress() {
         viewModelScope.launch {
-            val savedMovieHistory = repository.getShowProgress(showId)
-
-            if (savedMovieHistory.isNotEmpty()) {
-                restoreMovieSavedProgress(savedMovieHistory.first())
+            if (savedProgress.isNotEmpty()) {
+                restoreMovieSavedProgress(savedProgress.first())
             } else {
                 setDefaultMovieProgress()
             }
@@ -185,10 +235,8 @@ class PlayerScreenViewModel @Inject constructor(
 
     private fun restoreSeriesProgress() {
         viewModelScope.launch {
-            val savedSeriesHistory = repository.getShowProgress(showId)
-
-            if (savedSeriesHistory.isNotEmpty()) {
-                restoreSeriesSavedProgress(savedSeriesHistory.first())
+            if (savedProgress.isNotEmpty()) {
+                restoreSeriesSavedProgress(savedProgress.first())
             } else {
                 setDefaultSeriesProgress()
             }

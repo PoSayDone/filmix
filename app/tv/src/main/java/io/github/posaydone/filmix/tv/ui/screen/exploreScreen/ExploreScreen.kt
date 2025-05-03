@@ -53,10 +53,10 @@ fun ExploreScreen(
     val searchState by viewModel.searchState.collectAsStateWithLifecycle()
 
     val childPadding = rememberChildPadding()
-    val tfFocusRequester = remember { FocusRequester() }
     var searchQuery by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val tfInteractionSource = remember { MutableInteractionSource() }
+    val tfFocusRequester = remember { FocusRequester() }
 
     val isTfFocused by tfInteractionSource.collectIsFocusedAsState()
 

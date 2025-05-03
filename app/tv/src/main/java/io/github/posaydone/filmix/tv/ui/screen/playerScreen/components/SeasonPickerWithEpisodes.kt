@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,8 +37,8 @@ fun ScrollableTabRow(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var currentIndex by remember { mutableStateOf(selectedTabIndex) }
-    var focusedIndex by remember { mutableStateOf(selectedTabIndex) }
+    var currentIndex by remember { mutableIntStateOf(selectedTabIndex) }
+    var focusedIndex by remember { mutableIntStateOf(selectedTabIndex) }
     val transition = updateTransition(focusedIndex, label = "Tab Transition")
 
     val offsetX by transition.animateFloat(

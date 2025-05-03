@@ -1,0 +1,11 @@
+package io.github.posaydone.filmix.core.model
+
+data class AuthResponse(
+    val user_id: Int,
+    val is_pro: Boolean,
+    val is_pro_plus: Boolean,
+    val pro_date: String,
+    val accessToken: String,
+    val refreshToken: String,
+    val ga: Boolean
+)

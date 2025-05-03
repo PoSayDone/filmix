@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -27,6 +29,7 @@ import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenViewModel
+import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.Loading
@@ -44,6 +47,7 @@ fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     Log.d("UISTATE", uiState.toString())
 
     when (val s = uiState) {
@@ -53,11 +57,36 @@ fun HomeScreen(
         }
 
         is HomeScreenUiState.Error -> {
-            Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
+            Column {
+                Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry, children = {
+                    Button(onClick = {
+                        s.sessionManager.saveAccessToken(
+                            s.sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
+                        )
+                    }) {
+                        Text("clear expiration time")
+                    }
+                    Button(onClick = {
+                        s.sessionManager.saveAccessToken(
+                            null, System.currentTimeMillis() - 1000
+                        )
+                    }) {
+                        Text("remove token")
+                    }
+                    Button(onClick = {
+                        s.sessionManager.saveAccessToken(
+                            "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
+                        )
+                    }) {
+                        Text("save wrong token")
+                    }
+                })
+            }
         }
 
         is HomeScreenUiState.Done -> {
-            Body(paddingValues = paddingValues,
+            Body(
+                paddingValues = paddingValues,
                 modifier = Modifier
                     .fillMaxSize()
                     .animateContentSize(),
@@ -67,6 +96,7 @@ fun HomeScreen(
                 popularSeries = s.popularSeries,
                 popularCartoons = s.popularCartoons,
                 navController = navController,
+                sessionManager = s.sessionManager,
                 reload = { viewModel.retry() })
         }
     }
@@ -83,6 +113,7 @@ private fun Body(
     popularSeries: ShowList,
     popularCartoons: ShowList,
     navController: NavHostController,
+    sessionManager: SessionManager,
     reload: () -> Unit,
 ) {
     val refreshState = rememberPullToRefreshState()
@@ -105,9 +136,30 @@ private fun Body(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 16.dp), verticalArrangement = Arrangement.Center
         ) {
+//            Button(onClick = {
+//                sessionManager.saveAccessToken(
+//                    sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
+//                )
+//            }) {
+//                Text("clear expiration time")
+//            }
+//            Button(onClick = {
+//                sessionManager.saveAccessToken(
+//                    null, System.currentTimeMillis() - 1000
+//                )
+//            }) {
+//                Text("remove token")
+//            }
+//            Button(onClick = {
+//                sessionManager.saveAccessToken(
+//                    "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
+//                )
+//            }) {
+//                Text("save wrong token")
+//            }
             ShowsRow(
                 lastSeenShows,
-                title = stringResource(R.string.last_seen),
+                title = stringResource(R.string.continue_watching),
                 navController = navController
             )
             ShowsRow(

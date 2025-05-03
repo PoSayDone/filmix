@@ -86,5 +86,6 @@ dependencies {
 
     // For image loading in Compose
     implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
     implementation(libs.androidx.core.splashscreen)
 }

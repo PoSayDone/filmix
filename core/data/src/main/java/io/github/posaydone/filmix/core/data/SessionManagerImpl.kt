@@ -2,30 +2,57 @@ package io.github.posaydone.filmix.core.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
+import androidx.core.content.edit
+import com.auth0.android.jwt.JWT
 import io.github.posaydone.filmix.core.model.SessionManager
 import javax.inject.Inject
+
+const val TAG = "SessionManager"
+
+fun extractExpirationTimeFromJwt(token: String): Long? {
+    return try {
+        val jwt = JWT(token)
+        jwt.expiresAt?.time
+    } catch (e: Exception) {
+        null
+    }
+}
 
 class SessionManagerImpl @Inject constructor(context: Context) : SessionManager {
     private var prefs: SharedPreferences =
         context.getSharedPreferences("Filmix", Context.MODE_PRIVATE)
 
     companion object {
+        const val USER_HASH = "user_hash"
         const val USER_TOKEN = "user_token"
         const val USER_REFRESH_TOKEN = "user_refresh_token"
         const val USER_TOKEN_EXPIRES_IN = "user_token_expires_in"
     }
 
-    override fun saveAccessToken(token: String, expiresIn: Long) {
-        val editor = prefs.edit()
-        editor.putString(USER_TOKEN, token)
-        editor.putLong(USER_TOKEN_EXPIRES_IN, expiresIn)
-        editor.apply()
+    override fun saveHash(hash: String) {
+        prefs.edit() {
+            putString(USER_HASH, hash)
+        }
+    }
+
+    override fun saveAccessToken(token: String?, fallbackExpiration: Long) {
+        val expiration = token?.let { extractExpirationTimeFromJwt(it) } ?: fallbackExpiration
+        Log.d(TAG, "saveAccessToken: ${expiration}, $fallbackExpiration")
+        prefs.edit() {
+            putString(USER_TOKEN, token)
+            putLong(USER_TOKEN_EXPIRES_IN, fallbackExpiration)
+        }
     }
 
     override fun saveRefreshToken(refresh: String) {
-        val editor = prefs.edit()
-        editor.putString(USER_REFRESH_TOKEN, refresh)
-        editor.apply()
+        prefs.edit() {
+            putString(USER_REFRESH_TOKEN, refresh)
+        }
+    }
+
+    override fun fetchHash(): String? {
+        return prefs.getString(USER_HASH, null)
     }
 
     override fun fetchAccessToken(): String? {
@@ -45,12 +72,19 @@ class SessionManagerImpl @Inject constructor(context: Context) : SessionManager 
         return fetchAccessToken() != null && currentTimeMills >= fetchTokenExpiresIn()
     }
 
+    override fun removeAccessToken() {
+        prefs.edit {
+            putString(USER_TOKEN, null)
+        }
+    }
+
     override fun clearTokens() {
-        val editor = prefs.edit()
-        editor.putString(USER_TOKEN, null)
-        editor.putString(USER_REFRESH_TOKEN, null)
-        editor.putLong(USER_TOKEN_EXPIRES_IN, Long.MIN_VALUE)
-        editor.apply()
+        prefs.edit {
+            putString(USER_TOKEN, null)
+            putString(USER_REFRESH_TOKEN, null)
+            putString(USER_HASH, null)
+            putLong(USER_TOKEN_EXPIRES_IN, Long.MIN_VALUE)
+        }
     }
 
 }

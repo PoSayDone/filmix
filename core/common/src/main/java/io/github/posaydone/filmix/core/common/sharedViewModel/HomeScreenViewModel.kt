@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.model.FilmixCategory
+import io.github.posaydone.filmix.core.model.SessionManager
+import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -25,19 +27,28 @@ private const val TAG = "HomeScreenViewModel"
 @Immutable
 sealed class HomeScreenUiState {
     data object Loading : HomeScreenUiState()
-    data class Error(val message: String, val onRetry: () -> Unit) : HomeScreenUiState()
+    data class Error(
+        val sessionManager: SessionManager,
+        val message: String,
+        val onRetry: () -> Unit,
+    ) :
+        HomeScreenUiState()
+
     data class Done(
+        val sessionManager: SessionManager,
         val lastSeenShows: ShowList,
         val viewingShows: ShowList,
         val popularMovies: ShowList,
         val popularSeries: ShowList,
         val popularCartoons: ShowList,
+        val getShowImages: suspend (showId: Int) -> ShowImages,
     ) : HomeScreenUiState()
 }
 
 @HiltViewModel
 class HomeScreenViewModel @Inject constructor(
     private val filmixRepository: FilmixRepository,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val retryChannel = Channel<Unit>()
 
@@ -62,16 +73,19 @@ class HomeScreenViewModel @Inject constructor(
             val error = results.firstOrNull { it.isFailure }
             if (error != null) {
                 HomeScreenUiState.Error(
+                    sessionManager = sessionManager,
                     message = error.exceptionOrNull()?.message ?: "Unknown error",
                     onRetry = { retry() }
                 )
             } else {
                 HomeScreenUiState.Done(
+                    sessionManager = sessionManager,
                     lastSeenShows = lastSeenResult.getOrThrow(),
                     viewingShows = viewingResult.getOrThrow(),
                     popularMovies = popularMoviesResult.getOrThrow(),
                     popularSeries = popularSeriesResult.getOrThrow(),
                     popularCartoons = popularCartoonsResult.getOrThrow(),
+                    getShowImages = { filmixRepository.getShowImages(it) }
                 )
             }
         }

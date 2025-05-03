@@ -7,8 +7,9 @@ import dagger.hilt.components.SingletonComponent
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.network.Constants
 import io.github.posaydone.filmix.core.network.interceptor.AuthInterceptor
+import io.github.posaydone.filmix.core.network.interceptor.TokenAuthenticator
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
-import io.github.posaydone.filmix.core.network.service.FilmixRefreshService
+import io.github.posaydone.filmix.core.network.service.FilmixAuthService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -20,31 +21,39 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 internal object NetworkModule {
     @Provides
+    fun provideTokenAuthenticator(
+        sessionManager: SessionManager,
+        filmixAuthService: FilmixAuthService,
+    ): TokenAuthenticator {
+        return TokenAuthenticator(sessionManager, filmixAuthService)
+    }
+
+    @Provides
     fun provideAuthInterceptor(
         sessionManager: SessionManager,
-        filmixRefreshService: FilmixRefreshService,
     ): AuthInterceptor {
-        return AuthInterceptor(sessionManager, filmixRefreshService)
+        return AuthInterceptor(sessionManager)
     }
 
     @Provides
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
             .addInterceptor(
                 authInterceptor
-            ).build()
+            ).authenticator(tokenAuthenticator).build()
 
     }
 
     @Provides
     @Singleton
-    fun provideFilmixRefreshService(): FilmixRefreshService {
+    fun provideFilmixAuthService(): FilmixAuthService {
         return Retrofit.Builder().baseUrl(Constants.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create()).build()
-            .create(FilmixRefreshService::class.java)
+            .create(FilmixAuthService::class.java)
     }
 
     @Provides
@@ -53,8 +62,8 @@ internal object NetworkModule {
         okHttpClient: OkHttpClient,
     ): FilmixApiService {
         return Retrofit.Builder().baseUrl(Constants.BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient)
-            .build().create(FilmixApiService::class.java)
+            .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
+            .create(FilmixApiService::class.java)
     }
 
 }

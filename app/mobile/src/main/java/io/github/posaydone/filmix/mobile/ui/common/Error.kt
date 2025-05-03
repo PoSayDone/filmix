@@ -12,7 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Error(modifier: Modifier = Modifier, onRetry: () -> Unit) {
+fun Error(
+    modifier: Modifier = Modifier, onRetry: () -> Unit,
+    children: (@Composable () -> Unit)? = null,
+) {
     Column(
         modifier = modifier.padding(24.dp),
         horizontalAlignment = Alignment.Start,
@@ -32,5 +35,6 @@ fun Error(modifier: Modifier = Modifier, onRetry: () -> Unit) {
         ) {
             Text("Retry")
         }
+        children?.invoke()
     }
 }

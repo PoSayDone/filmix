@@ -1,4 +1,4 @@
-@file:kotlin.OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@file:kotlin.OptIn(ExperimentalMaterial3Api::class)
 
 package io.github.posaydone.filmix.mobile.ui.screen.playerScreen
 
@@ -11,7 +11,6 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -24,7 +23,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -54,6 +52,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -104,16 +104,25 @@ import io.github.posaydone.filmix.mobile.ui.utils.toHhMmSs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private var TAG = "PlayerScreen"
+
 @Composable
-fun LockScreenOrientation(orientation: Int) {
+fun LockScreenOrientation() {
     val context = LocalContext.current
-    DisposableEffect(orientation) {
-        val activity = context.findActivity() ?: return@DisposableEffect onDispose {}
-        val originalOrientation = activity.requestedOrientation
-        activity.requestedOrientation = orientation
+    val activity = context as? Activity
+
+    // Save the previous orientation
+    val previousOrientation = remember { activity?.requestedOrientation }
+
+    DisposableEffect(Unit) {
+        // Lock to landscape mode (both landscape-left and landscape-right)
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
         onDispose {
-            // restore original orientation when view disappears
-            activity.requestedOrientation = originalOrientation
+            // Restore previous orientation
+            previousOrientation?.let {
+                activity?.requestedOrientation = it
+            }
         }
     }
 }
@@ -140,7 +149,9 @@ fun PlayerScreen(
     val selectedMovieTranslation by viewModel.selectedMovieTranslation.collectAsState()
     val selectedQuality by viewModel.selectedQuality.collectAsState()
     val showType by viewModel.contentType.collectAsState()
-    var scale by remember { mutableStateOf(1f) }
+
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
 
     val hasPrevEpisode by viewModel.hasPrevEpisode.collectAsState()
     val hasNextEpisode by viewModel.hasNextEpisode.collectAsState()
@@ -158,14 +169,13 @@ fun PlayerScreen(
         mutableStateOf(false)
     }
 
-
     val view = LocalView.current
     val window = (view.context as Activity).window
     val insetsController = WindowCompat.getInsetsController(window, view)
 
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 
-    LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+    LockScreenOrientation()
 
     val pulseState = rememberPlayerPulseState()
 
@@ -219,7 +229,8 @@ fun PlayerScreen(
 
     if (showType == ShowType.SERIES) {
         if (seasons != null && selectedSeason != null) {
-            EpisodeBottomSheet(viewModel = viewModel,
+            EpisodeBottomSheet(
+                viewModel = viewModel,
                 seasons = seasons!!,
                 selectedSeason = selectedSeason,
                 selectedEpisode = selectedEpisode,
@@ -255,68 +266,60 @@ fun PlayerScreen(
     }
 
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color.Black)
-        .focusable()
-        .pointerInput(Unit) {
-            detectTransformGestures { _, _, zoom, _ ->
-                if (zoom > 1) {
-                    viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
-                } else if (zoom < 1) {
-                    viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .focusable() // Kept focusable on the main box
+    ) {
+        AndroidView(
+            factory = {
+                PlayerView(it).apply {
+                    player = viewModel.player
+                    useController = false
+                    resizeMode = playerState.resizeMode
+                    keepScreenOn = playerState.isPlaying
                 }
-            }
-        }) {
-        AndroidView(factory = {
-            PlayerView(it).apply {
-                player = viewModel.player
-                useController = false
-                resizeMode = playerState.resizeMode
-                keepScreenOn = playerState.isPlaying
-            }
-        }, update = {
-            it.apply {
-                resizeMode = playerState.resizeMode
-                keepScreenOn = playerState.isPlaying
-            }
-        }, modifier = Modifier.fillMaxSize()
-        )
-
-        Box(
-            modifier = Modifier.fillMaxSize()
+            }, update = {
+                it.apply {
+                    resizeMode = playerState.resizeMode
+                    keepScreenOn = playerState.isPlaying
+                }
+            }, modifier = Modifier.fillMaxSize()
         )
 
         Row(
             modifier = Modifier.fillMaxSize()
         ) {
             // Left side for seeking backward
-            Box(modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        showControls = !showControls
-                    }, // Single tap for toggling controls
-                        onDoubleTap = {
-                            viewModel.player.seekBack()
-                            pulseState.setType(PlayerPulse.Type.BACK) // Optional feedback
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, _, zoom, _ ->
+                            if (zoom > 1) {
+                                viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
+                            } else if (zoom < 1) {
+                                viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
+                            }
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { offset ->
+                            showControls = !showControls
+                        }, onDoubleTap = { offset ->
+                            val screenWidth = size.width
+                            if (offset.x < screenWidth / 2) {
+                                // Left side double tap
+                                viewModel.player.seekBack()
+                                pulseState.setType(PlayerPulse.Type.BACK)
+                            } else {
+                                // Right side double tap
+                                viewModel.player.seekForward()
+                                pulseState.setType(PlayerPulse.Type.FORWARD)
+                            }
                         })
-                })
-
-            // Right side for seeking forward
-            Box(modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        showControls = !showControls
-                    }, // Single tap for toggling controls
-                        onDoubleTap = {
-                            viewModel.player.seekForward()
-                            pulseState.setType(PlayerPulse.Type.FORWARD) // Optional feedback
-                        })
-                })
+                    })
         }
 
         Row(
@@ -325,6 +328,16 @@ fun PlayerScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PlayerPulse(pulseState)
+        }
+
+        AnimatedVisibility(
+            visible = showControls, enter = fadeIn(), exit = fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .fillMaxSize()
+            )
         }
 
         AnimatedVisibility(
@@ -354,6 +367,27 @@ fun PlayerScreen(
                     onAudioClick = { isAudioSheetOpen = true },
                     onEpisodeClick = { isEpisodeBottomSheetOpen = true },
                 )
+//                Button(onClick = {
+//                    viewModel.sessionManager.saveAccessToken(
+//                        viewModel.sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
+//                    )
+//                }) {
+//                    Text("clear expiration time")
+//                }
+//                Button(onClick = {
+//                    viewModel.sessionManager.saveAccessToken(
+//                        null, System.currentTimeMillis() - 1000
+//                    )
+//                }) {
+//                    Text("remove token")
+//                }
+//                Button(onClick = {
+//                    viewModel.sessionManager.saveAccessToken(
+//                        "penisini", viewModel.sessionManager.fetchTokenExpiresIn()
+//                    )
+//                }) {
+//                    Text("save wrong token")
+//                }
                 Spacer(modifier = Modifier.weight(1f))
                 BottomControls(player = viewModel.player)
             }
@@ -574,7 +608,8 @@ private fun EpisodeBottomSheet(
             )
         }
 
-        ScrollableTabRow(selectedTabIndex = tabIndex,
+        ScrollableTabRow(
+            selectedTabIndex = tabIndex,
             edgePadding = 0.dp,
             modifier = Modifier.fillMaxWidth(),
             containerColor = Color.Transparent,

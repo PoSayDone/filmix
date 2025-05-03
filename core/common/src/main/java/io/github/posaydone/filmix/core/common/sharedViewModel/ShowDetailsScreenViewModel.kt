@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
@@ -23,6 +24,7 @@ sealed class ShowDetailsScreenUiState {
     data object Loading : ShowDetailsScreenUiState()
     data class Error(val message: String, val onRetry: () -> Unit) : ShowDetailsScreenUiState()
     data class Done(
+        val sessionManager: SessionManager,
         val showDetails: ShowDetails,
         val showImages: ShowImages,
         val showTrailers: ShowTrailers,
@@ -34,6 +36,7 @@ sealed class ShowDetailsScreenUiState {
 class ShowDetailsScreenViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     repository: FilmixRepository,
+    sessionManager: SessionManager,
 ) : ViewModel() {
     private val retryChannel = Channel<Unit>(Channel.RENDEZVOUS)
 
@@ -54,6 +57,7 @@ class ShowDetailsScreenViewModel @Inject constructor(
                         showImages = images,
                         showTrailers = trailers,
                         showProgress = history,
+                        sessionManager = sessionManager
                     )
                 } catch (error: Exception) {
                     ShowDetailsScreenUiState.Error(message = "Unknown error", onRetry = { retry() })

@@ -6,9 +6,11 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.posaydone.filmix.core.data.FilmixAuthRepository
 import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.data.SessionManagerImpl
 import io.github.posaydone.filmix.core.model.SessionManager
+import io.github.posaydone.filmix.core.network.FilmixAuthRemoteDataSource
 import io.github.posaydone.filmix.core.network.FilmixRemoteDataSource
 import javax.inject.Singleton
 
@@ -23,6 +25,13 @@ object DataModule {
         return FilmixRepository(apiService)
     }
 
+    @Provides
+    @Singleton
+    fun provideFilmixAuthRepository(
+        apiService: FilmixAuthRemoteDataSource,
+    ): FilmixAuthRepository {
+        return FilmixAuthRepository(apiService)
+    }
 
     @Provides
     @Singleton
