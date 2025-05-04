@@ -1,9 +1,14 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
+import android.app.Application
+import android.content.ComponentName
 import android.content.pm.ActivityInfo
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.compose.runtime.Immutable
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,9 +17,12 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import androidx.media3.ui.AspectRatioFrameLayout
+import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.posaydone.filmix.core.common.services.PlaybackService
 import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.model.Episode
 import io.github.posaydone.filmix.core.model.File
@@ -27,6 +35,8 @@ import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.Translation
 import io.github.posaydone.filmix.core.model.VideoWithQualities
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +44,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -41,7 +52,8 @@ import javax.inject.Inject
 data class PlayerState(
     val isPlaying: Boolean = false,
     val isLoading: Boolean = true,
-    val totalTime: Long = 0L,
+    val currentPosition: Long = 0L,
+    val duration: Long = 0L,
     val resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_FIT,
     val orientation: Int = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE,
 )
@@ -56,14 +68,12 @@ sealed class VideoPlayerScreenUiState {
 @androidx.media3.common.util.UnstableApi
 @HiltViewModel
 class PlayerScreenViewModel @Inject constructor(
-    val player: ExoPlayer,
     val sessionManager: SessionManager,
     private val repository: FilmixRepository,
-    private val savedStateHandle: SavedStateHandle,
+    context: Application,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-
-    private val TAG: String = "PlayerVIewModel"
-
+    private val TAG: String = "PlayerViewModel"
     private val showId = checkNotNull(savedStateHandle.get<Int>("showId"))
 
     private val _playerState = MutableStateFlow(PlayerState())
@@ -118,50 +128,85 @@ class PlayerScreenViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
 
-    val audioAttributes = AudioAttributes.Builder()
-        .setUsage(C.USAGE_MEDIA)
-        .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-        .build()
+    val audioAttributes =
+        AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+            .build()
 
     private lateinit var series: Series
     private lateinit var movie: List<VideoWithQualities>
 
+    private var positionJob: Job? = null
+
+    private val _playerController = MutableStateFlow<MediaController?>(null)
+    private val sessionToken =
+        SessionToken(context, ComponentName(context, PlaybackService::class.java))
+    private var mediaControllerFuture: ListenableFuture<MediaController>? =
+        MediaController.Builder(context, sessionToken).buildAsync()
+    var playerController: StateFlow<MediaController?> = _playerController.asStateFlow()
+
+
     init {
-        player.prepare()
+        mediaControllerFuture?.let {
+            it.addListener({
+                val controller = it.get()
 
-        // Pause on Audio Focus Loss
-        player.setAudioAttributes(audioAttributes, true)
-        player.setHandleAudioBecomingNoisy(true)
+                controller.setAudioAttributes(audioAttributes, true)
 
-        // Retry on playback error
-        player.addListener(object : Player.Listener {
-            override fun onPlayerError(error: PlaybackException) {
-                if (shouldRetry(error)) {
-                    retryPlay()
+                controller.addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        if (shouldRetry(error)) retryPlay()
+                    }
+
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        _playerState.update { it.copy(isPlaying = isPlaying) }
+                    }
+
+                    override fun onPlaybackStateChanged(state: Int) {
+                        val isLoading =
+                            state == Player.STATE_BUFFERING || state == Player.STATE_IDLE
+                        _playerState.update { it.copy(isLoading = isLoading) }
+                    }
+
+                })
+
+                _playerState.update { it.copy(isLoading = true) }
+                initialize()
+                controller.playWhenReady = true
+                _playerController.value = controller // <-- Установка значения в StateFlow
+                startTrackingPlayback()
+            }, ContextCompat.getMainExecutor(context))
+        }
+
+    }
+
+    private fun startTrackingPlayback() {
+        positionJob?.cancel()
+        positionJob = viewModelScope.launch {
+            while (isActive) {
+                playerController.value?.let { player ->
+                    _playerState.update {
+                        it.copy(
+                            currentPosition = player.currentPosition,
+                            duration = player.duration.coerceAtLeast(0)
+                        )
+                    }
                 }
+                delay(500) // Update every 500ms
             }
-        })
-
-        // Return isLoading in PlayerState
-        player.addListener(object : Player.Listener {
-            override fun onIsLoadingChanged(isLoading: Boolean) {
-                _playerState.update { it.copy(isLoading = isLoading) }
-            }
-        })
-
-        initialize()
+        }
     }
 
     fun shouldRetry(error: PlaybackException): Boolean {
-        return error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
-                error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+        return error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED || error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
     }
 
     fun retryPlay(retryCount: Int = 3) {
         if (retryCount > 0) {
-            Handler(Looper.getMainLooper()).postDelayed({
-                playVideo(player.currentPosition / 1000) // retry from current time
-            }, 2000)
+            _playerController.value.let {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    playVideo(it!!.currentPosition / 1000) // retry from current time
+                }, 2000)
+            }
         }
     }
 
@@ -234,6 +279,7 @@ class PlayerScreenViewModel @Inject constructor(
     }
 
     private fun restoreSeriesProgress() {
+        Log.d(TAG, "restoreSeriesProgress: restoring series")
         viewModelScope.launch {
             if (savedProgress.isNotEmpty()) {
                 restoreSeriesSavedProgress(savedProgress.first())
@@ -244,6 +290,7 @@ class PlayerScreenViewModel @Inject constructor(
     }
 
     private fun restoreSeriesSavedProgress(savedSeries: ShowProgressItem) {
+        Log.d(TAG, "restoreSeriesProgress: restoring series saved")
         val season = seasons.value?.find { it.season == savedSeries.season }
         _selectedSeason.value = season
 
@@ -321,122 +368,120 @@ class PlayerScreenViewModel @Inject constructor(
 
     // Function to set the selected translation
     fun setTranslation(translation: Translation) {
-        val currentTime = player.currentPosition / 1000
-        val oldQuality = selectedQuality.value?.quality
-        _selectedTranslation.value = translation
+        playerController.value?.let { player ->
+            val currentTime = player.currentPosition / 1000
+            val oldQuality = selectedQuality.value?.quality
+            _selectedTranslation.value = translation
 
-        val oldQualityInNewTranslation =
-            translation.files.find { it.quality == oldQuality }
-        _selectedQuality.value = oldQualityInNewTranslation ?: translation.files.firstOrNull()
+            val oldQualityInNewTranslation = translation.files.find { it.quality == oldQuality }
+            _selectedQuality.value = oldQualityInNewTranslation ?: translation.files.firstOrNull()
 
-        _videoUrl.value = _selectedQuality.value?.url
-        playVideo(currentTime)
-        saveProgress()
+            _videoUrl.value = _selectedQuality.value?.url
+            playVideo(currentTime)
+            saveProgress()
+        }
     }
 
     fun setMovieTranslation(movieTranslation: VideoWithQualities) {
-        val currentTime = player.currentPosition / 1000
-        val oldQuality = selectedQuality.value?.quality
-        _selectedMovieTranslation.value = movieTranslation
+        playerController.value?.let { player ->
+            val currentTime = player.currentPosition / 1000
+            val oldQuality = selectedQuality.value?.quality
+            _selectedMovieTranslation.value = movieTranslation
 
-        val oldQualityInNewTranslation =
-            movieTranslation.files.find { it.quality == oldQuality }
-        _selectedQuality.value = oldQualityInNewTranslation ?: movieTranslation.files.firstOrNull()
+            val oldQualityInNewTranslation =
+                movieTranslation.files.find { it.quality == oldQuality }
+            _selectedQuality.value =
+                oldQualityInNewTranslation ?: movieTranslation.files.firstOrNull()
 
-        _videoUrl.value = _selectedQuality.value?.url
-        playVideo(currentTime)
-        saveProgress()
+            _videoUrl.value = _selectedQuality.value?.url
+            playVideo(currentTime)
+            saveProgress()
+        }
     }
 
     // Function to set the selected quality
     fun setQuality(qualityFile: File) {
-        val currentTime = player.currentPosition / 1000
-        _selectedQuality.value = qualityFile
-        _videoUrl.value = selectedQuality.value?.url
-        playVideo(currentTime)
-        saveProgress()
+        playerController.value?.let { player ->
+            val currentTime = player.currentPosition / 1000
+            _selectedQuality.value = qualityFile
+            _videoUrl.value = selectedQuality.value?.url
+            playVideo(currentTime)
+            saveProgress()
+        }
     }
 
 
-    fun playVideo(time: Long = 0L) {
-        videoUrl.value?.let { url ->
-            val mediaItem = MediaItem.fromUri(url)
-            player.setMediaItem(mediaItem)
-            player.prepare()
-            player.play()
-            if (time != 0L) {
-                player.seekTo(time * 1000)
-            }
-            _playerState.update {
-                it.copy(
-                    isPlaying = true, totalTime = mediaItem.mediaMetadata.durationMs ?: 0L
-                )
-            }
+    fun playVideo(time: Long = 0) {
+        val url = selectedQuality.value?.url ?: return
+        val mediaItem = MediaItem.fromUri(Uri.parse(url))
+
+        val controller = playerController.value ?: return
+
+        controller.setMediaItem(mediaItem)
+        controller.prepare()
+
+        if (time > 0) {
+            controller.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == Player.STATE_READY) {
+                        controller.seekTo(time * 1000L)
+                        controller.removeListener(this)
+                    }
+                }
+            })
         }
     }
 
     fun saveProgress() {
-        val season = selectedSeason.value
-        val episode = selectedEpisode.value
-        val translation = _selectedTranslation.value
-        val movieTranslation = _selectedMovieTranslation.value
-        val qualityFile = _selectedQuality.value
-        val time = player.currentPosition / 1000
+        playerController.value?.let { player ->
+            val season = selectedSeason.value
+            val episode = selectedEpisode.value
+            val translation = _selectedTranslation.value
+            val movieTranslation = _selectedMovieTranslation.value
+            val qualityFile = _selectedQuality.value
+            val time = player.currentPosition / 1000
 
-        if (contentType.value == ShowType.MOVIE) {
-            if (movieTranslation != null && qualityFile != null) viewModelScope.launch {
-                val savedSeriesProgress = ShowProgressItem(
-                    0,
-                    0,
-                    movieTranslation.voiceover,
-                    time,
-                    qualityFile.quality,
-                )
-                repository.addShowProgress(showId, savedSeriesProgress)
-            }
-        } else {
-            if (season != null && episode != null && translation != null && qualityFile != null) viewModelScope.launch {
-                val savedSeriesProgress = ShowProgressItem(
-                    season.season,
-                    episode.episode,
-                    translation.translation,
-                    time,
-                    qualityFile.quality,
-                )
-                repository.addShowProgress(showId, savedSeriesProgress)
+            if (contentType.value == ShowType.MOVIE) {
+                if (movieTranslation != null && qualityFile != null) viewModelScope.launch {
+                    val savedSeriesProgress = ShowProgressItem(
+                        0,
+                        0,
+                        movieTranslation.voiceover,
+                        time,
+                        qualityFile.quality,
+                    )
+                    repository.addShowProgress(showId, savedSeriesProgress)
+                }
+            } else {
+                if (season != null && episode != null && translation != null && qualityFile != null) viewModelScope.launch {
+                    val savedSeriesProgress = ShowProgressItem(
+                        season.season,
+                        episode.episode,
+                        translation.translation,
+                        time,
+                        qualityFile.quality,
+                    )
+                    repository.addShowProgress(showId, savedSeriesProgress)
+                }
             }
         }
     }
 
     fun onPlayPauseClick() {
-        if (player.isPlaying) {
-            player.pause().also {
-                _playerState.update {
-                    it.copy(isPlaying = false)
-                }
-            }
-        } else {
-            player.play().also {
-                _playerState.update {
-                    it.copy(isPlaying = true)
-                }
-            }
+        playerController.value?.let { player ->
+            if (player.isPlaying) player.pause() else player.play()
         }
     }
 
     fun pause() {
-        player.pause().also {
-            _playerState.update {
-                it.copy(isPlaying = false)
-            }
+        playerController.value?.let { player ->
+            player.pause()
         }
     }
 
     fun play() {
-        player.play().also {
-            _playerState.update {
-                it.copy(isPlaying = true)
-            }
+        playerController.value?.let { player ->
+            player.play()
         }
     }
 
@@ -486,6 +531,44 @@ class PlayerScreenViewModel @Inject constructor(
         _playerState.update {
             it.copy(resizeMode = resizeMode)
         }
+    }
+
+    fun seekForward() {
+        playerController.value?.let { it.seekForward() }
+    }
+
+    fun seekBack() {
+        playerController.value?.let { it.seekBack() }
+    }
+
+    fun seekTo(to: Long) {
+        playerController.value?.let { it.seekTo(to) }
+    }
+
+
+    override fun onCleared() {
+        saveProgress()
+        mediaControllerFuture?.let {
+            _playerController.value?.let { player ->
+                player.stop()
+                player.clearMediaItems()
+                player.release()
+            }
+            MediaController.releaseFuture(it)
+            _playerController.value = null
+        }
+        mediaControllerFuture = null
+        positionJob?.cancel()
+        positionJob = null
+        _playerState.update {
+            it.copy(
+                isPlaying = false,
+                isLoading = false,
+                currentPosition = 0L,
+                duration = 0L
+            )
+        }
+        super.onCleared()
     }
 }
 

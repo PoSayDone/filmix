@@ -1,18 +1,22 @@
 package io.github.posaydone.filmix.tv.ui.common
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,10 +24,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -40,6 +49,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -55,7 +65,6 @@ import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.github.posaydone.filmix.core.model.Show
-import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.tv.R
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
@@ -65,9 +74,11 @@ enum class ItemDirection(val aspectRatio: Float) {
     Vertical(10.5f / 16f), Horizontal(16f / 9f);
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+private const val TAG = "ShowsRow"
+
 @Composable
 fun ShowsRow(
+    cardWidth: Dp = 148.dp,
     showList: ShowList,
     modifier: Modifier = Modifier,
     itemDirection: ItemDirection = ItemDirection.Vertical,
@@ -81,11 +92,19 @@ fun ShowsRow(
     showIndexOverImage: Boolean = false,
     onShowSelected: (show: Show) -> Unit = {},
     onShowFocused: ((Show) -> Unit)? = {},
+    requestInitialFocus: Boolean = false,
 ) {
     val (lazyRow, firstItem) = remember { FocusRequester.createRefs() }
+    var isInitialyFocused = remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.focusGroup()
+            .onGloballyPositioned {
+                if (!isInitialyFocused.value && requestInitialFocus) {
+                    lazyRow.requestFocus()
+                    isInitialyFocused.value = true
+                }
+            }
     ) {
         if (title != null) {
             Text(
@@ -108,7 +127,8 @@ fun ShowsRow(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier
                     .focusRequester(lazyRow)
-                    .focusRestorer { firstItem }) {
+                    .focusRestorer(firstItem)
+            ) {
                 itemsIndexed(movieState, key = { _, show -> show.id }) { index, show ->
                     val itemModifier = if (index == 0) {
                         Modifier.focusRequester(firstItem)
@@ -119,6 +139,7 @@ fun ShowsRow(
                     ShowsRowItem(
                         modifier = itemModifier.weight(1f),
                         index = index,
+                        cardWidth = cardWidth,
                         itemDirection = itemDirection,
                         onShowSelected = {
                             lazyRow.saveFocusedChild()
@@ -135,7 +156,6 @@ fun ShowsRow(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ImmersiveShowsRow(
     showList: ShowList,
@@ -150,36 +170,54 @@ fun ImmersiveShowsRow(
     showItemTitle: Boolean = true,
     showIndexOverImage: Boolean = false,
     onShowSelected: (Show) -> Unit = {},
-    getShowImages: suspend (showId: Int) -> ShowImages,
+    requestInitialFocus: Boolean = false,
 ) {
+
     var isListFocused by remember { mutableStateOf(false) }
     var selectedShow by remember(showList) { mutableStateOf(showList.first()) }
-    var showImages by remember { mutableStateOf<ShowImages?>(null) }
+    val animatedCardWidth by animateDpAsState(
+        targetValue = if (isListFocused) 110.dp else 148.dp,
+        animationSpec = tween(durationMillis = 300),
+        label = "cardWidthAnimation"
+    )
 
     Box(
         modifier
-            .bringIntoViewIfChildrenAreFocused()
             .fillMaxSize()
+            .bringIntoViewIfChildrenAreFocused()
     ) {
-        Box(Modifier.fillMaxSize()) {
-            Background(
-                show = selectedShow,
-                showImages = showImages
-            )
-            AnimatedContent(
-                targetState = selectedShow,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(durationMillis = 500)) togetherWith
-                            fadeOut(animationSpec = tween(durationMillis = 500))
-                },
-                label = "",
-                contentAlignment = Alignment.CenterStart,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = startPadding, end = 30.dp, top = 90.dp)
-                    .fillMaxWidth(0.6f)
-            ) { show ->
-                MovieDescription(show)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(LocalConfiguration.current.run { screenHeightDp.dp } - 32.dp)) {
+            AnimatedVisibility(
+                visible = isListFocused, enter = fadeIn(), exit = fadeOut()
+            ) {
+                Background(
+                    show = selectedShow
+                )
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .gradientOverlay(MaterialTheme.colorScheme.surface)
+                )
+                AnimatedContent(
+                    targetState = selectedShow,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(durationMillis = 500)) togetherWith fadeOut(
+                            animationSpec = tween(durationMillis = 500)
+                        )
+                    },
+                    label = "",
+                    contentAlignment = Alignment.CenterStart,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.6f)
+                        .align(Alignment.CenterStart)
+                        .padding(start = startPadding, end = 30.dp, top = 30.dp)
+                ) { show ->
+                    MovieDescription(show)
+                }
             }
         }
 
@@ -188,6 +226,8 @@ fun ImmersiveShowsRow(
                 .align(Alignment.BottomStart)
                 .onFocusChanged { isListFocused = it.hasFocus }) {
             ShowsRow(
+                requestInitialFocus = requestInitialFocus,
+                cardWidth = animatedCardWidth,
                 showList = showList,
                 itemDirection = itemDirection,
                 startPadding = startPadding,
@@ -199,7 +239,7 @@ fun ImmersiveShowsRow(
                 onShowSelected = onShowSelected,
                 onShowFocused = {
                     selectedShow = it
-                }
+                },
             )
         }
     }
@@ -217,6 +257,7 @@ private fun ShowsRowItem(
     modifier: Modifier = Modifier,
     itemDirection: ItemDirection = ItemDirection.Vertical,
     onShowFocused: (Show) -> Unit = {},
+    cardWidth: Dp = 148.dp,
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -226,7 +267,7 @@ private fun ShowsRowItem(
                 showItemTitle = showItemTitle, isItemFocused = isFocused, show = show
             )
         }, modifier = Modifier
-            .width(148.dp)
+            .width(cardWidth)
             .onFocusChanged {
                 isFocused = it.isFocused
                 if (it.isFocused) {
@@ -250,7 +291,7 @@ private fun ShowsRowItemImage(
     index: Int,
     modifier: Modifier = Modifier,
 ) {
-    Box(contentAlignment = Alignment.CenterStart) {
+    Box(modifier = Modifier, contentAlignment = Alignment.CenterStart) {
         PosterImage(
             show = show,
             modifier = modifier
@@ -313,25 +354,17 @@ private fun ShowsRowItemText(
 @Composable
 private fun Background(
     show: Show,
-    showImages: ShowImages?,
 ) {
-    val image = showImages?.frames?.getOrNull(0)?.url ?: show.poster
+    val image = show.poster
 
     Crossfade(
-        targetState = image,
-        label = "PosterCrossfade",
-        animationSpec = tween(durationMillis = 500)
+        targetState = image, label = "PosterCrossfade", animationSpec = tween(durationMillis = 500)
     ) { showingImage ->
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(showingImage)
-                .build(),
+            model = ImageRequest.Builder(LocalContext.current).data(showingImage).build(),
             contentDescription = stringResource(R.string.app_name),
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .height(LocalConfiguration.current.run { screenHeightDp.dp } - 32.dp)
-                .gradientOverlay(MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxSize()
         )
     }
 }

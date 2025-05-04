@@ -14,6 +14,7 @@ import io.github.posaydone.filmix.tv.ui.screen.exploreScreen.ExploreScreen
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.HomeScreen
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.VideoPlayerScreen
 import io.github.posaydone.filmix.tv.ui.screen.showDetailsScreen.ShowDetailsScreen
+import io.github.posaydone.filmix.tv.utils.LocalFocusTransferredOnLaunchProvider
 
 @Composable
 fun NavGraph(
@@ -46,20 +47,31 @@ private fun NavGraphBuilder.mainGraph(
 ) {
     navigation<Screens.Main>(startDestination = Screens.Main.Home) {
         composable<Screens.Main.Home> {
-            HomeScreen(navController = navController)
+            BackHandler {
+                navController.popBackStack()
+            }
+            LocalFocusTransferredOnLaunchProvider {
+                HomeScreen(
+                    navController = navController,
+                )
+            }
         }
         composable<Screens.Main.Explore> {
             BackHandler {
                 navController.popBackStack()
             }
-            ExploreScreen(navController = navController)
+            LocalFocusTransferredOnLaunchProvider {
+                ExploreScreen(navController = navController)
+            }
         }
         composable<Screens.Main.Details> {
+            val args = it.toRoute<Screens.Main.Details>()
             BackHandler {
                 navController.popBackStack()
             }
-            val args = it.toRoute<Screens.Main.Details>()
-            ShowDetailsScreen(args.showId, navController)
+            LocalFocusTransferredOnLaunchProvider {
+                ShowDetailsScreen(args.showId, navController)
+            }
         }
     }
 }

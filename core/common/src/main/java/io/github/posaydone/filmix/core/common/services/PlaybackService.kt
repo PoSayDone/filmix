@@ -1,8 +1,11 @@
 package io.github.posaydone.filmix.core.common.services
 
+import android.util.Log
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+
+private const val TAG = "tag"
 
 class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
@@ -19,6 +22,8 @@ class PlaybackService : MediaSessionService() {
 
     // Remember to release the player and media session in onDestroy
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy: destroy")
+
         mediaSession?.run {
             player.release()
             release()

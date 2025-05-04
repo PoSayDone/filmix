@@ -43,11 +43,11 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-    implementation(libs.media3.session)
     kapt(libs.hilt.android.compiler)
 
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
 
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.core.ktx)

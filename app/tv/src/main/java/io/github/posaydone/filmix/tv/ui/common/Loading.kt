@@ -1,21 +1,21 @@
 package io.github.posaydone.filmix.tv.ui.common
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.tv.material3.Text
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun Loading(
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Text("Loading")
-//            CircularProgressIndicator(
-//                modifier = Modifier.width(64.dp),
-//                color = MaterialTheme.colorScheme.secondary,
-//                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-//            )
+    Box(modifier = modifier.focusable(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(
+            progress = 0.75f,
+            modifier = Modifier.size(64.dp),
+        )
     }
 }

@@ -24,11 +24,9 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.AutoAwesomeMotion
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,10 +47,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
-import androidx.tv.material3.Button
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
@@ -83,7 +80,6 @@ import io.github.posaydone.filmix.tv.ui.screen.playerScreen.components.VideoPlay
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.components.rememberVideoPlayerPulseState
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.components.rememberVideoPlayerState
 import io.github.posaydone.filmix.tv.ui.utils.handleDPadKeyEvents
-import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -100,15 +96,16 @@ fun VideoPlayerScreen(
 ) {
     val showDetails by viewModel.details.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
+    val player = viewModel.playerController.collectAsState().value
 
-    when (showDetails) {
-        null -> {
+    when (showDetails == null || player == null) {
+        true -> {
             Loading(modifier = Modifier.fillMaxSize())
         }
 
-        else -> {
+        false -> {
             VideoPlayerScreenContent(
-                viewModel.player, viewModel, playerState, showDetails!!
+                player, viewModel, playerState, showDetails!!
             )
         }
     }
@@ -117,7 +114,7 @@ fun VideoPlayerScreen(
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayerScreenContent(
-    player: ExoPlayer,
+    player: MediaController,
     viewModel: PlayerScreenViewModel,
     playerState: PlayerState,
     showDetails: ShowDetails,
@@ -134,13 +131,9 @@ fun VideoPlayerScreenContent(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_STOP -> {
+                Lifecycle.Event.ON_PAUSE -> {
                     viewModel.saveProgress()
-                    viewModel.player.pause()
-                }
-
-                Lifecycle.Event.ON_DESTROY -> {
-                    viewModel.player.stop()
+                    viewModel.pause()
                 }
 
                 else -> {}
@@ -151,16 +144,12 @@ fun VideoPlayerScreenContent(
 
         onDispose {
             viewModel.saveProgress()
-            viewModel.player.stop()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
 
     val videoPlayerState = rememberVideoPlayerState(hideSeconds = 4)
-
-    var contentCurrentPosition by remember { mutableLongStateOf(0L) }
-    var isPlaying: Boolean by remember { mutableStateOf(player.isPlaying) }
 
     var isAudioDialogOpen by rememberSaveable {
         mutableStateOf(false)
@@ -172,21 +161,18 @@ fun VideoPlayerScreenContent(
         mutableStateOf(false)
     }
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(300)
-            contentCurrentPosition = player.currentPosition
-            isPlaying = player.isPlaying
-        }
-    }
-
     val pulseState = rememberVideoPlayerPulseState()
     val focusRequester = remember { FocusRequester() }
 
     Box(
         Modifier
             .dPadEvents(
-                player, isEpisodeDialogOpen, videoPlayerState, pulseState
+                seekBack = { viewModel.seekBack() },
+                seekForward = { viewModel.seekForward() },
+                pause = { viewModel.pause() },
+                isEpisodeDialogOpen,
+                videoPlayerState,
+                pulseState
             )
             .fillMaxSize()
             .background(color = Color.Black)
@@ -194,31 +180,35 @@ fun VideoPlayerScreenContent(
     ) {
 
 
-        AndroidView(factory = {
-            PlayerView(context).apply { useController = false }
-        }, update = {
-            it.player = player
-            it.apply {
-                resizeMode = playerState.resizeMode
-                keepScreenOn = playerState.isPlaying
-            }
-        }, modifier = Modifier.fillMaxSize()
+        AndroidView(
+            factory = {
+                PlayerView(context).apply { useController = false }
+            }, update = {
+                it.player = player
+                it.apply {
+                    resizeMode = playerState.resizeMode
+                    keepScreenOn = playerState.isPlaying
+                }
+            }, modifier = Modifier.fillMaxSize()
         )
 
 
-        VideoPlayerOverlay(modifier = Modifier.align(Alignment.BottomCenter),
+        VideoPlayerOverlay(
+            modifier = Modifier.align(Alignment.BottomCenter),
             focusRequester = focusRequester,
             state = videoPlayerState,
-            isPlaying = isPlaying,
+            isPlaying = player.isPlaying,
             pulseState = pulseState,
-            centerButton = { VideoPlayerPulse(pulseState) },
+            centerButton = { VideoPlayerPulse(pulseState, playerState.isLoading) },
             subtitles = { /* TODO Implement subtitles */ },
             controls = {
-                VideoPlayerControls(showDetails,
-                    isPlaying,
+                VideoPlayerControls(
+                    showDetails,
+                    isPlaying = player.isPlaying,
                     showType,
-                    contentCurrentPosition,
-                    player,
+                    currentPosition = playerState.currentPosition,
+                    duration = playerState.duration,
+                    player = player,
                     videoPlayerState,
                     focusRequester,
                     changeSizing = {
@@ -236,7 +226,8 @@ fun VideoPlayerScreenContent(
             })
 
 
-        Dialogs(focusRequester,
+        Dialogs(
+            focusRequester,
             viewModel,
             isEpisodeDialogOpen,
             isAudioDialogOpen,
@@ -254,8 +245,9 @@ fun VideoPlayerControls(
     showDetails: ShowDetails,
     isPlaying: Boolean,
     showType: ShowType?,
-    contentCurrentPosition: Long,
-    exoPlayer: ExoPlayer,
+    currentPosition: Long,
+    duration: Long,
+    player: MediaController,
     state: VideoPlayerState,
     focusRequester: FocusRequester,
     changeSizing: () -> Unit,
@@ -269,75 +261,76 @@ fun VideoPlayerControls(
 ) {
     val onPlayPauseToggle = { shouldPlay: Boolean ->
         if (shouldPlay) {
-            exoPlayer.play()
+            player.play()
         } else {
-            exoPlayer.pause()
+            player.pause()
         }
     }
 
 
-    VideoPlayerMainFrame(mediaTitle = {
-        VideoPlayerMediaTitle(
-            title = showDetails.title,
-            secondaryText = showDetails.year.toString(),
-            tertiaryText = showDetails.directors?.get(0)?.name ?: "",
-            type = VideoPlayerMediaTitleType.DEFAULT
-        )
-    }, mediaActions = {
-        Row(
-            modifier = Modifier.padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (showType == ShowType.SERIES) {
+    VideoPlayerMainFrame(
+        mediaTitle = {
+            VideoPlayerMediaTitle(
+                title = showDetails.title,
+                secondaryText = showDetails.year.toString(),
+                tertiaryText = showDetails.directors?.get(0)?.name ?: "",
+                type = VideoPlayerMediaTitleType.DEFAULT
+            )
+        }, mediaActions = {
+            Row(
+                modifier = Modifier.padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showType == ShowType.SERIES) {
+                    VideoPlayerControlsIcon(
+                        icon = Icons.Rounded.AutoAwesomeMotion,
+                        state = state,
+                        isPlaying = isPlaying,
+                        contentDescription = "Playlist button",
+                        onClick = openEpisodeSheet,
+                    )
+                }
                 VideoPlayerControlsIcon(
-                    icon = Icons.Rounded.AutoAwesomeMotion,
+                    modifier = Modifier.padding(start = 12.dp),
+                    icon = Icons.Default.Audiotrack,
                     state = state,
                     isPlaying = isPlaying,
-                    contentDescription = "Playlist button",
-                    onClick = openEpisodeSheet,
+                    contentDescription = "Captions button",
+                    onClick = openAudioSheet,
+                )
+                VideoPlayerControlsIcon(
+                    modifier = Modifier.padding(start = 12.dp),
+                    icon = Icons.Default.Crop,
+                    state = state,
+                    isPlaying = isPlaying,
+                    contentDescription = "Video crop button",
+                    onClick = changeSizing
+                )
+                VideoPlayerControlsIcon(
+                    modifier = Modifier.padding(start = 12.dp),
+                    icon = Icons.Default.Settings,
+                    state = state,
+                    isPlaying = isPlaying,
+                    contentDescription = "Settings button",
+                    onClick = openQualitySheet,
                 )
             }
-            VideoPlayerControlsIcon(
-                modifier = Modifier.padding(start = 12.dp),
-                icon = Icons.Default.Audiotrack,
+        }, seeker = {
+            VideoPlayerSeeker(
+                focusRequester = focusRequester,
                 state = state,
                 isPlaying = isPlaying,
-                contentDescription = "Captions button",
-                onClick = openAudioSheet,
+                onPlayPauseToggle = onPlayPauseToggle,
+                showType = showType,
+                onPrevEpisodeClick = onPrevEpisodeClick,
+                onNextEpisodeClick = onNextEpisodeClick,
+                hasPrevEpisode = hasPrevEpisode,
+                hasNextEpisode = hasNextEpisode,
+                onSeek = { player.seekTo(player.duration.times(it).toLong()) },
+                contentProgress = currentPosition.milliseconds,
+                contentDuration = duration.milliseconds
             )
-            VideoPlayerControlsIcon(
-                modifier = Modifier.padding(start = 12.dp),
-                icon = Icons.Default.Crop,
-                state = state,
-                isPlaying = isPlaying,
-                contentDescription = "Video crop button",
-                onClick = changeSizing
-            )
-            VideoPlayerControlsIcon(
-                modifier = Modifier.padding(start = 12.dp),
-                icon = Icons.Default.Settings,
-                state = state,
-                isPlaying = isPlaying,
-                contentDescription = "Settings button",
-                onClick = openQualitySheet,
-            )
-        }
-    }, seeker = {
-        VideoPlayerSeeker(
-            focusRequester = focusRequester,
-            state = state,
-            isPlaying = isPlaying,
-            onPlayPauseToggle = onPlayPauseToggle,
-            showType = showType,
-            onPrevEpisodeClick = onPrevEpisodeClick,
-            onNextEpisodeClick = onNextEpisodeClick,
-            hasPrevEpisode = hasPrevEpisode,
-            hasNextEpisode = hasNextEpisode,
-            onSeek = { exoPlayer.seekTo(exoPlayer.duration.times(it).toLong()) },
-            contentProgress = contentCurrentPosition.milliseconds,
-            contentDuration = exoPlayer.duration.milliseconds
-        )
-    }, more = null
+        }, more = null
     )
 }
 
@@ -475,7 +468,8 @@ private fun QualityDialog(
 
 @Composable
 fun <T> SingleSelectionCard(selectionOption: T, selectedOption: T?, onOptionClicked: (T) -> Unit) {
-    ListItem(headlineContent = { Text(text = selectionOption.toString()) },
+    ListItem(
+        headlineContent = { Text(text = selectionOption.toString()) },
         scale = ListItemDefaults.scale(focusedScale = 1.02f),
         selected = false,
         onClick = { onOptionClicked(selectionOption) },
@@ -568,18 +562,20 @@ private fun Dialogs(
 }
 
 private fun Modifier.dPadEvents(
-    exoPlayer: ExoPlayer,
+    seekBack: () -> Unit,
+    seekForward: () -> Unit,
+    pause: () -> Unit,
     isEpisodeSheetOpen: Boolean,
     videoPlayerState: VideoPlayerState,
     pulseState: VideoPlayerPulseState,
 ): Modifier = this.handleDPadKeyEvents(onLeft = {
     if (!videoPlayerState.controlsVisible && !isEpisodeSheetOpen) {
-        exoPlayer.seekBack()
+        seekBack()
         pulseState.setType(VideoPlayerPulse.Type.BACK)
     }
 }, onRight = {
     if (!videoPlayerState.controlsVisible && !isEpisodeSheetOpen) {
-        exoPlayer.seekForward()
+        seekForward()
         pulseState.setType(VideoPlayerPulse.Type.FORWARD)
     }
 }, onUp = {
@@ -588,7 +584,7 @@ private fun Modifier.dPadEvents(
     if (!isEpisodeSheetOpen) videoPlayerState.showControls()
 }, onEnter = {
     if (!isEpisodeSheetOpen) {
-        exoPlayer.pause()
+        pause()
         videoPlayerState.showControls()
     }
 })

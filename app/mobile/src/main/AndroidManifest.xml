@@ -26,15 +26,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-<!--        <service-->
-<!--            android:name="io.github.posaydone.filmix.core.common.services.PlaybackService"-->
-<!--            android:exported="true"-->
-<!--            android:foregroundServiceType="mediaPlayback">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="androidx.media3.session.MediaSessionService" />-->
-<!--                <action android:name="android.media.browse.MediaBrowserService" />-->
-<!--            </intent-filter>-->
-<!--        </service>-->
+        <service
+            android:name="io.github.posaydone.filmix.core.common.services.PlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

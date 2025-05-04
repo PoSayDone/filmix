@@ -3,8 +3,6 @@
 package io.github.posaydone.filmix.mobile.ui.screen.playerScreen
 
 import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.util.Log
 import androidx.annotation.OptIn
@@ -23,9 +21,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.AutoAwesomeMotion
 import androidx.compose.material.icons.rounded.HighQuality
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,18 +54,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -72,6 +71,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -82,14 +83,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaController
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.PlayerScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.PlayerState
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowType
 import io.github.posaydone.filmix.core.model.Episode
 import io.github.posaydone.filmix.core.model.File
@@ -99,10 +101,10 @@ import io.github.posaydone.filmix.core.model.Translation
 import io.github.posaydone.filmix.core.model.VideoWithQualities
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerMediaTitle
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerPulse
+import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerPulseState
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.rememberPlayerPulseState
 import io.github.posaydone.filmix.mobile.ui.utils.toHhMmSs
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 private var TAG = "PlayerScreen"
 
@@ -127,12 +129,6 @@ fun LockScreenOrientation() {
     }
 }
 
-fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
-
 @UnstableApi
 @Composable
 fun PlayerScreen(
@@ -149,9 +145,7 @@ fun PlayerScreen(
     val selectedMovieTranslation by viewModel.selectedMovieTranslation.collectAsState()
     val selectedQuality by viewModel.selectedQuality.collectAsState()
     val showType by viewModel.contentType.collectAsState()
-
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
+    val player = viewModel.playerController.collectAsState().value
 
     val hasPrevEpisode by viewModel.hasPrevEpisode.collectAsState()
     val hasNextEpisode by viewModel.hasNextEpisode.collectAsState()
@@ -199,7 +193,6 @@ fun PlayerScreen(
 
         onDispose {
             viewModel.saveProgress()
-            viewModel.player.stop()
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -266,73 +259,110 @@ fun PlayerScreen(
     }
 
 
+
+    if (player == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else {
+        PlayerContent(
+            playerInstance = player,
+            playerState = playerState,
+            details = details,
+            showType = showType,
+            showControls = showControls,
+            onToggleControls = { showControls = !showControls },
+            onShowAudioSheet = { isAudioSheetOpen = true },
+            onShowQualitySheet = { isQualitySheetOpen = true },
+            onShowEpisodeSheet = { isEpisodeBottomSheetOpen = true },
+            pulseState = pulseState,
+            hasPrevEpisode = hasPrevEpisode,
+            hasNextEpisode = hasNextEpisode,
+            setResizeMode = { viewModel.setResizeMode(it) },
+            seekBack = { viewModel.seekBack() },
+            seekForward = { viewModel.seekForward() },
+            goToNextEpisode = { viewModel.goToNextEpisode() },
+            goToPrevEpisode = { viewModel.goToPrevEpisode() },
+            onPlayPauseClick = { viewModel.onPlayPauseClick() },
+            seekTo = { viewModel.seekTo(it) },
+        )
+    }
+}
+
+
+@OptIn(UnstableApi::class)
+@Composable
+fun PlayerContent(
+    playerInstance: MediaController,
+    playerState: PlayerState,
+    details: ShowDetails?,
+    showType: ShowType?,
+    showControls: Boolean,
+    onToggleControls: () -> Unit,
+    onShowAudioSheet: () -> Unit,
+    onShowQualitySheet: () -> Unit,
+    onShowEpisodeSheet: () -> Unit,
+    pulseState: PlayerPulseState,
+    hasPrevEpisode: Boolean,
+    hasNextEpisode: Boolean,
+    setResizeMode: (Int) -> Unit,
+    seekBack: () -> Unit,
+    seekForward: () -> Unit,
+    goToNextEpisode: () -> Unit,
+    goToPrevEpisode: () -> Unit,
+    onPlayPauseClick: () -> Unit,
+    seekTo: (Long) -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .focusable() // Kept focusable on the main box
+            .focusable()
     ) {
         AndroidView(
             factory = {
                 PlayerView(it).apply {
-                    player = viewModel.player
+                    player = playerInstance
                     useController = false
                     resizeMode = playerState.resizeMode
                     keepScreenOn = playerState.isPlaying
                 }
             }, update = {
-                it.apply {
-                    resizeMode = playerState.resizeMode
-                    keepScreenOn = playerState.isPlaying
-                }
+                it.resizeMode = playerState.resizeMode
+                it.keepScreenOn = playerState.isPlaying
             }, modifier = Modifier.fillMaxSize()
         )
 
-        Row(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Left side for seeking backward
+        Row(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(Unit) {
                         detectTransformGestures { _, _, zoom, _ ->
                             if (zoom > 1) {
-                                viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
+                                setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
                             } else if (zoom < 1) {
-                                viewModel.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
+                                setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
                             }
                         }
                     }
                     .pointerInput(Unit) {
-                        detectTapGestures(onTap = { offset ->
-                            showControls = !showControls
-                        }, onDoubleTap = { offset ->
+                        detectTapGestures(onTap = { onToggleControls() }, onDoubleTap = { offset ->
                             val screenWidth = size.width
                             if (offset.x < screenWidth / 2) {
-                                // Left side double tap
-                                viewModel.player.seekBack()
+                                seekBack()
                                 pulseState.setType(PlayerPulse.Type.BACK)
                             } else {
-                                // Right side double tap
-                                viewModel.player.seekForward()
+                                seekForward()
                                 pulseState.setType(PlayerPulse.Type.FORWARD)
                             }
                         })
-                    })
+                    }) {
+
+            }
         }
 
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PlayerPulse(pulseState)
-        }
-
-        AnimatedVisibility(
-            visible = showControls, enter = fadeIn(), exit = fadeOut()
-        ) {
+        AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
             Box(
                 modifier = Modifier
                     .background(Color.Black.copy(alpha = 0.5f))
@@ -340,56 +370,66 @@ fun PlayerScreen(
             )
         }
 
-        AnimatedVisibility(
-            visible = showControls, enter = fadeIn(), exit = fadeOut()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(WindowInsets.safeDrawing.asPaddingValues())
         ) {
-            MiddleControls(
-                showType = showType,
-                isPlaying = playerState.isPlaying,
-                onPlayPauseClick = {
-                    viewModel.onPlayPauseClick()
-                },
-                hasPrevEpisode = hasPrevEpisode,
-                hasNextEpisode = hasNextEpisode,
-                onPrevEpisodeClick = { viewModel.goToPrevEpisode() },
-                onNextEpisodeClick = { viewModel.goToNextEpisode() },
-            )
-        }
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PlayerPulse(pulseState)
+            }
 
-        AnimatedVisibility(
-            visible = showControls, enter = fadeIn(), exit = fadeOut()
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                TopControls(
+
+            AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
+                MiddleControls(
                     showType = showType,
-                    showDetails = details,
-                    onMoreClick = { isQualitySheetOpen = true },
-                    onAudioClick = { isAudioSheetOpen = true },
-                    onEpisodeClick = { isEpisodeBottomSheetOpen = true },
+                    isPlaying = playerState.isPlaying,
+                    isLoading = playerState.isLoading,
+                    onPlayPauseClick = onPlayPauseClick,
+                    hasPrevEpisode = hasPrevEpisode,
+                    hasNextEpisode = hasNextEpisode,
+                    onPrevEpisodeClick = goToPrevEpisode,
+                    onNextEpisodeClick = goToNextEpisode,
                 )
-//                Button(onClick = {
-//                    viewModel.sessionManager.saveAccessToken(
-//                        viewModel.sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
-//                    )
-//                }) {
-//                    Text("clear expiration time")
-//                }
-//                Button(onClick = {
-//                    viewModel.sessionManager.saveAccessToken(
-//                        null, System.currentTimeMillis() - 1000
-//                    )
-//                }) {
-//                    Text("remove token")
-//                }
-//                Button(onClick = {
-//                    viewModel.sessionManager.saveAccessToken(
-//                        "penisini", viewModel.sessionManager.fetchTokenExpiresIn()
-//                    )
-//                }) {
-//                    Text("save wrong token")
-//                }
-                Spacer(modifier = Modifier.weight(1f))
-                BottomControls(player = viewModel.player)
+            }
+
+            AnimatedVisibility(
+                visible = playerState.isLoading,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .align(Alignment.Center)
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    TopControls(
+                        showType = showType,
+                        showDetails = details,
+                        onMoreClick = onShowQualitySheet,
+                        onAudioClick = onShowAudioSheet,
+                        onEpisodeClick = onShowEpisodeSheet,
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (playerState.duration > 0L) {
+                        BottomControls(
+                            duration = playerState.duration,
+                            currentPosition = playerState.currentPosition,
+                            seekTo = seekTo
+                        )
+                    }
+                }
             }
         }
     }
@@ -400,6 +440,7 @@ fun PlayerScreen(
 private fun MiddleControls(
     showType: ShowType?,
     isPlaying: Boolean,
+    isLoading: Boolean,
     onPlayPauseClick: () -> Unit,
     hasNextEpisode: Boolean,
     onNextEpisodeClick: () -> Unit,
@@ -414,21 +455,30 @@ private fun MiddleControls(
         ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (showType != ShowType.MOVIE) Box(
-            modifier = Modifier.clickable(
-                onClick = onPrevEpisodeClick,
-                role = Role.Button,
-                interactionSource = interactionSource,
-                indication = ripple(bounded = false, radius = 24.dp)
-            ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Default.SkipPrevious,
-                contentDescription = "Previous episode",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
+        if (showType != ShowType.MOVIE) {
+            Box(
+                modifier = Modifier
+                    .then(
+                        if (hasPrevEpisode) {
+                            Modifier.clickable(
+                                onClick = onPrevEpisodeClick,
+                                role = Role.Button,
+                                interactionSource = interactionSource,
+                                indication = ripple(bounded = false, radius = 24.dp)
+                            )
+                        } else {
+                            Modifier.semantics { disabled() }
+                        }
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.SkipPrevious,
+                    contentDescription = "Previous episode",
+                    tint = Color.White.copy(alpha = if (hasPrevEpisode) 1f else 0.4f),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
 
         Box(
@@ -440,29 +490,43 @@ private fun MiddleControls(
             ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
-                contentDescription = "Pause",
-                tint = Color.White,
-                modifier = Modifier.size(48.dp)
-            )
+            if (isLoading) {
+                Spacer(Modifier.size(48.dp)) // Keeps layout consistent
+            }
+            this@Row.AnimatedVisibility(visible = !isLoading, enter = fadeIn(), exit = fadeOut()) {
+                Icon(
+                    painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = Color.White,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
         }
 
-        if (showType != ShowType.MOVIE) Box(
-            modifier = Modifier.clickable(
-                onClick = onNextEpisodeClick,
-                role = Role.Button,
-                interactionSource = interactionSource,
-                indication = ripple(bounded = false, radius = 24.dp)
-            ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Default.SkipNext,
-                contentDescription = "Next episode",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
+        if (showType != ShowType.MOVIE) {
+            Box(
+                modifier = Modifier
+                    .then(
+                        if (hasNextEpisode) {
+                            Modifier.clickable(
+                                onClick = onNextEpisodeClick,
+                                role = Role.Button,
+                                interactionSource = interactionSource,
+                                indication = ripple(bounded = false, radius = 24.dp)
+                            )
+                        } else {
+                            Modifier.semantics { disabled() }
+                        }
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.SkipNext,
+                    contentDescription = "Next episode",
+                    tint = Color.White.copy(alpha = if (hasNextEpisode) 1f else 0.4f),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
     }
 }
@@ -521,31 +585,17 @@ private fun TopControls(
 @OptIn(UnstableApi::class)
 @Composable
 private fun BottomControls(
-    player: Player,
+    duration: Long,
+    currentPosition: Long,
+    seekTo: (Long) -> Unit,
 ) {
-    var currentTime by rememberSaveable {
-        mutableLongStateOf(player.currentPosition)
-    }
+    var isSeekInProgress by remember { mutableStateOf(false) }
+    var seekBarTime by remember { mutableLongStateOf(currentPosition) }
 
-    var totalDuration by rememberSaveable {
-        mutableLongStateOf(player.duration)
-    }
-
-    var isSeekInProgress by remember {
-        mutableStateOf(false)
-    }
-
-    val timerCoroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(key1 = Unit) {
-        timerCoroutineScope.launch {
-            while (true) {
-                delay(500)
-                if (!isSeekInProgress) {
-                    currentTime = player.currentPosition
-                    totalDuration = player.duration
-                }
-            }
+    // When user is not seeking, keep seekBarTime in sync with currentPosition
+    LaunchedEffect(currentPosition, duration, isSeekInProgress) {
+        if (!isSeekInProgress) {
+            seekBarTime = currentPosition
         }
     }
 
@@ -556,32 +606,30 @@ private fun BottomControls(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (totalDuration > 0L) Box(
-            modifier = Modifier.width(72.dp)
-        ) {
+        if (duration > 0L) Box(modifier = Modifier.width(90.dp)) {
             Text(
-                text = currentTime.toHhMmSs(),
+                text = seekBarTime.toHhMmSs(),
                 color = Color.White,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
+
         CustomSeekBar(
             isSeekInProgress = { isInProgress ->
                 isSeekInProgress = isInProgress
             },
             onSeekBarMove = { position ->
-                currentTime = position
+                seekBarTime = position
             },
-            totalDuration = totalDuration,
-            currentTime = currentTime,
-            onSeekStop = { position -> player.seekTo(position) },
+            totalDuration = duration,
+            currentTime = seekBarTime,
+            onSeekStop = { position -> seekTo(position) },
             modifier = Modifier.weight(1f)
         )
-        if (totalDuration > 0L) Box(
-            modifier = Modifier.width(72.dp)
-        ) {
+
+        if (duration > 0L) Box(modifier = Modifier.width(90.dp)) {
             Text(
-                text = totalDuration.toHhMmSs(),
+                text = duration.toHhMmSs(),
                 color = Color.White,
                 modifier = Modifier.align(Alignment.Center)
             )

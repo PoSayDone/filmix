@@ -18,6 +18,7 @@ fun ShowCard(
     title: @Composable () -> Unit = {},
     image: @Composable BoxScope.() -> Unit,
 ) {
+
     StandardCardContainer(
         modifier = modifier,
         title = title,
