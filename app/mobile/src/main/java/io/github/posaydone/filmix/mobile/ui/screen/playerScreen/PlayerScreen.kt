@@ -185,7 +185,9 @@ fun PlayerScreen(
                     }
                 }
 
-                else -> {}
+                else -> {
+                    viewModel.saveProgress()
+                }
             }
         }
 
