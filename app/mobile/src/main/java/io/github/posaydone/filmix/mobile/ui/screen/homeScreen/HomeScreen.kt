@@ -58,29 +58,29 @@ fun HomeScreen(
 
         is HomeScreenUiState.Error -> {
             Column {
-//                Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry, children = {
-//                    Button(onClick = {
-//                        s.sessionManager.saveAccessToken(
-//                            s.sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
-//                        )
-//                    }) {
-//                        Text("clear expiration time")
-//                    }
-//                    Button(onClick = {
-//                        s.sessionManager.saveAccessToken(
-//                            null, System.currentTimeMillis() - 1000
-//                        )
-//                    }) {
-//                        Text("remove token")
-//                    }
-//                    Button(onClick = {
-//                        s.sessionManager.saveAccessToken(
-//                            "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
-//                        )
-//                    }) {
-//                        Text("save wrong token")
-//                    }
-//                })
+                Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry, children = {
+                    Button(onClick = {
+                        s.sessionManager.saveAccessToken(
+                            s.sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
+                        )
+                    }) {
+                        Text("clear expiration time")
+                    }
+                    Button(onClick = {
+                        s.sessionManager.saveAccessToken(
+                            null, System.currentTimeMillis() - 1000
+                        )
+                    }) {
+                        Text("remove token")
+                    }
+                    Button(onClick = {
+                        s.sessionManager.saveAccessToken(
+                            "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
+                        )
+                    }) {
+                        Text("save wrong token")
+                    }
+                })
             }
         }
 
@@ -136,27 +136,27 @@ private fun Body(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 16.dp), verticalArrangement = Arrangement.Center
         ) {
-//            Button(onClick = {
-//                sessionManager.saveAccessToken(
-//                    sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
-//                )
-//            }) {
-//                Text("clear expiration time")
-//            }
-//            Button(onClick = {
-//                sessionManager.saveAccessToken(
-//                    null, System.currentTimeMillis() - 1000
-//                )
-//            }) {
-//                Text("remove token")
-//            }
-//            Button(onClick = {
-//                sessionManager.saveAccessToken(
-//                    "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
-//                )
-//            }) {
-//                Text("save wrong token")
-//            }
+            Button(onClick = {
+                sessionManager.saveAccessToken(
+                    sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
+                )
+            }) {
+                Text("clear expiration time")
+            }
+            Button(onClick = {
+                sessionManager.saveAccessToken(
+                    null, System.currentTimeMillis() - 1000
+                )
+            }) {
+                Text("remove token")
+            }
+            Button(onClick = {
+                sessionManager.saveAccessToken(
+                    "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
+                )
+            }) {
+                Text("save wrong token")
+            }
             ShowsRow(
                 lastSeenShows,
                 title = stringResource(R.string.continue_watching),

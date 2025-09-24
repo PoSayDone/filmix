@@ -10,6 +10,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.posaydone.filmix.core.model.AuthEvent
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Singleton
 
 @Module
@@ -23,9 +27,20 @@ internal object CommonModule {
     ): ExoPlayer {
         return ExoPlayer.Builder(context)
             .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-            .setSeekForwardIncrementMs(10000)
-            .setSeekBackIncrementMs(10000)
-            .build()
+            .setSeekForwardIncrementMs(10000).setSeekBackIncrementMs(10000).build()
     }
 
+    @Provides
+    @Singleton
+    fun provideAuthEventChannel(): MutableSharedFlow<AuthEvent> {
+        return MutableSharedFlow(replay = 0, extraBufferCapacity = 1)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthEventFlow(
+        mutableSharedFlow: MutableSharedFlow<AuthEvent>,
+    ): SharedFlow<AuthEvent> {
+        return mutableSharedFlow
+    }
 }

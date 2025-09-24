@@ -32,17 +32,25 @@ class AuthScreenViewModel @Inject constructor(
     fun authorizeUser(username: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthScreenUiState.Loading
-            val wasSuccessful = withContext(Dispatchers.IO) {
-                authRepository.login(username, password)
-            }
+            try {
 
-            sessionManager.saveLoginState(wasSuccessful)
+                val response = withContext(Dispatchers.IO) {
+                    authRepository.login(username, password)
+                }
 
-            if (wasSuccessful) {
+                sessionManager.saveAccessToken(
+                    response.access_token,
+                    System.currentTimeMillis() + 50 * 60 * 1000
+                )
+                sessionManager.saveRefreshToken(response.refresh_token)
+
                 _uiState.value = AuthScreenUiState.Success;
-            } else {
-                _uiState.value = AuthScreenUiState.Error("Invalid credentials or network error.")
+
+            } catch (e: Exception) {
+                _uiState.value =
+                    AuthScreenUiState.Error(e.message.toString())
             }
+
         }
     }
 

@@ -1,6 +1,5 @@
 package io.github.posaydone.filmix.core.model
 
-data class AuthResponse(
-    val access_token: String,
+data class RefreshRequestBody(
     val refresh_token: String,
 )
