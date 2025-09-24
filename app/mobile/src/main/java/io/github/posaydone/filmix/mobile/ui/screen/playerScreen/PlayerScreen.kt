@@ -654,7 +654,7 @@ private fun EpisodeBottomSheet(
     ) {
         var tabIndex by rememberSaveable {
             mutableIntStateOf(
-                selectedSeason!!.season.minus(1)
+                selectedSeason?.season?.minus(1) ?: 0
             )
         }
 
@@ -684,7 +684,9 @@ private fun EpisodeBottomSheet(
                 SingleSelectionCard(
                     selectionOption = episode, selectedEpisode
                 ) {
+                    viewModel.setSeason(seasons[tabIndex])
                     viewModel.setEpisode(episode)
+                    onDismiss()
                 }
             }
         }

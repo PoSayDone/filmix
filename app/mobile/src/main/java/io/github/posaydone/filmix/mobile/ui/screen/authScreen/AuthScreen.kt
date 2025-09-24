@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,10 +29,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.R
+import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenViewModel
-import io.github.posaydone.filmix.core.model.AuthRequestBody
 import io.github.posaydone.filmix.mobile.navigation.Screens
 import io.github.posaydone.filmix.mobile.ui.common.PasswordTextField
 import kotlinx.coroutines.launch
@@ -41,21 +43,21 @@ fun AuthScreen(
     navController: NavHostController,
     viewModel: AuthScreenViewModel = hiltViewModel(),
 ) {
-    val navigateToHome = {
-        navController.navigate(Screens.Main) {
-            popUpTo<Screens.Auth> { inclusive = true }
-        }
-    }
-
     val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    if (viewModel.areTokensSaved()) {
-        navigateToHome()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(key1 = uiState) {
+        if (uiState is AuthScreenUiState.Success) {
+            navController.navigate(Screens.Main) {
+                popUpTo<Screens.Auth> { inclusive = true }
+            }
+            viewModel.onNavigationHandled() // Reset the state to prevent re-navigation
+        }
     }
 
     Column(
@@ -104,38 +106,13 @@ fun AuthScreen(
                 .height(52.dp)
                 .fillMaxWidth(),
             onClick = {
-                scope.launch {
-                    loading = true
-                    errorMessage = null
-                    try {
-                        // Step 1: Request hash token
-                        val hashResponse = viewModel.requestHash()
-                        val hash = hashResponse.token
-
-                        // Step 2: Authorize
-                        val authResponse = viewModel.authorizeUser(
-                            hash = hash, body = AuthRequestBody(
-                                user_name = email, user_passw = password, session = true
-                            )
-                        )
-
-                        viewModel.saveTokens(
-                            access = authResponse.accessToken,
-                            refresh = authResponse.refreshToken,
-                            hash = hash,
-                            expiresInMs = 50 * 60 * 1000
-                        )
-
-                        navigateToHome()
-                    } catch (e: Exception) {
-                        errorMessage = "Authorization failed: ${e.localizedMessage}"
-                    } finally {
-                        loading = false
-                    }
-                }
-            }, enabled = !loading
+                viewModel.authorizeUser(username = email, password = password)
+            }, enabled = uiState != AuthScreenUiState.Loading
         ) {
-            Text(text = if (loading) "Loading..." else "Login", fontSize = 18.sp)
+            Text(
+                text = if (uiState != AuthScreenUiState.Loading) "Loading..." else "Login",
+                fontSize = 18.sp
+            )
         }
 
         errorMessage?.let {

@@ -9,18 +9,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
+import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.mobile.navigation.NavGraph
 import io.github.posaydone.filmix.mobile.ui.theme.FilmixTheme
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var sessionManager: SessionManager // Inject SessionManager
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen()
         enableEdgeToEdge()
         setContent {
             FilmixTheme {
-                NavGraph()
+                NavGraph(sessionManager = sessionManager)
             }
         }
     }

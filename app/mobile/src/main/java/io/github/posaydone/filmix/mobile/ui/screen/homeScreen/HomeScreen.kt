@@ -58,29 +58,29 @@ fun HomeScreen(
 
         is HomeScreenUiState.Error -> {
             Column {
-                Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry, children = {
-                    Button(onClick = {
-                        s.sessionManager.saveAccessToken(
-                            s.sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
-                        )
-                    }) {
-                        Text("clear expiration time")
-                    }
-                    Button(onClick = {
-                        s.sessionManager.saveAccessToken(
-                            null, System.currentTimeMillis() - 1000
-                        )
-                    }) {
-                        Text("remove token")
-                    }
-                    Button(onClick = {
-                        s.sessionManager.saveAccessToken(
-                            "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
-                        )
-                    }) {
-                        Text("save wrong token")
-                    }
-                })
+//                Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry, children = {
+//                    Button(onClick = {
+//                        s.sessionManager.saveAccessToken(
+//                            s.sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
+//                        )
+//                    }) {
+//                        Text("clear expiration time")
+//                    }
+//                    Button(onClick = {
+//                        s.sessionManager.saveAccessToken(
+//                            null, System.currentTimeMillis() - 1000
+//                        )
+//                    }) {
+//                        Text("remove token")
+//                    }
+//                    Button(onClick = {
+//                        s.sessionManager.saveAccessToken(
+//                            "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
+//                        )
+//                    }) {
+//                        Text("save wrong token")
+//                    }
+//                })
             }
         }
 

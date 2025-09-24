@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.log
 
 @androidx.media3.common.util.UnstableApi
 data class PlayerState(
@@ -413,6 +414,7 @@ class PlayerScreenViewModel @Inject constructor(
 
     fun playVideo(time: Long = 0) {
         val url = selectedQuality.value?.url ?: return
+        Log.d("video", url)
         val mediaItem = MediaItem.fromUri(Uri.parse(url))
 
         val controller = playerController.value ?: return

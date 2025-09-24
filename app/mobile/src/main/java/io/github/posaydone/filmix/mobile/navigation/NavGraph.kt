@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
+import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.mobile.ui.screen.authScreen.AuthScreen
 import io.github.posaydone.filmix.mobile.ui.screen.exploreScreen.ExploreScreen
 import io.github.posaydone.filmix.mobile.ui.screen.historyScreen.HistoryScreen
@@ -27,16 +28,19 @@ import io.github.posaydone.filmix.mobile.ui.screen.showDetailsScreen.ShowDetails
 
 @Composable
 fun NavGraph(
+    sessionManager: SessionManager
 ) {
     val animationDuration = 300
     val navController = rememberNavController()
+
+    val startDestination = if (sessionManager.isLoggedIn()) Screens.Main else Screens.Auth
 
     Scaffold(
         bottomBar = { BottomNavigation(navController) },
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screens.Auth,
+            startDestination = startDestination,
             enterTransition = {
                 slideInHorizontally(
                     initialOffsetX = { it }, animationSpec = tween(animationDuration)

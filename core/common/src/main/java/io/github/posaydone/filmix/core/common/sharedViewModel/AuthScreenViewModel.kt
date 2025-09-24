@@ -1,50 +1,52 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.posaydone.filmix.core.data.FilmixAuthRepository
-import io.github.posaydone.filmix.core.model.AuthRequestBody
-import io.github.posaydone.filmix.core.model.AuthResponse
-import io.github.posaydone.filmix.core.model.HashResponse
-import io.github.posaydone.filmix.core.model.QrResponse
+import io.github.posaydone.filmix.core.data.AuthRepository
 import io.github.posaydone.filmix.core.model.SessionManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+
+sealed class AuthScreenUiState {
+    data object Idle : AuthScreenUiState()
+    data object Loading : AuthScreenUiState()
+    data object Success : AuthScreenUiState()
+    data class Error(val message: String) : AuthScreenUiState()
+}
 
 @HiltViewModel
 class AuthScreenViewModel @Inject constructor(
     private val sessionManager: SessionManager,
-    private val repository: FilmixAuthRepository
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
-    suspend fun authorizeUser(hash: String, body: AuthRequestBody): AuthResponse {
-        return withContext(Dispatchers.IO) {
-            repository.authorize(hash, body)
+    private val _uiState = MutableStateFlow<AuthScreenUiState>(AuthScreenUiState.Idle)
+    val uiState: StateFlow<AuthScreenUiState> = _uiState
+
+    fun authorizeUser(username: String, password: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthScreenUiState.Loading
+            val wasSuccessful = withContext(Dispatchers.IO) {
+                authRepository.login(username, password)
+            }
+
+            sessionManager.saveLoginState(wasSuccessful)
+
+            if (wasSuccessful) {
+                _uiState.value = AuthScreenUiState.Success;
+            } else {
+                _uiState.value = AuthScreenUiState.Error("Invalid credentials or network error.")
+            }
         }
     }
 
-    suspend fun requestQrCode(hash: String): QrResponse {
-        return withContext(Dispatchers.IO) {
-            repository.getQrCode(hash)
-        }
-    }
-
-    suspend fun requestHash(): HashResponse {
-        return withContext(Dispatchers.IO) {
-            repository.getHash()
-        }
-    }
-
-    fun saveTokens(access: String, refresh: String, hash: String, expiresInMs: Long) {
-        sessionManager.saveAccessToken(access, System.currentTimeMillis() + expiresInMs)
-        sessionManager.saveRefreshToken(refresh)
-        sessionManager.saveHash(hash)
-    }
-
-    fun areTokensSaved(): Boolean {
-        return sessionManager.fetchAccessToken() != null &&
-                sessionManager.fetchRefreshToken() != null &&
-                sessionManager.fetchHash() != null
+    fun onNavigationHandled() {
+        _uiState.value = AuthScreenUiState.Idle
     }
 }

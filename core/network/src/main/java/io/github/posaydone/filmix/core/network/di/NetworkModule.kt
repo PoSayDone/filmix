@@ -4,12 +4,11 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.network.Constants
-import io.github.posaydone.filmix.core.network.interceptor.AuthInterceptor
-import io.github.posaydone.filmix.core.network.interceptor.TokenAuthenticator
+import io.github.posaydone.filmix.core.network.interceptor.SharedPreferencesCookieJar
+import io.github.posaydone.filmix.core.network.service.AuthService
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
-import io.github.posaydone.filmix.core.network.service.FilmixAuthService
+import okhttp3.CookieJar
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -21,39 +20,36 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 internal object NetworkModule {
     @Provides
-    fun provideTokenAuthenticator(
-        sessionManager: SessionManager,
-        filmixAuthService: FilmixAuthService,
-    ): TokenAuthenticator {
-        return TokenAuthenticator(sessionManager, filmixAuthService)
-    }
-
-    @Provides
-    fun provideAuthInterceptor(
-        sessionManager: SessionManager,
-    ): AuthInterceptor {
-        return AuthInterceptor(sessionManager)
+    @Singleton
+    fun provideCookieJar(cookieJar: SharedPreferencesCookieJar): CookieJar {
+        return cookieJar
     }
 
     @Provides
     fun provideOkHttpClient(
-        authInterceptor: AuthInterceptor,
-        tokenAuthenticator: TokenAuthenticator,
+        cookieJar: CookieJar,
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .cookieJar(cookieJar)
             .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-            .addInterceptor(
-                authInterceptor
-            ).authenticator(tokenAuthenticator).build()
-
+            .build()
     }
 
     @Provides
     @Singleton
-    fun provideFilmixAuthService(): FilmixAuthService {
+    fun provideAuthService(
+        cookieJar: CookieJar,
+    ): AuthService {
         return Retrofit.Builder().baseUrl(Constants.BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create()).build()
-            .create(FilmixAuthService::class.java)
+            .addConverterFactory(
+                GsonConverterFactory.create(
+                )
+            ).client(
+                OkHttpClient.Builder().cookieJar(cookieJar)
+                    .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+                    .build()
+            ).build()
+            .create(AuthService::class.java)
     }
 
     @Provides
