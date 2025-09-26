@@ -7,41 +7,63 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.model.ShowList
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
-@Immutable
-sealed interface SearchState {
-    data object Searching : SearchState
-    data class Done(val showList: ShowList) : SearchState
-}
-
-
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class ExploreScreenViewModel @Inject constructor(
     private val repository: FilmixRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val internalSearchState = MutableSharedFlow<SearchState>()
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
 
-    fun query(queryString: String) {
-        viewModelScope.launch { postQuery(queryString) }
+    private val _searchState = MutableStateFlow<SearchState>(SearchState.Initial)
+    val searchState = _searchState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(300) // 300ms debounce
+                .distinctUntilChanged()
+                .flatMapLatest { query ->
+                    if (query.isBlank()) {
+                        // If query is empty, emit initial state
+                        kotlinx.coroutines.flow.flowOf(SearchState.Initial)
+                    } else {
+                        // Emit searching state first
+                        _searchState.value = SearchState.Searching
+                        
+                        // Then get and emit results
+                        val result = repository.getShowsListWithQuery(query = query)
+                        kotlinx.coroutines.flow.flowOf(SearchState.Done(result))
+                    }
+                }
+                .collect { state ->
+                    _searchState.value = state
+                }
+        }
     }
 
-    private suspend fun postQuery(queryString: String) {
-        internalSearchState.emit(SearchState.Searching)
-        val result = repository.getShowsListWithQuery(query = queryString)
-        internalSearchState.emit(SearchState.Done(result))
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
     }
+}
 
-    val searchState = internalSearchState.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = SearchState.Done(emptyList())
-    )
+@Immutable
+sealed interface SearchState {
+    data object Initial : SearchState
+    data object Searching : SearchState
+    data class Done(val showList: ShowList) : SearchState
 }

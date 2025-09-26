@@ -56,12 +56,17 @@ fun FavoritesScreenContent(
 
     LazyColumn(
         state = lazyListState,
-        modifier = Modifier.fillMaxSize().padding(top = childPadding.top, bottom = childPadding.bottom),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Text(
-                modifier = Modifier.padding(horizontal = childPadding.start, vertical = 24.dp),
+                modifier = Modifier
+                    .padding(
+                        top = 24.dp + childPadding.top,
+                        bottom = 24.dp,
+                        start = childPadding.start
+                    ),
                 text = "Favorites",
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface
@@ -70,6 +75,7 @@ fun FavoritesScreenContent(
         item {
             ShowsRow(
                 title = "Favorite",
+                requestInitialFocus = true,
                 modifier = Modifier,
                 showList = favoritesList,
                 onShowSelected = { show ->
@@ -82,7 +88,10 @@ fun FavoritesScreenContent(
         item {
             ShowsRow(
                 title = "History",
-                modifier = Modifier,
+                modifier = Modifier
+                    .padding(
+                        bottom = childPadding.bottom
+                    ),
                 showList = historyList,
                 onShowSelected = { show ->
                     navController.navigate(Screens.Main.Details(show.id)) {

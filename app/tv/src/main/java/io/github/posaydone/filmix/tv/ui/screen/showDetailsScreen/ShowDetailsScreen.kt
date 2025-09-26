@@ -4,11 +4,10 @@ package io.github.posaydone.filmix.tv.ui.screen.showDetailsScreen
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BookmarkAdd
+import androidx.compose.material.icons.rounded.BookmarkRemove
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.tv.material3.Button
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
@@ -63,6 +63,8 @@ import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.ImmersiveBackground
 import io.github.posaydone.filmix.tv.ui.common.ImmersiveDetails
+import io.github.posaydone.filmix.tv.ui.common.LargeButton
+import io.github.posaydone.filmix.tv.ui.common.LargeButtonStyle
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.gradientOverlay
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
@@ -96,6 +98,7 @@ fun ShowDetailsScreen(
                 showImages = s.showImages,
                 showTrailers = s.showTrailers,
                 kinopoiskMovie = s.kinopoiskMovie,
+                toggleFavorites = s.toggleFavorites,
                 goToMoviePlayer = {
                     navController.navigate(Screens.Player(showId)) {
                         launchSingleTop = true
@@ -118,6 +121,7 @@ private fun Details(
     showProgress: ShowProgress?,
     showImages: ShowImages,
     showTrailers: ShowTrailers?,
+    toggleFavorites: () -> Unit,
     goToMoviePlayer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -180,12 +184,15 @@ private fun Details(
                     seriesLength = kinopoiskMovie?.seriesLength,
                     ageRating = kinopoiskMovie?.ageRating?.toString() ?: showDetails.mpaa ?: ""
                 )
-                WatchButton(
+                ShowDetailsButtons(
                     modifier = Modifier.onFocusChanged {
                         if (it.isFocused) {
                             coroutineScope.launch { bringIntoViewRequester.bringIntoView() }
                         }
-                    }, goToMoviePlayer = goToMoviePlayer
+                    },
+                    goToMoviePlayer = goToMoviePlayer,
+                    toggleFavorites = toggleFavorites,
+                    isFavorite = showDetails.isFavorite == true
                 )
             }
         }
@@ -198,6 +205,7 @@ private fun Details(
 private fun ShowDetailsScreenPreview() {
 
     Details(
+        toggleFavorites = {},
         showDetails = ShowDetails(
             id = 1,
             category = "TV Show",
@@ -296,28 +304,44 @@ fun InfoItemPreview() {
 }
 
 @Composable
-private fun WatchButton(
+private fun ShowDetailsButtons(
     modifier: Modifier = Modifier,
     goToMoviePlayer: () -> Unit,
+    toggleFavorites: () -> Unit,
+    isFavorite: Boolean,
 ) {
     val focusRequester = remember { FocusRequester() }
 
-    Button(
-        onClick = goToMoviePlayer,
-        modifier = modifier
-            .focusRequester(focusRequester)
-            .focusable(),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
+    Row(
+        modifier = modifier, horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Icon(
-            modifier = Modifier.size(28.dp),
-            imageVector = Icons.Rounded.PlayArrow,
-            contentDescription = null
-        )
-        Spacer(Modifier.size(12.dp))
-        Text(
-            text = stringResource(R.string.playString), style = MaterialTheme.typography.titleMedium
-        )
+        LargeButton(
+            onClick = goToMoviePlayer,
+            style = LargeButtonStyle.FILLED,
+            modifier = Modifier.focusRequester(focusRequester)
+        ) {
+            Icon(
+                modifier = Modifier.size(28.dp),
+                imageVector = Icons.Rounded.PlayArrow,
+                contentDescription = null
+            )
+            Spacer(Modifier.size(12.dp))
+            Text(
+                text = stringResource(R.string.playString),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        LargeButton(
+            onClick = toggleFavorites,
+            style = if (isFavorite) LargeButtonStyle.FILLED else LargeButtonStyle.OUTLINED
+        ) {
+            Icon(
+                modifier = Modifier.size(28.dp),
+                imageVector = if (isFavorite) Icons.Rounded.BookmarkRemove else Icons.Rounded.BookmarkAdd,
+                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites"
+            )
+        }
     }
 
     LaunchedEffect(Unit) {

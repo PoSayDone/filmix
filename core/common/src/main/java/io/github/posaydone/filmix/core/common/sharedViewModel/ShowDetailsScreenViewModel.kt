@@ -62,8 +62,11 @@ class ShowDetailsScreenViewModel @Inject constructor(
                     val trailers = filmixRepository.getShowTrailers(showId)
                     val history = filmixRepository.getShowProgress(showId)
 
+                    var query =
+                        if (details.originalTitle.isNullOrEmpty()) details.title else details.originalTitle
+
                     val searchResult = kinopoiskRepository.movieSearch(
-                        page = 1, limit = 1, query = details.originalTitle
+                        page = 1, limit = 1, query = query
                     )
                     Log.d(TAG, "searchresult: $searchResult")
 

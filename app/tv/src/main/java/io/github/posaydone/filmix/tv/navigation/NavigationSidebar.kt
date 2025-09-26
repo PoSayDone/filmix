@@ -67,9 +67,9 @@ fun NavigationSidebar(
         else return Icons.Default.Error
     }
 
-    var focusEnabled by remember { mutableStateOf(false) }
+    var focusEnabled by remember { mutableStateOf(true) }
     LaunchedEffect(destination) {
-        delay(3000L)
+        // Keep focus enabled always for navigation sidebar
         focusEnabled = true
     }
 
@@ -95,13 +95,6 @@ fun NavigationSidebar(
                         currentDestination?.hierarchy?.any { it.route == item.route::class.qualifiedName } == true
 
                     NavigationDrawerItem(
-                        colors = NavigationDrawerItemDefaults.colors(
-                            focusedSelectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            focusedContentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        modifier = Modifier
-                            .focusable(focusEnabled)
-                            .focusProperties { canFocus = focusEnabled },
                         selected = isSelected,
                         onClick = {
                             navController.navigate(item.route)

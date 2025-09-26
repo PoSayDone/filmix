@@ -148,8 +148,12 @@ class HomeScreenViewModel @Inject constructor(
         fetchJob = viewModelScope.launch {
             _immersiveContentState.value = ImmersiveContentUiState.Loading
             try {
+
+                var query =
+                    if (show.original_name.isNullOrEmpty()) show.title else show.original_name
+
                 val searchResult = kinopoiskRepository.movieSearch(
-                    limit = 1, query = show.original_name ?: show.title
+                    page = 1, limit = 1, query = query
                 )
                 val kinopoiskMovie = searchResult.docs.firstOrNull()
 

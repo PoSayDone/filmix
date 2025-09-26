@@ -1,174 +1,133 @@
 package io.github.posaydone.filmix.tv.ui.screen.exploreScreen
 
-import android.view.KeyEvent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.tv.material3.Border
-import androidx.tv.material3.ClickableSurfaceDefaults
-import androidx.tv.material3.LocalContentColor
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.posaydone.filmix.tv.navigation.Screens
+import io.github.posaydone.filmix.tv.ui.common.CircularProgressIndicator
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
+import io.github.posaydone.filmix.tv.ui.common.TextField
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
-import io.github.posaydone.filmix.tv.ui.theme.FilmixCardShape
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ExploreScreen(
     navController: NavHostController,
     viewModel: ExploreScreenViewModel = hiltViewModel(),
 ) {
+    val focusRequester = remember { FocusRequester() }
     val searchState by viewModel.searchState.collectAsStateWithLifecycle()
+    val currentSearchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
     val childPadding = rememberChildPadding()
-    var searchQuery by remember { mutableStateOf("") }
-    val focusManager = LocalFocusManager.current
-    val tfInteractionSource = remember { MutableInteractionSource() }
-    val tfFocusRequester = remember { FocusRequester() }
 
-    val isTfFocused by tfInteractionSource.collectIsFocusedAsState()
-
-    Column {
-        Surface(
-            shape = ClickableSurfaceDefaults.shape(shape = FilmixCardShape),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.inverseOnSurface,
-                focusedContainerColor = MaterialTheme.colorScheme.inverseOnSurface,
-                pressedContainerColor = MaterialTheme.colorScheme.inverseOnSurface,
-                focusedContentColor = MaterialTheme.colorScheme.onSurface,
-                pressedContentColor = MaterialTheme.colorScheme.onSurface
-            ),
-
-            border = ClickableSurfaceDefaults.border(
-                focusedBorder = Border(
-                    border = BorderStroke(
-                        width = if (isTfFocused) 2.dp else 2.dp, color = animateColorAsState(
-                            targetValue = if (isTfFocused) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.border, label = ""
-                        ).value
-                    ), shape = RoundedCornerShape(50)
+    Column(
+        modifier = Modifier
+            .padding(top = childPadding.top, bottom = childPadding.bottom)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        TextField(
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Rounded.Search, contentDescription = "Search Icon"
                 )
-            ),
-            tonalElevation = 2.dp,
+            },
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            value = currentSearchQuery,
+            onValueChange = { updatedQuery ->
+                viewModel.updateSearchQuery(updatedQuery)
+            },
             modifier = Modifier
-                .padding(horizontal = childPadding.start)
-                .padding(top = 8.dp)
-                .clip(RoundedCornerShape(50)),
-            onClick = { tfFocusRequester.requestFocus() }) {
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = { updatedQuery -> searchQuery = updatedQuery },
-                decorationBox = {
-                    Box(
-                        modifier = Modifier
-                            .padding(vertical = 16.dp)
-                            .padding(start = 20.dp),
-                    ) {
-                        it()
-                        if (searchQuery.isEmpty()) {
-                            Text(
-                                modifier = Modifier.graphicsLayer { alpha = 0.6f }, text = "",
-//                            text = stringResource(R.string.search_screen_et_placeholder),
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        vertical = 4.dp, horizontal = 8.dp
-                    )
-                    .focusRequester(tfFocusRequester)
-                    .onKeyEvent {
-                        if (it.nativeKeyEvent.action == KeyEvent.ACTION_UP) {
-                            when (it.nativeKeyEvent.keyCode) {
-                                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                    focusManager.moveFocus(FocusDirection.Down)
-                                }
-
-                                KeyEvent.KEYCODE_DPAD_UP -> {
-                                    focusManager.moveFocus(FocusDirection.Up)
-                                }
-
-                                KeyEvent.KEYCODE_BACK -> {
-                                    focusManager.moveFocus(FocusDirection.Exit)
-                                }
-                            }
-                        }
-                        true
-                    },
-                cursorBrush = Brush.verticalGradient(
-                    colors = listOf(
-                        LocalContentColor.current,
-                        LocalContentColor.current,
-                    )
-                ),
-                keyboardOptions = KeyboardOptions(
-                    autoCorrectEnabled = false, imeAction = ImeAction.Search
-                ),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        viewModel.query(searchQuery)
-                    }),
-                maxLines = 1,
-                interactionSource = tfInteractionSource,
-                textStyle = MaterialTheme.typography.titleSmall.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ))
-        }
+                .padding(vertical = 24.dp)
+                .width(500.dp)
+                .height(64.dp)
+                .focusRequester(focusRequester),
+            placeholderText = "Search...",
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                autoCorrectEnabled = false, imeAction = ImeAction.Search
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onSearch = {
+                    viewModel.updateSearchQuery(currentSearchQuery)
+                })
+        )
 
         when (val s = searchState) {
+            is SearchState.Initial -> {
+            }
+
             is SearchState.Searching -> {
-                Text(text = "Searching...")
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
 
             is SearchState.Done -> {
                 val showList = s.showList
-                ShowsRow(
-                    modifier = Modifier.padding(horizontal = childPadding.start),
-                    showList = showList,
-                    onShowSelected = { show ->
-                        navController.navigate(Screens.Main.Details(show.id)) {
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    })
+                if (showList.isEmpty()) {
+                    // Show placeholder when nothing is found
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No results found",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                } else {
+                    ShowsRow(
+                        title = "Search Results",
+                        modifier = Modifier
+                            .padding(horizontal = childPadding.start)
+                            .fillMaxWidth(),
+                        showList = showList,
+                        onShowSelected = { show ->
+                            navController.navigate(Screens.Main.Details(show.id)) {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        })
+                }
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 }
 

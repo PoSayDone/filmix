@@ -25,7 +25,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.tv.material3.Icon
-import androidx.tv.material3.Button
+import io.github.posaydone.filmix.tv.ui.common.LargeButton
+import io.github.posaydone.filmix.tv.ui.common.LargeButtonStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenUiState
@@ -82,11 +83,12 @@ fun AuthScreen(
             modifier = Modifier.height(64.dp)
         )
         Spacer(Modifier.height(12.dp))
-        Button(
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
+        LargeButton(
             onClick = {
                 viewModel.authorizeUser(username = email, password = password)
-            }, enabled = uiState != AuthScreenUiState.Loading
+            }, 
+            enabled = uiState != AuthScreenUiState.Loading,
+            style = LargeButtonStyle.FILLED
         ) {
             Text(
                 text = stringResource(R.string.sign_in),
@@ -98,7 +100,6 @@ fun AuthScreen(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowRightAlt,
                 contentDescription = null
             )
-
         }
         if (uiState is AuthScreenUiState.Error) {
             Spacer(modifier = Modifier.height(8.dp))
