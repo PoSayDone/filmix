@@ -1,7 +1,7 @@
 package io.github.posaydone.filmix.core.data
 
 import io.github.posaydone.filmix.core.model.KinopoiskMoviesResponse
-import io.github.posaydone.filmix.core.network.KinopoiskRemoteDataSource
+import io.github.posaydone.filmix.core.network.dataSource.KinopoiskRemoteDataSource
 import javax.inject.Inject
 
 class KinopoiskRepository @Inject constructor(private val kinopoiskRemoteDataSource: KinopoiskRemoteDataSource) {

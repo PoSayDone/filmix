@@ -1,5 +1,6 @@
 package io.github.posaydone.filmix.tv.ui.common
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -7,6 +8,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +62,7 @@ enum class ItemDirection(val aspectRatio: Float) {
 
 private const val TAG = "ShowsRow"
 
+@SuppressLint("UnusedContentLambdaTargetStateParameter")
 @Composable
 fun ShowsRow(
     cardWidth: Dp = 148.dp,
@@ -77,6 +80,7 @@ fun ShowsRow(
     onShowSelected: (show: Show) -> Unit = {},
     onShowFocused: ((Show) -> Unit)? = {},
     requestInitialFocus: Boolean = false,
+    onViewAll: (() -> Unit)? = null,
 ) {
     val (lazyRow, firstItem) = remember { FocusRequester.createRefs() }
     var isInitiallyFocused = remember { mutableStateOf(false) }
@@ -102,7 +106,7 @@ fun ShowsRow(
         AnimatedContent(
             targetState = showList,
             label = "",
-        ) { movieState ->
+        ) {
             LazyRow(
                 contentPadding = PaddingValues(
                     start = startPadding,
@@ -113,7 +117,33 @@ fun ShowsRow(
                     .focusRequester(lazyRow)
                     .focusRestorer(firstItem)
             ) {
-                itemsIndexed(movieState, key = { _, show -> show.id }) { index, show ->
+                if (onViewAll != null) {
+                    item {
+                        ShowCard(
+                            onClick = { onViewAll() },
+                            modifier = Modifier
+                                .width(cardWidth)
+                                .focusRequester(firstItem),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .aspectRatio(ItemDirection.Vertical.aspectRatio),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "View All",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+
+                itemsIndexed(showList, key = { _, show -> show.id }) { index, show ->
                     val itemModifier = if (index == 0) {
                         Modifier.focusRequester(firstItem)
                     } else {
@@ -135,6 +165,7 @@ fun ShowsRow(
                         showIndexOverImage = showIndexOverImage
                     )
                 }
+
             }
         }
     }
@@ -254,20 +285,19 @@ private fun ShowsRowItem(
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
-    ShowCard(
-        onClick = { onShowSelected(show) }, title = {
-            ShowsRowItemText(
-                showItemTitle = showItemTitle, isItemFocused = isFocused, show = show
-            )
-        }, modifier = Modifier
-            .width(cardWidth)
-            .onFocusChanged {
-                isFocused = it.isFocused
-                if (it.isFocused) {
-                    onShowFocused(show)
-                }
+    ShowCard(onClick = { onShowSelected(show) }, title = {
+        ShowsRowItemText(
+            showItemTitle = showItemTitle, isItemFocused = isFocused, show = show
+        )
+    }, modifier = Modifier
+        .width(cardWidth)
+        .onFocusChanged {
+            isFocused = it.isFocused
+            if (it.isFocused) {
+                onShowFocused(show)
             }
-            .then(modifier)) {
+        }
+        .then(modifier)) {
         ShowsRowItemImage(
             modifier = Modifier.aspectRatio(itemDirection.aspectRatio),
             showIndexOverImage = showIndexOverImage,

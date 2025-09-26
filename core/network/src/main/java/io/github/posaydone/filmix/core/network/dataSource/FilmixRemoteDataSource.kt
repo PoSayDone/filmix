@@ -1,4 +1,4 @@
-package io.github.posaydone.filmix.core.network
+package io.github.posaydone.filmix.core.network.dataSource
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException

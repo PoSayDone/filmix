@@ -1,7 +1,7 @@
 package io.github.posaydone.filmix.core.data
 
 import io.github.posaydone.filmix.core.model.AuthResponse
-import io.github.posaydone.filmix.core.network.AuthRemoteDataSource
+import io.github.posaydone.filmix.core.network.dataSource.AuthRemoteDataSource
 import javax.inject.Inject
 import javax.inject.Singleton
 

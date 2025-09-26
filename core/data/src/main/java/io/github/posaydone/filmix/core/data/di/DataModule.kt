@@ -11,9 +11,9 @@ import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.data.KinopoiskRepository
 import io.github.posaydone.filmix.core.data.SessionManagerImpl
 import io.github.posaydone.filmix.core.model.SessionManager
-import io.github.posaydone.filmix.core.network.AuthRemoteDataSource
-import io.github.posaydone.filmix.core.network.FilmixRemoteDataSource
-import io.github.posaydone.filmix.core.network.KinopoiskRemoteDataSource
+import io.github.posaydone.filmix.core.network.dataSource.AuthRemoteDataSource
+import io.github.posaydone.filmix.core.network.dataSource.FilmixRemoteDataSource
+import io.github.posaydone.filmix.core.network.dataSource.KinopoiskRemoteDataSource
 import javax.inject.Singleton
 
 @Module

@@ -1,11 +1,7 @@
-package io.github.posaydone.filmix.core.network
+package io.github.posaydone.filmix.core.network.dataSource
 
-import io.github.posaydone.filmix.core.model.AuthRequestBody
-import io.github.posaydone.filmix.core.model.AuthResponse
 import io.github.posaydone.filmix.core.model.KinopoiskMoviesResponse
 import io.github.posaydone.filmix.core.network.service.KinopoiskService
-import retrofit2.Response
-import retrofit2.http.Query
 import javax.inject.Inject
 
 class KinopoiskRemoteDataSource @Inject constructor(

@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.github.posaydone.filmix.core.network.Constants
 import io.github.posaydone.filmix.core.network.interceptor.AuthInterceptor
+import io.github.posaydone.filmix.core.network.interceptor.FingerprintHeaderInterceptor
 import io.github.posaydone.filmix.core.network.interceptor.TokenAuthenticator
 import io.github.posaydone.filmix.core.network.service.AuthService
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
@@ -24,12 +25,13 @@ internal object NetworkModule {
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
+        fingerprintHeaderInterceptor: FingerprintHeaderInterceptor,
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-            .addInterceptor(
-                authInterceptor
-            ).authenticator(tokenAuthenticator).build()
+            .addInterceptor(authInterceptor)
+            .addInterceptor(fingerprintHeaderInterceptor)
+            .authenticator(tokenAuthenticator).build()
 
     }
 

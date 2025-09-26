@@ -20,6 +20,7 @@ import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
+import io.github.posaydone.filmix.tv.ui.screen.showsGridScreen.ShowsGridQueryType
 
 @Composable
 fun FavoritesScreen(
@@ -83,6 +84,9 @@ fun FavoritesScreenContent(
                         launchSingleTop = true
                         restoreState = true
                     }
+                },
+                onViewAll = {
+                    navController.navigate(Screens.Main.ShowsGrid(ShowsGridQueryType.FAVORITES.name))
                 })
         }
         item {
@@ -98,6 +102,9 @@ fun FavoritesScreenContent(
                         launchSingleTop = true
                         restoreState = true
                     }
+                },
+                onViewAll = {
+                    navController.navigate(Screens.Main.ShowsGrid(ShowsGridQueryType.HISTORY.name))
                 })
         }
     }

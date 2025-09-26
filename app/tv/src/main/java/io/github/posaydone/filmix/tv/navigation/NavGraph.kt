@@ -19,6 +19,7 @@ import io.github.posaydone.filmix.tv.ui.screen.favoritesScreen.FavoritesScreen
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.HomeScreen
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.VideoPlayerScreen
 import io.github.posaydone.filmix.tv.ui.screen.showDetailsScreen.ShowDetailsScreen
+import io.github.posaydone.filmix.tv.ui.screen.showsGridScreen.ShowsGridScreen
 import io.github.posaydone.filmix.tv.utils.LocalFocusTransferredOnLaunchProvider
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -104,6 +105,15 @@ private fun NavGraphBuilder.mainGraph(
             }
             LocalFocusTransferredOnLaunchProvider {
                 FavoritesScreen(navController = navController)
+            }
+        }
+        composable<Screens.Main.ShowsGrid> {
+            val args = it.toRoute<Screens.Main.ShowsGrid>()
+            BackHandler {
+                navController.popBackStack()
+            }
+            LocalFocusTransferredOnLaunchProvider {
+                ShowsGridScreen(navController = navController)
             }
         }
     }

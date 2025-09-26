@@ -1,4 +1,4 @@
-package io.github.posaydone.filmix.core.network
+package io.github.posaydone.filmix.core.network.dataSource
 
 import io.github.posaydone.filmix.core.model.AuthRequestBody
 import io.github.posaydone.filmix.core.model.AuthResponse

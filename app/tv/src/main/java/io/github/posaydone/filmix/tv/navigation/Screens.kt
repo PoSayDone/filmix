@@ -23,6 +23,11 @@ sealed class Screens {
         @Serializable
         object Favorite
 
+        @Serializable
+        data class ShowsGrid(
+            val queryType: String,
+        )
+
 
         @Serializable
         data class Details(

@@ -10,7 +10,7 @@ import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.ShowTrailers
-import io.github.posaydone.filmix.core.network.FilmixRemoteDataSource
+import io.github.posaydone.filmix.core.network.dataSource.FilmixRemoteDataSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
