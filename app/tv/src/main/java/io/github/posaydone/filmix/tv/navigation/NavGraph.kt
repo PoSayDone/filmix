@@ -15,6 +15,7 @@ import io.github.posaydone.filmix.core.model.AuthEvent
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.tv.ui.screen.authScreen.AuthScreen
 import io.github.posaydone.filmix.tv.ui.screen.exploreScreen.ExploreScreen
+import io.github.posaydone.filmix.tv.ui.screen.favoritesScreen.FavoritesScreen
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.HomeScreen
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.VideoPlayerScreen
 import io.github.posaydone.filmix.tv.ui.screen.showDetailsScreen.ShowDetailsScreen
@@ -95,6 +96,14 @@ private fun NavGraphBuilder.mainGraph(
             }
             LocalFocusTransferredOnLaunchProvider {
                 ShowDetailsScreen(args.showId, navController)
+            }
+        }
+        composable<Screens.Main.Favorite> {
+            BackHandler {
+                navController.popBackStack()
+            }
+            LocalFocusTransferredOnLaunchProvider {
+                FavoritesScreen(navController = navController)
             }
         }
     }

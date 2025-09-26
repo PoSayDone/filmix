@@ -128,6 +128,16 @@ class FilmixRemoteDataSource @Inject constructor(
         }
     }
 
+    suspend fun fetchFavoritesPage(
+        limit: Int = 48,
+        page: Int? = null,
+    ): PageWithShows<Show> {
+        return filmixApiService.fetchFavoritesPage(
+            page = page,
+            limit = limit,
+        )
+    }
+
     suspend fun removeFromFavorites(showId: Int): Boolean {
         return try {
             val response = filmixApiService.removeFromFavorites(showId)

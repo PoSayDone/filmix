@@ -70,7 +70,7 @@ fun ShowsRow(
     endPadding: Dp = rememberChildPadding().end,
     title: String? = null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge.copy(
-        fontWeight = FontWeight.Medium, fontSize = 20.sp
+        fontWeight = FontWeight.Normal, fontSize = 18.sp
     ),
     showItemTitle: Boolean = true,
     showIndexOverImage: Boolean = false,
@@ -151,7 +151,7 @@ fun ImmersiveShowsRow(
     endPadding: Dp = rememberChildPadding().end,
     title: String? = null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge.copy(
-        fontWeight = FontWeight.Medium, fontSize = 20.sp
+        fontWeight = FontWeight.Normal, fontSize = 18.sp
     ),
     showItemTitle: Boolean = true,
     showIndexOverImage: Boolean = false,
@@ -254,19 +254,20 @@ private fun ShowsRowItem(
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
-    ShowCard(onClick = { onShowSelected(show) }, title = {
-        ShowsRowItemText(
-            showItemTitle = showItemTitle, isItemFocused = isFocused, show = show
-        )
-    }, modifier = Modifier
-        .width(cardWidth)
-        .onFocusChanged {
-            isFocused = it.isFocused
-            if (it.isFocused) {
-                onShowFocused(show)
+    ShowCard(
+        onClick = { onShowSelected(show) }, title = {
+            ShowsRowItemText(
+                showItemTitle = showItemTitle, isItemFocused = isFocused, show = show
+            )
+        }, modifier = Modifier
+            .width(cardWidth)
+            .onFocusChanged {
+                isFocused = it.isFocused
+                if (it.isFocused) {
+                    onShowFocused(show)
+                }
             }
-        }
-        .then(modifier)) {
+            .then(modifier)) {
         ShowsRowItemImage(
             modifier = Modifier.aspectRatio(itemDirection.aspectRatio),
             showIndexOverImage = showIndexOverImage,
@@ -285,7 +286,8 @@ private fun ShowsRowItemImage(
 ) {
     Box(modifier = Modifier, contentAlignment = Alignment.CenterStart) {
         PosterImage(
-            show = show,
+            contentDescritpion = show.title,
+            imageUrl = show.poster,
             modifier = modifier
                 .fillMaxWidth()
                 .drawWithContent {

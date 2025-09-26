@@ -36,7 +36,11 @@ fun ShowsGrid(
                 onClick = { onShowClick(show.id) },
                 modifier = Modifier.aspectRatio(2f / 3f),
             ) {
-                PosterImage(show = show, modifier = Modifier.fillMaxSize())
+                PosterImage(
+                    contentDescritpion = show.title,
+                    imageUrl = show.poster,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

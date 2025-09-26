@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +51,7 @@ fun NavigationSidebar(
         listOf(
             NavigationDrawerScreens.Home,
             NavigationDrawerScreens.Explore,
+            NavigationDrawerScreens.Favorites
         )
     }
 
@@ -59,6 +63,7 @@ fun NavigationSidebar(
     fun getIcon(iconName: String): ImageVector {
         if (iconName == "Home") return Icons.Default.Home
         if (iconName == "Explore") return Icons.Default.Explore
+        if (iconName == "Favorite") return Icons.Default.Favorite
         else return Icons.Default.Error
     }
 

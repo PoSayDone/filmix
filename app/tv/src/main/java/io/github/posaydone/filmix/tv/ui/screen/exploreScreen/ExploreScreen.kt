@@ -40,7 +40,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.posaydone.filmix.tv.navigation.Screens
-import io.github.posaydone.filmix.tv.ui.common.ShowsGrid
+import io.github.posaydone.filmix.tv.ui.common.ShowsRow
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
 import io.github.posaydone.filmix.tv.ui.theme.FilmixCardShape
 
@@ -75,14 +75,11 @@ fun ExploreScreen(
             border = ClickableSurfaceDefaults.border(
                 focusedBorder = Border(
                     border = BorderStroke(
-                        width = if (isTfFocused) 2.dp else 2.dp,
-                        color = animateColorAsState(
+                        width = if (isTfFocused) 2.dp else 2.dp, color = animateColorAsState(
                             targetValue = if (isTfFocused) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.border,
-                            label = ""
+                            else MaterialTheme.colorScheme.border, label = ""
                         ).value
-                    ),
-                    shape = RoundedCornerShape(50)
+                    ), shape = RoundedCornerShape(50)
                 )
             ),
             tonalElevation = 2.dp,
@@ -90,8 +87,7 @@ fun ExploreScreen(
                 .padding(horizontal = childPadding.start)
                 .padding(top = 8.dp)
                 .clip(RoundedCornerShape(50)),
-            onClick = { tfFocusRequester.requestFocus() }
-        ) {
+            onClick = { tfFocusRequester.requestFocus() }) {
             BasicTextField(
                 value = searchQuery,
                 onValueChange = { updatedQuery -> searchQuery = updatedQuery },
@@ -104,8 +100,7 @@ fun ExploreScreen(
                         it()
                         if (searchQuery.isEmpty()) {
                             Text(
-                                modifier = Modifier.graphicsLayer { alpha = 0.6f },
-                                text = "",
+                                modifier = Modifier.graphicsLayer { alpha = 0.6f }, text = "",
 //                            text = stringResource(R.string.search_screen_et_placeholder),
                                 style = MaterialTheme.typography.titleSmall
                             )
@@ -115,8 +110,7 @@ fun ExploreScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        vertical = 4.dp,
-                        horizontal = 8.dp
+                        vertical = 4.dp, horizontal = 8.dp
                     )
                     .focusRequester(tfFocusRequester)
                     .onKeyEvent {
@@ -144,20 +138,17 @@ fun ExploreScreen(
                     )
                 ),
                 keyboardOptions = KeyboardOptions(
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Search
+                    autoCorrectEnabled = false, imeAction = ImeAction.Search
                 ),
                 keyboardActions = KeyboardActions(
                     onSearch = {
                         viewModel.query(searchQuery)
-                    }
-                ),
+                    }),
                 maxLines = 1,
                 interactionSource = tfInteractionSource,
                 textStyle = MaterialTheme.typography.titleSmall.copy(
                     color = MaterialTheme.colorScheme.onSurface
-                )
-            )
+                ))
         }
 
         when (val s = searchState) {
@@ -167,17 +158,15 @@ fun ExploreScreen(
 
             is SearchState.Done -> {
                 val showList = s.showList
-                ShowsGrid(
-                    modifier = Modifier
-                        .padding(horizontal = childPadding.start),
+                ShowsRow(
+                    modifier = Modifier.padding(horizontal = childPadding.start),
                     showList = showList,
-                    onShowClick = { showId ->
-                        navController.navigate(Screens.Main.Details(showId)) {
+                    onShowSelected = { show ->
+                        navController.navigate(Screens.Main.Details(show.id)) {
                             launchSingleTop = true
                             restoreState = true
                         }
-                    }
-                )
+                    })
             }
         }
     }

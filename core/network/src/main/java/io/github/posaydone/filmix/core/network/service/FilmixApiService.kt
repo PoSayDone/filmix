@@ -90,15 +90,21 @@ interface FilmixApiService {
     suspend fun addShowProgress(
         @Path("movieId") movieId: Int, @Body showProgressItem: ShowProgressItem,
     )
-    
+
     @POST("favorites")
     @FormUrlEncoded // Use this annotation for POST requests with x-www-form-urlencoded body
     suspend fun addToFavorites(
-        @Field("id") showId: Int
-    ): Response<Unit> // Use Response<Unit> to check for success (e.g., 200 OK)
+        @Field("id") showId: Int,
+    ): Response<Unit>
+
+    @GET("favorites")
+    suspend fun fetchFavoritesPage(
+        @Query("page") page: Int? = null,
+        @Query("limit") limit: Int = 48,
+    ): PageWithShows<Show>
 
     @DELETE("favorites/{showId}")
     suspend fun removeFromFavorites(
-        @Path("showId") showId: Int
+        @Path("showId") showId: Int,
     ): Response<Unit>
 }

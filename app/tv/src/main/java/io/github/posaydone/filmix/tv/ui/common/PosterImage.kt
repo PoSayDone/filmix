@@ -10,16 +10,17 @@ import io.github.posaydone.filmix.core.model.Show
 
 @Composable
 fun PosterImage(
-    show: Show,
+    contentDescritpion: String?,
+    imageUrl: String,
     modifier: Modifier = Modifier,
 ) {
     AsyncImage(
         modifier = modifier,
         model = ImageRequest.Builder(LocalContext.current)
             .crossfade(true)
-            .data(show.poster)
+            .data(imageUrl)
             .build(),
-        contentDescription = show.title,
+        contentDescription = contentDescritpion,
         contentScale = ContentScale.Crop
 //        contentDescription = StringConstants.Composable.ContentDescription.moviePoster(show.name),
     )

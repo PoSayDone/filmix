@@ -138,6 +138,25 @@ class FilmixRepository @Inject constructor(private val filmixRemoteDataSource: F
         return filmixRemoteDataSource.fetchShowResource(movieId)
     }
 
+    suspend fun getFavoritesPage(
+        limit: Int = 48,
+        page: Int? = null,
+    ): PageWithShows<Show> {
+        return filmixRemoteDataSource.fetchFavoritesPage(
+            page = page, limit = limit
+        )
+    }
+
+    fun getFavoritesList(
+        limit: Int = 48,
+        page: Int? = null,
+    ): Flow<List<Show>> = flow {
+        val list = getFavoritesPage(
+            page = page, limit = limit
+        ).items
+        emit(list)
+    }
+
     suspend fun toggleFavorite(showId: Int, isFavorite: Boolean): Boolean {
         return if (isFavorite) {
             filmixRemoteDataSource.addToFavorites(showId)

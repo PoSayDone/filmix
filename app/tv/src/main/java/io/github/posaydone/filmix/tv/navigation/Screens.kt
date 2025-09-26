@@ -21,7 +21,7 @@ sealed class Screens {
         }
 
         @Serializable
-        object History
+        object Favorite
 
 
         @Serializable
