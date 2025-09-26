@@ -117,4 +117,23 @@ class FilmixRemoteDataSource @Inject constructor(
             throw Exception("HTTP error: ${response.code()}")
         }
     }
+
+
+    suspend fun addToFavorites(showId: Int): Boolean {
+        return try {
+            val response = filmixApiService.addToFavorites(showId)
+            response.isSuccessful
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun removeFromFavorites(showId: Int): Boolean {
+        return try {
+            val response = filmixApiService.removeFromFavorites(showId)
+            response.isSuccessful
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="season">Сезон %1$d</string>
     <string name="episode">Эпизод %1$d</string>
     <string name="continueWatchingMovie">Продолжить</string>
@@ -23,4 +23,13 @@
     <string name="release_year">Год выхода</string>
     <string name="duration">Длительность</string>
     <string name="movie_duration">%1$s мин.</string>
+    <string name="sign_in">Войти</string>
+    
+    <plurals name="hours_plural" tools:ignore="MissingQuantity">
+        <item quantity="other">%d ч</item>
+    </plurals>
+
+    <plurals name="minutes_plural" tools:ignore="MissingQuantity">
+        <item quantity="other">%d мин</item>
+    </plurals>
 </resources>

@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "io.github.posaydone.filmix.mobile"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.posaydone.filmix.mobile"

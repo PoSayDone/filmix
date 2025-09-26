@@ -2,6 +2,7 @@ package io.github.posaydone.filmix.mobile.ui.screen.authScreen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowRightAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -43,11 +47,8 @@ fun AuthScreen(
     navController: NavHostController,
     viewModel: AuthScreenViewModel = hiltViewModel(),
 ) {
-    val scope = rememberCoroutineScope()
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -103,21 +104,31 @@ fun AuthScreen(
 
         Button(
             modifier = Modifier
-                .height(52.dp)
                 .fillMaxWidth(),
             onClick = {
                 viewModel.authorizeUser(username = email, password = password)
-            }, enabled = uiState != AuthScreenUiState.Loading
+            },
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
+            enabled = uiState != AuthScreenUiState.Loading
         ) {
             Text(
-                text = if (uiState != AuthScreenUiState.Loading) "Loading..." else "Login",
-                fontSize = 18.sp
+                text = stringResource(R.string.sign_in),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(Modifier.size(12.dp))
+            Icon(
+                modifier = Modifier.size(28.dp),
+                imageVector = Icons.AutoMirrored.Rounded.ArrowRightAlt,
+                contentDescription = null
             )
         }
 
-        errorMessage?.let {
+        if (uiState is AuthScreenUiState.Error) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = it, color = MaterialTheme.colorScheme.error)
+            Text(
+                text = (uiState as AuthScreenUiState.Error).message,
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }

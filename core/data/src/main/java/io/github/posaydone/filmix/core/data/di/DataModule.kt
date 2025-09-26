@@ -8,10 +8,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.posaydone.filmix.core.data.AuthRepository
 import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.data.KinopoiskRepository
 import io.github.posaydone.filmix.core.data.SessionManagerImpl
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.network.AuthRemoteDataSource
 import io.github.posaydone.filmix.core.network.FilmixRemoteDataSource
+import io.github.posaydone.filmix.core.network.KinopoiskRemoteDataSource
 import javax.inject.Singleton
 
 @Module
@@ -23,6 +25,14 @@ object DataModule {
         dataSource: FilmixRemoteDataSource,
     ): FilmixRepository {
         return FilmixRepository(dataSource)
+    }
+
+    @Provides
+    @Singleton
+    fun provideKinopoiskRepository(
+        dataSource: KinopoiskRemoteDataSource,
+    ): KinopoiskRepository {
+        return KinopoiskRepository(dataSource)
     }
 
     @Provides

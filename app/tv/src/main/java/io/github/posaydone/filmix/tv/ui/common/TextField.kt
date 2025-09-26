@@ -6,6 +6,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +46,7 @@ fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(all = 14.dp),
     placeholderText: String = "Enter text...",
     textStyle: TextStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default.copy(
@@ -83,14 +86,14 @@ fun TextField(
             )
         ),
         tonalElevation = 2.dp,
-        modifier = modifier
-            .clip(RoundedCornerShape(50)),
+        modifier = modifier.clip(RoundedCornerShape(50)),
         onClick = { tfFocusRequester.requestFocus() }) {
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier
-                .padding(14.dp)
+                .padding(contentPadding)
+                .fillMaxHeight()
                 .fillMaxWidth()
                 .focusRequester(tfFocusRequester)
                 .onKeyEvent {
@@ -120,7 +123,6 @@ fun TextField(
             interactionSource = interactionSource, // Pass the interactionSource here
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), // Use theme color for cursor
             decorationBox = { innerTextField ->
-                // You can add placeholder text logic here if BasicTextField itself doesn't suffice
                 Box(contentAlignment = Alignment.CenterStart) {
                     if (value.isEmpty()) {
                         Text(

@@ -1,7 +1,6 @@
 package io.github.posaydone.filmix.tv.ui.screen.homeScreen
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -13,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
@@ -24,6 +22,8 @@ import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.ImmersiveContentUiState
+import io.github.posaydone.filmix.core.model.Show
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.Error
@@ -53,6 +53,7 @@ fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val immersiveContentState by viewModel.immersiveContentState.collectAsStateWithLifecycle()
 
     when (val s = uiState) {
         is HomeScreenUiState.Loading -> {
@@ -73,6 +74,8 @@ fun HomeScreen(
                 popularMovies = s.popularMovies,
                 popularSeries = s.popularSeries,
                 popularCartoons = s.popularCartoons,
+                immersiveContentState = immersiveContentState,
+                onImmersiveShowFocused = viewModel::onImmersiveShowFocused,
                 goToDetails = { showId ->
                     navController.navigate(Screens.Main.Details(showId)) {
                         launchSingleTop = true
@@ -93,6 +96,8 @@ private fun Body(
     popularMovies: ShowList,
     popularSeries: ShowList,
     popularCartoons: ShowList,
+    immersiveContentState: ImmersiveContentUiState, // Receive the new state
+    onImmersiveShowFocused: (Show) -> Unit,       // Receive the callback
     goToDetails: (showId: Int) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
@@ -107,9 +112,10 @@ private fun Body(
                 showItemTitle = false,
                 showList = lastSeenShows,
                 title = stringResource(R.string.continue_watching),
-                onShowSelected = { show ->
-                    goToDetails(show.id)
-                },
+                immersiveState = immersiveContentState,
+                onShowSelected = { show -> goToDetails(show.id) },
+                // Pass the focus callback down
+                onShowFocused = onImmersiveShowFocused
             )
         }
 

@@ -10,13 +10,20 @@
     <string name="history">History</string>
     <string name="score" translatable="false">%.1f</string>
     <string name="movie">Movie</string>
+    <plurals name="hours_plural">
+        <item quantity="other">%d h</item>
+    </plurals>
+    <plurals name="minutes_plural">
+        <item quantity="other">%d min</item>
+    </plurals>
 
     <!-- Error messages -->
+    <string name="sign_in">Sign in</string>
     <string name="search">Search</string>
     <string name="retry_error">Oops, failed to load the movies, try again</string>
     <string name="retry">Retry</string>
     <string name="seasonsCountString">%1$d seasons</string>
-    <string name="playString">Play</string>
+    <string name="playString">Watch</string>
     <string name="continue_watching">Continue watching</string>
     <string name="watching_now">Watching now</string>
     <string name="popular_movies">Popular movies</string>

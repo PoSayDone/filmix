@@ -11,11 +11,22 @@ import androidx.compose.ui.Modifier
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import dagger.hilt.android.AndroidEntryPoint
+import io.github.posaydone.filmix.core.model.AuthEvent
+import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.tv.navigation.NavGraph
 import io.github.posaydone.filmix.tv.ui.theme.FilmixTheme
+import kotlinx.coroutines.flow.SharedFlow
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var sessionManager: SessionManager // Inject SessionManager
+
+    @Inject
+    @JvmSuppressWildcards
+    lateinit var authEventFlow: SharedFlow<AuthEvent> // Inject the flow
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -28,7 +39,10 @@ class MainActivity : ComponentActivity() {
                     CompositionLocalProvider(
                         LocalContentColor provides MaterialTheme.colorScheme.onSurface
                     ) {
-                        NavGraph()
+                        NavGraph(
+                            sessionManager = sessionManager,
+                            authEventFlow = authEventFlow
+                        )
                     }
                 }
             }

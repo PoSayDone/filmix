@@ -137,4 +137,12 @@ class FilmixRepository @Inject constructor(private val filmixRemoteDataSource: F
     suspend fun getShowResource(movieId: Int): ShowResourceResponse {
         return filmixRemoteDataSource.fetchShowResource(movieId)
     }
+
+    suspend fun toggleFavorite(showId: Int, isFavorite: Boolean): Boolean {
+        return if (isFavorite) {
+            filmixRemoteDataSource.addToFavorites(showId)
+        } else {
+            filmixRemoteDataSource.removeFromFavorites(showId)
+        }
+    }
 }

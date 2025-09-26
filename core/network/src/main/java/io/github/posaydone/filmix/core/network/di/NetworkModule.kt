@@ -9,6 +9,7 @@ import io.github.posaydone.filmix.core.network.interceptor.AuthInterceptor
 import io.github.posaydone.filmix.core.network.interceptor.TokenAuthenticator
 import io.github.posaydone.filmix.core.network.service.AuthService
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
+import io.github.posaydone.filmix.core.network.service.KinopoiskService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -35,10 +36,8 @@ internal object NetworkModule {
     @Provides
     @Singleton
     fun provideAuthService(): AuthService {
-        return Retrofit.Builder().baseUrl(Constants.BASE_URL).addConverterFactory(
-                GsonConverterFactory.create(
-                )
-            ).client(
+        return Retrofit.Builder().baseUrl(Constants.BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create()).client(
                 OkHttpClient.Builder()
                     .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
                     .build()
@@ -47,10 +46,20 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideKinopoiskService(
+        okHttpClient: OkHttpClient,
+    ): KinopoiskService {
+        return Retrofit.Builder().baseUrl(Constants.KINOPOISK_API_URL)
+            .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
+            .create(KinopoiskService::class.java)
+    }
+
+    @Provides
+    @Singleton
     fun provideFilmixApiService(
         okHttpClient: OkHttpClient,
     ): FilmixApiService {
-        return Retrofit.Builder().baseUrl(Constants.BASE_URL)
+        return Retrofit.Builder().baseUrl(Constants.FILMIX_API_URL)
             .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
             .create(FilmixApiService::class.java)
     }

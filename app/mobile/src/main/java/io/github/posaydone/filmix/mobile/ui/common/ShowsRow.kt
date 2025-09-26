@@ -45,7 +45,7 @@ fun ShowsRow(
         Text(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             text = title,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.titleSmall,
         )
 
         AnimatedContent(
@@ -57,9 +57,7 @@ fun ShowsRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .focusRequester(lazyRow)
-                    .focusRestorer {
-                        firstItem
-                    }
+                    .focusRestorer(firstItem)
             ) {
 
                 itemsIndexed(showList, key = { _, show -> show.id }) { index, show ->

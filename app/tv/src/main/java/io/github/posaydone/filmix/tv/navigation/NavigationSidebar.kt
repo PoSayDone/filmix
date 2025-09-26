@@ -32,6 +32,8 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.NavigationDrawer
 import androidx.tv.material3.NavigationDrawerItem
+import androidx.tv.material3.NavigationDrawerItemColors
+import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import kotlinx.coroutines.delay
@@ -66,7 +68,6 @@ fun NavigationSidebar(
         focusEnabled = true
     }
 
-    // Unified focus group for both sidebar and content
     NavigationDrawer(
         drawerState = drawerState, drawerContent = {
             if (destination) LazyColumn(
@@ -89,6 +90,10 @@ fun NavigationSidebar(
                         currentDestination?.hierarchy?.any { it.route == item.route::class.qualifiedName } == true
 
                     NavigationDrawerItem(
+                        colors = NavigationDrawerItemDefaults.colors(
+                            focusedSelectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            focusedContentColor = MaterialTheme.colorScheme.primary
+                        ),
                         modifier = Modifier
                             .focusable(focusEnabled)
                             .focusProperties { canFocus = focusEnabled },

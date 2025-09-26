@@ -1,18 +1,30 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
+import android.health.connect.datatypes.units.Length
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.data.KinopoiskRepository
 import io.github.posaydone.filmix.core.model.FilmixCategory
+import io.github.posaydone.filmix.core.model.KinopoiskCountry
+import io.github.posaydone.filmix.core.model.KinopoiskGenre
+import io.github.posaydone.filmix.core.model.KinopoiskMovie
+import io.github.posaydone.filmix.core.model.Rating
 import io.github.posaydone.filmix.core.model.SessionManager
+import io.github.posaydone.filmix.core.model.Show
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowList
+import io.github.posaydone.filmix.core.model.Votes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -31,8 +43,7 @@ sealed class HomeScreenUiState {
         val sessionManager: SessionManager,
         val message: String,
         val onRetry: () -> Unit,
-    ) :
-        HomeScreenUiState()
+    ) : HomeScreenUiState()
 
     data class Done(
         val sessionManager: SessionManager,
@@ -45,9 +56,34 @@ sealed class HomeScreenUiState {
     ) : HomeScreenUiState()
 }
 
+@Immutable
+sealed interface ImmersiveContentUiState {
+    data object Loading : ImmersiveContentUiState
+    data class Content(
+        val backdropUrl: String?,
+        val title: String?,
+        val ageRating: Int,
+        val logoUrl: String?,
+        val description: String?,
+        val shortDescription: String?,
+        val rating: Rating,
+        val votes: Votes,
+        val isSeries: Boolean,
+        val type: String,
+        val seriesLength: Int?,
+        val movieLength: Int?,
+        val genres: List<KinopoiskGenre>,
+        val countries: List<KinopoiskCountry>,
+        val year: Int,
+    ) : ImmersiveContentUiState
+
+    data object Error : ImmersiveContentUiState
+}
+
 @HiltViewModel
 class HomeScreenViewModel @Inject constructor(
     private val filmixRepository: FilmixRepository,
+    private val kinopoiskRepository: KinopoiskRepository,
     private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val retryChannel = Channel<Unit>()
@@ -75,8 +111,7 @@ class HomeScreenViewModel @Inject constructor(
                 HomeScreenUiState.Error(
                     sessionManager = sessionManager,
                     message = error.exceptionOrNull()?.message ?: "Unknown error",
-                    onRetry = { retry() }
-                )
+                    onRetry = { retry() })
             } else {
                 HomeScreenUiState.Done(
                     sessionManager = sessionManager,
@@ -85,8 +120,7 @@ class HomeScreenViewModel @Inject constructor(
                     popularMovies = popularMoviesResult.getOrThrow(),
                     popularSeries = popularSeriesResult.getOrThrow(),
                     popularCartoons = popularCartoonsResult.getOrThrow(),
-                    getShowImages = { filmixRepository.getShowImages(it) }
-                )
+                    getShowImages = { filmixRepository.getShowImages(it) })
             }
         }
     }.stateIn(
@@ -94,6 +128,59 @@ class HomeScreenViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = HomeScreenUiState.Loading
     )
+
+    private val _immersiveContentState =
+        MutableStateFlow<ImmersiveContentUiState>(ImmersiveContentUiState.Loading)
+    val immersiveContentState: StateFlow<ImmersiveContentUiState> =
+        _immersiveContentState.asStateFlow()
+
+    private val kinopoiskCache = mutableMapOf<Int, ImmersiveContentUiState.Content>()
+    private var fetchJob: Job? = null
+
+    fun onImmersiveShowFocused(show: Show) {
+        fetchJob?.cancel()
+
+        if (kinopoiskCache.containsKey(show.id)) {
+            _immersiveContentState.value = kinopoiskCache[show.id]!!
+            return
+        }
+
+        fetchJob = viewModelScope.launch {
+            _immersiveContentState.value = ImmersiveContentUiState.Loading
+            try {
+                val searchResult = kinopoiskRepository.movieSearch(
+                    limit = 1, query = show.original_name ?: show.title
+                )
+                val kinopoiskMovie = searchResult.docs.firstOrNull()
+
+                if (kinopoiskMovie != null) {
+                    val content = ImmersiveContentUiState.Content(
+                        backdropUrl = kinopoiskMovie.backdrop?.url,
+                        title = kinopoiskMovie.name,
+                        ageRating = kinopoiskMovie.ageRating,
+                        logoUrl = kinopoiskMovie.logo?.url,
+                        shortDescription = kinopoiskMovie.shortDescription,
+                        description = kinopoiskMovie.description,
+                        countries = kinopoiskMovie.countries,
+                        type = kinopoiskMovie.type,
+                        year = kinopoiskMovie.year,
+                        movieLength = kinopoiskMovie.movieLength,
+                        seriesLength = kinopoiskMovie.seriesLength,
+                        votes = kinopoiskMovie.votes,
+                        genres = kinopoiskMovie.genres,
+                        rating = kinopoiskMovie.rating,
+                        isSeries = kinopoiskMovie.isSeries
+                    )
+
+                    kinopoiskCache[show.id] = content
+                    _immersiveContentState.value = content
+                }
+
+            } catch (e: Exception) {
+                _immersiveContentState.value = ImmersiveContentUiState.Error
+            }
+        }
+    }
 
     init {
         retry()
@@ -110,5 +197,4 @@ class HomeScreenViewModel @Inject constructor(
  * Extension function to map a Flow to a Result.
  */
 private fun <T> Flow<T>.mapToResult(): Flow<Result<T>> =
-    this.map { Result.success(it) }
-        .catch { emit(Result.failure(it)) }
+    this.map { Result.success(it) }.catch { emit(Result.failure(it)) }

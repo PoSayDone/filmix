@@ -136,27 +136,27 @@ private fun Body(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 16.dp), verticalArrangement = Arrangement.Center
         ) {
-            Button(onClick = {
-                sessionManager.saveAccessToken(
-                    sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
-                )
-            }) {
-                Text("clear expiration time")
-            }
-            Button(onClick = {
-                sessionManager.saveAccessToken(
-                    null, System.currentTimeMillis() - 1000
-                )
-            }) {
-                Text("remove token")
-            }
-            Button(onClick = {
-                sessionManager.saveAccessToken(
-                    "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
-                )
-            }) {
-                Text("save wrong token")
-            }
+//            Button(onClick = {
+//                sessionManager.saveAccessToken(
+//                    sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
+//                )
+//            }) {
+//                Text("clear expiration time")
+//            }
+//            Button(onClick = {
+//                sessionManager.saveAccessToken(
+//                    null, System.currentTimeMillis() - 1000
+//                )
+//            }) {
+//                Text("remove token")
+//            }
+//            Button(onClick = {
+//                sessionManager.saveAccessToken(
+//                    "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
+//                )
+//            }) {
+//                Text("save wrong token")
+//            }
             ShowsRow(
                 lastSeenShows,
                 title = stringResource(R.string.continue_watching),

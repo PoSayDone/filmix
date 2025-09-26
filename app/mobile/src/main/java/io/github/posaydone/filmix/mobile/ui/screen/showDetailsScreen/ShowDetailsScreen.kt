@@ -8,23 +8,34 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -33,18 +44,22 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -53,14 +68,25 @@ import coil.request.ImageRequest
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenViewModel
+import io.github.posaydone.filmix.core.common.utils.formatDuration
+import io.github.posaydone.filmix.core.common.utils.formatVoteCount
+import io.github.posaydone.filmix.core.model.KinopoiskCountry
+import io.github.posaydone.filmix.core.model.KinopoiskGenre
+import io.github.posaydone.filmix.core.model.KinopoiskMovie
+import io.github.posaydone.filmix.core.model.Rating
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowTrailers
+import io.github.posaydone.filmix.core.model.Votes
 import io.github.posaydone.filmix.mobile.navigation.Screens
 import io.github.posaydone.filmix.mobile.ui.common.Error
+import io.github.posaydone.filmix.mobile.ui.common.LargeButton
+import io.github.posaydone.filmix.mobile.ui.common.LargeButtonStyle
 import io.github.posaydone.filmix.mobile.ui.common.Loading
+import kotlin.math.max
+import kotlin.math.min
 
 val TAG = "ShowDetailsScreen"
 
@@ -91,6 +117,8 @@ fun ShowDetailsScreen(
                 showProgress = s.showProgress,
                 showImages = s.showImages,
                 showTrailers = s.showTrailers,
+                kinopoiskMovie = s.kinopoiskMovie,
+                toggleFavorites = s.toggleFavorites,
                 goToMoviePlayer = {
                     navController.navigate(Screens.Player(showId)) {
                         launchSingleTop = true
@@ -101,14 +129,13 @@ fun ShowDetailsScreen(
                     navController.navigateUp()
                 },
                 sessionManager = s.sessionManager,
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
                     .animateContentSize()
             )
         }
     }
 }
-
 
 @Composable
 private fun Details(
@@ -117,233 +144,277 @@ private fun Details(
     showProgress: ShowProgress,
     showImages: ShowImages,
     showTrailers: ShowTrailers,
+    kinopoiskMovie: KinopoiskMovie?,
+    toggleFavorites: () -> Unit,
     goToMoviePlayer: () -> Unit,
     goBack: () -> Unit,
     modifier: Modifier = Modifier,
     sessionManager: SessionManager,
 ) {
-    val gradient = Brush.verticalGradient(
-        colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background),
-        startY = 0.0f,
-        endY = 1000.0f
-    )
+    val lazyListState = rememberLazyListState()
 
-    Box {
-        Column(
-            modifier = modifier
-                .padding(
-                    top = 0.dp,
-                    start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
-                    end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
-                    bottom = paddingValues.calculateBottomPadding(),
-                )
-                .verticalScroll(rememberScrollState())
+    Box(modifier = modifier) {
+        val imageUrl = kinopoiskMovie?.backdrop?.url ?: showImages.frames.firstOrNull()?.url
+        ?: showDetails.poster
+
+        val headerHeight = 400.dp
+        val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
+
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
+                .build(),
+            contentDescription = "Background",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(headerHeight)
+                .graphicsLayer {
+                    val scrollOffset = lazyListState.firstVisibleItemScrollOffset.toFloat()
+                    alpha = (1f - (scrollOffset / headerHeightPx)).coerceIn(0f, 1f)
+                })
+
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = paddingValues.calculateTopPadding(),
+                bottom = paddingValues.calculateBottomPadding()
+            )
         ) {
-            Box(modifier = Modifier.height(500.dp)) {
+            item {
+                Spacer(modifier = Modifier.height(300.dp))
+            }
 
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current).crossfade(true)
-                        .data(showDetails.poster).build(),
-                    contentDescription = "Poster",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter),
-                    contentScale = ContentScale.Crop
-                )
-
-                Box(
-                    modifier = Modifier
-                        .height(430.dp)
-                        .fillMaxWidth()
-                        .background(gradient)
-                        .align(Alignment.BottomCenter),
-                )
+            item {
                 Column(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = showDetails.originalTitle,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleSmall
-                    )
-
-                    Text(
-                        text = showDetails.title,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(
-                            space = 16.dp, alignment = Alignment.CenterHorizontally
+                        .fillMaxWidth()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent, MaterialTheme.colorScheme.background
+                                ), startY = 0f, endY = with(LocalDensity.current) { 50.dp.toPx() })
                         )
+                        .padding(top = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = showDetails.year.toString())
-                        Text(text = showDetails.countries.get(0).name)
-                        showDetails.mpaa?.let {
-                            if (it.isNotBlank()) {
-                                var text = it
-                                if (!text.contains("+")) {
-                                    text += "+"
-                                }
-                                Text(text = text)
-                            }
-                        }
+                        TitleSection(
+                            title = showDetails.title, logoUrl = kinopoiskMovie?.logo?.url
+                        )
+                        MetadataColumn(
+                            ratingKp = kinopoiskMovie?.rating?.kp
+                            ?: showDetails.ratingKinopoisk,
+                            votesKp = kinopoiskMovie?.votes?.kp ?: showDetails.votesKinopoisk,
+                            originalTitle = showDetails.originalTitle,
+                            title = showDetails.title,
+                            year = kinopoiskMovie?.year ?: showDetails.year,
+                            genres = (kinopoiskMovie?.genres?.map { it.name }
+                                ?: showDetails.genres.map { it.name }),
+                            countries = (kinopoiskMovie?.countries?.map { it.name }
+                                ?: showDetails.countries.map { it.name }),
+                            totalMinutes = max(
+                                kinopoiskMovie?.movieLength ?: 0, kinopoiskMovie?.seriesLength ?: 0
+                            ).takeIf { it > 0 } ?: showDetails.duration ?: 0,
+                            ageRating = kinopoiskMovie?.ageRating
+                                ?: showDetails.mpaa?.filter { it.isDigit() }?.toIntOrNull()
+                        )
+
+                        ActionButtons(
+                            goToMoviePlayer = goToMoviePlayer,
+                            toggleFavorites = toggleFavorites,
+                            showDetails = showDetails
+                        )
                     }
 
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .padding(vertical = 24.dp),
+                    ) {
+                        DescriptionSection(
+                            description = kinopoiskMovie?.description
+                                ?: kinopoiskMovie?.shortDescription ?: showDetails.shortStory
+                        )
+                    }
                 }
             }
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-//                Button(onClick = {
-//                    sessionManager.saveAccessToken(
-//                        sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000000
-//                    )
-//                }) {
-//                    Text("clear expiration time")
-//                }
-//                Button(onClick = {
-//                    sessionManager.saveAccessToken(
-//                        null, System.currentTimeMillis() - 1000
-//                    )
-//                }) {
-//                    Text("remove token")
-//                }
-//                Button(onClick = {
-//                    sessionManager.saveAccessToken(
-//                        "penisini", sessionManager.fetchTokenExpiresIn()
-//                    )
-//                }) {
-//                    Text("save wrong token")
-//                }
-                Button(
-                    onClick = goToMoviePlayer, modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.size(18.dp),
-                        painter = painterResource(id = R.drawable.ic_play),
-                        contentDescription = "Play"
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (showProgress.isNotEmpty()) {
-                            if (showDetails.lastEpisode == null) {
-                                stringResource(R.string.continueWatchingMovie)
-                            } else {
-                                stringResource(
-                                    R.string.continueWatchingSeries,
-                                    showProgress[0].season,
-                                    showProgress[0].episode
-                                )
-                            }
-                        } else {
-                            stringResource(R.string.playString)
-                        }
-                    )
-                }
+        }
 
-                Row(
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        space = 8.dp, alignment = Alignment.CenterHorizontally
-                    ),
-                ) {
-                    AssistChip(label = {
-                        Text(
-                            stringResource(
-                                R.string.score, showDetails.ratingImdb
-                            )
-                        )
-                    }, leadingIcon = {
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            painter = painterResource(id = R.drawable.ic_imdb),
-                            contentDescription = "Imdb icon"
-                        )
-                    }, onClick = {})
-                    AssistChip(label = {
-                        Text(
 
-                            stringResource(
-                                R.string.score, showDetails.ratingKinopoisk
-                            )
-                        )
-                    }, leadingIcon = {
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            painter = painterResource(id = R.drawable.ic_kp),
-                            contentDescription = "Kinopoisk icon"
-                        )
-                    }, onClick = {})
-                    val ratingFilmix: Double = ((showDetails.votesPos.toDouble()
-                        .div((showDetails.votesNeg + showDetails.votesPos).toDouble())) * 10)
-                    AssistChip(label = {
-                        Text(
-                            stringResource(R.string.score, ratingFilmix)
-                        )
-                    }, leadingIcon = {
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            painter = painterResource(id = R.drawable.ic_filmix),
-                            contentDescription = "Filmix icon"
-                        )
-                    }, onClick = {})
-                }
+        TransparentTopAppBar(goBack = goBack)
+    }
+}
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedButton(
-                        onClick = { /* Handle like */ },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 4.dp)
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            painter = painterResource(id = R.drawable.ic_like),
-                            contentDescription = "Like icon"
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = showDetails.votesPos.toString())
-                    }
 
-                    OutlinedButton(
-                        onClick = { /* Handle dislike */ }, modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            painter = painterResource(id = R.drawable.ic_dislike),
-                            contentDescription = "Dislike"
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = showDetails.votesNeg.toString())
-                    }
-                }
+@Composable
+private fun TitleSection(title: String, logoUrl: String?) {
+    if (logoUrl != null) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current).data(logoUrl).build(),
+            contentDescription = title,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxWidth(0.8f) // Take up to 80% of width
+                .height(80.dp)
+        )
+    } else {
+        Text(
+            text = title,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+        )
+    }
+}
+
+@Composable
+private fun MetadataColumn(
+    ratingKp: Double?,
+    votesKp: Int?,
+    originalTitle: String,
+    title: String,
+    year: Int?,
+    genres: List<String>,
+    countries: List<String>,
+    totalMinutes: Int,
+    ageRating: Int?,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+
+    Column(
+        modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "%.1f".format(ratingKp ?: 0.0) + " (${formatVoteCount(votesKp ?: 0)})",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (originalTitle.isNotBlank() && originalTitle != title) {
+                Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    text = showDetails.shortStory,
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium
+                    text = originalTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-        TopAppBar({},
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-            navigationIcon = {
-                FilledIconButton(
-                    onClick = goBack,
-                ) {
-                    Icon(
-                        contentDescription = "Navback icon",
-                        painter = painterResource(R.drawable.ic_arrow_back)
-                    )
-                }
-            })
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = year?.toString() ?: "",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = genres.take(2).joinToString(", "),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = countries.take(2).joinToString(", "),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = formatDuration(context, totalMinutes),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            ageRating?.let {
+                Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "$it+",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun ActionButtons(
+    goToMoviePlayer: () -> Unit,
+    toggleFavorites: () -> Unit,
+    showDetails: ShowDetails,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        LargeButton(
+            onClick = goToMoviePlayer
+        ) {
+            Icon(
+                contentDescription = "Play",
+                modifier = Modifier.size(28.dp),
+                imageVector = Icons.Rounded.PlayArrow,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = stringResource(R.string.playString))
+        }
+        LargeButton(
+            style = LargeButtonStyle.OUTLINED,
+            onClick = toggleFavorites,
+            colors = if (showDetails?.isFavorite == true) ButtonDefaults.buttonColors().copy(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) else ButtonDefaults.outlinedButtonColors()
+        ) {
+            Icon(
+                contentDescription = "Favorite",
+                modifier = Modifier.size(28.dp),
+                imageVector = if (showDetails?.isFavorite == true) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DescriptionSection(description: String) {
+    Text(
+        text = description,
+        style = MaterialTheme.typography.bodyLarge.copy(letterSpacing = 0.sp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+private fun TransparentTopAppBar(goBack: () -> Unit) {
+    TopAppBar(
+        title = {},
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        navigationIcon = {
+            FilledIconButton(onClick = goBack, modifier = Modifier.size(56.dp)) {
+                Icon(
+                    contentDescription = "Back", painter = painterResource(R.drawable.ic_arrow_back)
+                )
+            }
+        })
 }

@@ -57,4 +57,5 @@ class AuthScreenViewModel @Inject constructor(
     fun onNavigationHandled() {
         _uiState.value = AuthScreenUiState.Idle
     }
+
 }
