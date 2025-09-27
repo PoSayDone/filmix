@@ -51,7 +51,7 @@ fun LargeButton(
         .then(modifier)
 
     val commonPadding = PaddingValues(
-        horizontal = 24.dp, vertical = 16.dp
+        horizontal = 24.dp, vertical = 18.dp
     )
 
     when (style) {

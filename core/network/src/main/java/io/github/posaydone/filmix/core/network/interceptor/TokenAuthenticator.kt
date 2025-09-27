@@ -81,7 +81,7 @@ class TokenAuthenticator @Inject constructor(
     }
 
     private fun triggerForceLogout() {
-        sessionManager.clearTokens()
+        sessionManager.logout()
         runBlocking {
             Log.d(TAG, "Emitting ForceLogout event.")
             authEventChannel.tryEmit(AuthEvent.ForceLogout)

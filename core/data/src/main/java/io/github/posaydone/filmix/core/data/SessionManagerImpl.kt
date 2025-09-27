@@ -60,7 +60,7 @@ class SessionManagerImpl @Inject constructor(@ApplicationContext context: Contex
         return prefs.getString(USER_REFRESH_TOKEN, null)
     }
 
-    override fun clearTokens() {
+    override fun logout() {
         prefs.edit().clear().apply()
     }
 

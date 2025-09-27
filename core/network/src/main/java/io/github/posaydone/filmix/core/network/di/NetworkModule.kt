@@ -25,24 +25,23 @@ internal object NetworkModule {
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
-        fingerprintHeaderInterceptor: FingerprintHeaderInterceptor,
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-            .addInterceptor(authInterceptor)
-            .addInterceptor(fingerprintHeaderInterceptor)
-            .authenticator(tokenAuthenticator).build()
+            .addInterceptor(authInterceptor).authenticator(tokenAuthenticator).build()
 
     }
 
     @Provides
     @Singleton
-    fun provideAuthService(): AuthService {
+    fun provideAuthService(
+        fingerprintHeaderInterceptor: FingerprintHeaderInterceptor,
+    ): AuthService {
         return Retrofit.Builder().baseUrl(Constants.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create()).client(
                 OkHttpClient.Builder()
                     .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-                    .build()
+                    .addInterceptor(fingerprintHeaderInterceptor).build()
             ).build().create(AuthService::class.java)
     }
 

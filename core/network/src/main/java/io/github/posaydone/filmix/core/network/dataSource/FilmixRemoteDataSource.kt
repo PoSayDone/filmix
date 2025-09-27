@@ -13,6 +13,7 @@ import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.ShowTrailers
+import io.github.posaydone.filmix.core.model.UserProfileInfo
 import io.github.posaydone.filmix.core.model.VideoWithQualities
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
 import io.github.posaydone.filmix.core.network.utils.transformSeries
@@ -136,6 +137,10 @@ class FilmixRemoteDataSource @Inject constructor(
             page = page,
             limit = limit,
         )
+    }
+
+    suspend fun fetchUserProfile(): UserProfileInfo {
+        return filmixApiService.fetchUserProfile()
     }
 
     suspend fun removeFromFavorites(showId: Int): Boolean {

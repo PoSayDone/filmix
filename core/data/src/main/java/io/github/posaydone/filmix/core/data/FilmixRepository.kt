@@ -10,6 +10,7 @@ import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.ShowTrailers
+import io.github.posaydone.filmix.core.model.UserProfileInfo
 import io.github.posaydone.filmix.core.network.dataSource.FilmixRemoteDataSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -147,7 +148,7 @@ class FilmixRepository @Inject constructor(private val filmixRemoteDataSource: F
         )
     }
 
-    fun getFavoritesList(
+    suspend fun getFavoritesList(
         limit: Int = 48,
         page: Int? = null,
     ): Flow<List<Show>> = flow {
@@ -155,6 +156,10 @@ class FilmixRepository @Inject constructor(private val filmixRemoteDataSource: F
             page = page, limit = limit
         ).items
         emit(list)
+    }
+
+    suspend fun getUserProfile(): UserProfileInfo {
+        return filmixRemoteDataSource.fetchUserProfile()
     }
 
     suspend fun toggleFavorite(showId: Int, isFavorite: Boolean): Boolean {

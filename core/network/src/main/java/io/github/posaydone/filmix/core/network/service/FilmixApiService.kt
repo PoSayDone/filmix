@@ -8,7 +8,7 @@ import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowTrailers
-import io.github.posaydone.filmix.core.network.Constants
+import io.github.posaydone.filmix.core.model.UserProfileInfo
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -16,7 +16,6 @@ import retrofit2.http.DELETE
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
-import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -103,8 +102,11 @@ interface FilmixApiService {
         @Query("limit") limit: Int = 48,
     ): PageWithShows<Show>
 
+    @GET("me")
+    suspend fun fetchUserProfile(): UserProfileInfo
+
     @DELETE("favorites/{showId}")
     suspend fun removeFromFavorites(
-        @Path("showId") showId: Int,
+        @Path("showId") showId: Int
     ): Response<Unit>
 }

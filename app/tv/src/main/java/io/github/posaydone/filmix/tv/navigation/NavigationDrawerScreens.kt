@@ -25,4 +25,11 @@ sealed class NavigationDrawerScreens<T>(val name: String, val icon: String, val 
         icon = "Favorite",
         route = Screens.Main.Favorite
     )
+
+    @Serializable
+    data object Profile : NavigationDrawerScreens<Screens.Main.Profile>(
+        name = "Profile",
+        icon = "Profile",
+        route = Screens.Main.Profile
+    )
 }

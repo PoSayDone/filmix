@@ -22,6 +22,9 @@ sealed class Screens {
 
         @Serializable
         object Favorite
+        
+        @Serializable
+        object Profile
 
         @Serializable
         data class ShowsGrid(
