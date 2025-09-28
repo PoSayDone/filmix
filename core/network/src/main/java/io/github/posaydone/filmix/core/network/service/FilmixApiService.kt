@@ -8,6 +8,8 @@ import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowTrailers
+import io.github.posaydone.filmix.core.model.StreamTypeRequest
+import io.github.posaydone.filmix.core.model.StreamTypeResponse
 import io.github.posaydone.filmix.core.model.UserProfileInfo
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -105,8 +107,18 @@ interface FilmixApiService {
     @GET("me")
     suspend fun fetchUserProfile(): UserProfileInfo
 
+    @GET("user/stream-type")
+    suspend fun fetchStreamType(): StreamTypeResponse
+
+    @POST("user/stream-type")
+    suspend fun updateStreamType(@Body request: StreamTypeRequest): Response<Unit>
+
+    @FormUrlEncoded
+    @POST("user/vs")
+    suspend fun updateServerLocation(@Field("vs") serverLocation: String): Response<Unit>
+
     @DELETE("favorites/{showId}")
     suspend fun removeFromFavorites(
-        @Path("showId") showId: Int
+        @Path("showId") showId: Int,
     ): Response<Unit>
 }

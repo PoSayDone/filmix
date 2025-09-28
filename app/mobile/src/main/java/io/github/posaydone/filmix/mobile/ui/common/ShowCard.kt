@@ -53,14 +53,14 @@ fun ShowCard(show: Show, modifier: Modifier = Modifier, onClick: () -> Unit) {
 
 
             Text(
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.labelMedium,
                 text = show.title,
                 maxLines = 2,
                 minLines = 2,
                 softWrap = true,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
-                    .padding(4.dp),
+                    .padding(top = 6.dp),
             )
         }
     }

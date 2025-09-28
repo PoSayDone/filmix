@@ -10,6 +10,7 @@ import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.ShowTrailers
+import io.github.posaydone.filmix.core.model.StreamTypeResponse
 import io.github.posaydone.filmix.core.model.UserProfileInfo
 import io.github.posaydone.filmix.core.network.dataSource.FilmixRemoteDataSource
 import kotlinx.coroutines.flow.Flow
@@ -160,6 +161,18 @@ class FilmixRepository @Inject constructor(private val filmixRemoteDataSource: F
 
     suspend fun getUserProfile(): UserProfileInfo {
         return filmixRemoteDataSource.fetchUserProfile()
+    }
+
+    suspend fun getStreamType(): StreamTypeResponse {
+        return filmixRemoteDataSource.fetchStreamType()
+    }
+
+    suspend fun updateStreamType(streamType: String): Boolean {
+        return filmixRemoteDataSource.updateStreamType(streamType)
+    }
+
+    suspend fun updateServerLocation(serverLocation: String): Boolean {
+        return filmixRemoteDataSource.updateServerLocation(serverLocation)
     }
 
     suspend fun toggleFavorite(showId: Int, isFavorite: Boolean): Boolean {

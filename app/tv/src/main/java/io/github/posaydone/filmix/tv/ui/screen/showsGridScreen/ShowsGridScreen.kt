@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,6 +25,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridQueryType
+import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridUiState
 import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.CircularProgressIndicator
 import io.github.posaydone.filmix.tv.ui.common.Error

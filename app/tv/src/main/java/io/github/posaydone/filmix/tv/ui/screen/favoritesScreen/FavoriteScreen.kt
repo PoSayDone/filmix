@@ -14,13 +14,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import io.github.posaydone.filmix.core.common.sharedViewModel.FavoritesScreenUiState
+import io.github.posaydone.filmix.core.common.sharedViewModel.FavoritesScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridQueryType
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
-import io.github.posaydone.filmix.tv.ui.screen.showsGridScreen.ShowsGridQueryType
 
 @Composable
 fun FavoritesScreen(

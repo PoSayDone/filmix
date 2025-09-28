@@ -5,16 +5,20 @@ import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -22,19 +26,19 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.compose.ui.unit.sp
 import io.github.posaydone.filmix.core.model.Show
 import io.github.posaydone.filmix.core.model.ShowList
-import io.github.posaydone.filmix.mobile.navigation.Screens
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShowsRow(
     showList: ShowList,
     modifier: Modifier = Modifier,
     title: String,
-    navController: NavController,
+    onShowClick: (Show) -> Unit = { },
+    onViewAll: (() -> Unit)? = null,
 ) {
 
     val (lazyRow, firstItem) = remember { FocusRequester.createRefs() }
@@ -42,11 +46,37 @@ fun ShowsRow(
     Column(
         modifier = modifier.focusGroup()
     ) {
-        Text(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-        )
+        Surface(
+            onClick = onViewAll ?: {},
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 18.sp,
+                        letterSpacing = 0.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                )
+
+                if (onViewAll != null)
+                    Text(
+                        text = "View All",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            letterSpacing = 0.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+            }
+        }
 
         AnimatedContent(
             targetState = showList,
@@ -71,10 +101,7 @@ fun ShowsRow(
                         index = index,
                         onMovieSelected = {
                             lazyRow.saveFocusedChild()
-                            navController.navigate(Screens.Main.Details(show.id)) {
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            onShowClick(show)
                         },
                         onMovieFocused = {},
                         show = show,
@@ -97,9 +124,7 @@ private fun ShowsRowItem(
     var isFocused by remember { mutableStateOf(false) }
 
     ShowCard(
-        show = show,
-        onClick = { onMovieSelected(show) },
-        modifier = Modifier
+        show = show, onClick = { onMovieSelected(show) }, modifier = Modifier
             .onFocusChanged {
                 isFocused = it.isFocused
                 if (it.isFocused) {
@@ -113,6 +138,5 @@ private fun ShowsRowItem(
                     FocusRequester.Default
                 }
             }
-            .then(modifier)
-    )
+            .then(modifier))
 }

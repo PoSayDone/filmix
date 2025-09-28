@@ -13,6 +13,8 @@ import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowProgressItem
 import io.github.posaydone.filmix.core.model.ShowResourceResponse
 import io.github.posaydone.filmix.core.model.ShowTrailers
+import io.github.posaydone.filmix.core.model.StreamTypeRequest
+import io.github.posaydone.filmix.core.model.StreamTypeResponse
 import io.github.posaydone.filmix.core.model.UserProfileInfo
 import io.github.posaydone.filmix.core.model.VideoWithQualities
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
@@ -141,6 +143,20 @@ class FilmixRemoteDataSource @Inject constructor(
 
     suspend fun fetchUserProfile(): UserProfileInfo {
         return filmixApiService.fetchUserProfile()
+    }
+
+    suspend fun fetchStreamType(): StreamTypeResponse {
+        return filmixApiService.fetchStreamType()
+    }
+
+    suspend fun updateStreamType(streamType: String): Boolean {
+        val response = filmixApiService.updateStreamType(StreamTypeRequest(streamType))
+        return response.isSuccessful
+    }
+
+    suspend fun updateServerLocation(serverLocation: String): Boolean {
+        val response = filmixApiService.updateServerLocation(serverLocation)
+        return response.isSuccessful
     }
 
     suspend fun removeFromFavorites(showId: Int): Boolean {

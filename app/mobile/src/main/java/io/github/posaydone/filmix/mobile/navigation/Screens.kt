@@ -19,6 +19,17 @@ sealed class Screens {
         object History
 
         @Serializable
+        object Favorite
+
+        @Serializable
+        object Profile
+
+        @Serializable
+        data class ShowsGrid(
+            val queryType: String,
+        )
+
+        @Serializable
         data class SearchResults(
             val query: String,
         )

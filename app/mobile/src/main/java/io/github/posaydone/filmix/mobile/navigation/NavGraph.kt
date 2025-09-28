@@ -23,7 +23,11 @@ import io.github.posaydone.filmix.core.model.AuthEvent
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.mobile.ui.screen.authScreen.AuthScreen
 import io.github.posaydone.filmix.mobile.ui.screen.exploreScreen.ExploreScreen
+import io.github.posaydone.filmix.mobile.ui.common.HistoryCard
+import io.github.posaydone.filmix.mobile.ui.screen.favoritesScreen.FavoritesScreen
 import io.github.posaydone.filmix.mobile.ui.screen.historyScreen.HistoryScreen
+import io.github.posaydone.filmix.mobile.ui.screen.profileScreen.ProfileScreen
+import io.github.posaydone.filmix.mobile.ui.screen.showsGridScreen.ShowsGridScreen
 import io.github.posaydone.filmix.mobile.ui.screen.homeScreen.HomeScreen
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.PlayerScreen
 import io.github.posaydone.filmix.mobile.ui.screen.searchResults.SearchResultsScreen
@@ -34,7 +38,7 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun NavGraph(
     sessionManager: SessionManager,
-    authEventFlow: SharedFlow<@JvmSuppressWildcards AuthEvent>
+    authEventFlow: SharedFlow<@JvmSuppressWildcards AuthEvent>,
 ) {
     val animationDuration = 300
     val navController = rememberNavController()
@@ -127,6 +131,15 @@ private fun NavGraphBuilder.mainGraph(
         }
         composable<Screens.Main.History> {
             HistoryScreen(paddingValues, navController)
+        }
+        composable<Screens.Main.Favorite> {
+            FavoritesScreen(paddingValues, navController)
+        }
+        composable<Screens.Main.Profile> {
+            ProfileScreen(navController)
+        }
+        composable<Screens.Main.ShowsGrid> {
+            ShowsGridScreen(navController)
         }
         composable<Screens.Main.Details> {
             val args = it.toRoute<Screens.Main.Details>()

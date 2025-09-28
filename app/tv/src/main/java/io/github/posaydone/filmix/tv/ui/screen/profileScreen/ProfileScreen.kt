@@ -27,6 +27,8 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil.compose.rememberAsyncImagePainter
+import io.github.posaydone.filmix.core.common.sharedViewModel.ProfileScreenUiState
+import io.github.posaydone.filmix.core.common.sharedViewModel.ProfileScreenViewModel
 import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.LargeButton

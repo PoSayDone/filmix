@@ -1,5 +1,10 @@
 package io.github.posaydone.filmix.mobile.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -20,7 +25,8 @@ fun BottomNavigation(navController: NavController) {
         listOf(
             BottomScreens.Home,
             BottomScreens.Explore,
-            BottomScreens.History,
+            BottomScreens.Favorite,
+            BottomScreens.Profile
         )
     }
 
@@ -28,6 +34,15 @@ fun BottomNavigation(navController: NavController) {
     val currentDestination = navBackStackEntry?.destination
     val bottomBarDestination =
         bottomScreens.any { it.route::class.qualifiedName == currentDestination?.route }
+
+    fun getIcon(iconName: String): ImageVector {
+        return when (iconName) {
+            "Home" -> Icons.Default.Home
+            "Explore" -> Icons.Default.Explore
+            "Favorite" -> Icons.Default.Favorite
+            else -> Icons.Default.Error
+        }
+    }
 
 
     if (bottomBarDestination) {
@@ -48,7 +63,7 @@ fun BottomNavigation(navController: NavController) {
                     },
                     icon = {
                         Icon(
-                            imageVector = ImageVector.vectorResource(screen.icon),
+                            imageVector = getIcon(screen.icon),
                             contentDescription = screen.name
                         )
                     },

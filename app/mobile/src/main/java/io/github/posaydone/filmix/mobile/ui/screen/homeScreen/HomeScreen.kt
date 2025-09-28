@@ -31,6 +31,7 @@ import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenViewModel
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowList
+import io.github.posaydone.filmix.mobile.navigation.Screens
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.Loading
 import io.github.posaydone.filmix.mobile.ui.common.ShowsRow
@@ -158,29 +159,54 @@ private fun Body(
 //                Text("save wrong token")
 //            }
             ShowsRow(
-                lastSeenShows,
+                showList = lastSeenShows,
                 title = stringResource(R.string.continue_watching),
-                navController = navController
+                onShowClick = { show ->
+                    navController.navigate(Screens.Main.Details(show.id)) {
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
             ShowsRow(
-                viewingShows,
+                showList = viewingShows,
                 title = stringResource(R.string.watching_now),
-                navController = navController
+                onShowClick = { show ->
+                    navController.navigate(Screens.Main.Details(show.id)) {
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
             ShowsRow(
-                popularMovies,
+                showList = popularMovies,
                 title = stringResource(R.string.popular_movies),
-                navController = navController
+                onShowClick = { show ->
+                    navController.navigate(Screens.Main.Details(show.id)) {
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
             ShowsRow(
-                popularSeries,
+                showList = popularSeries,
                 title = stringResource(R.string.popular_series),
-                navController = navController
+                onShowClick = { show ->
+                    navController.navigate(Screens.Main.Details(show.id)) {
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
             ShowsRow(
-                popularCartoons,
+                showList = popularCartoons,
                 title = stringResource(R.string.popular_cartoons),
-                navController = navController
+                onShowClick = { show ->
+                    navController.navigate(Screens.Main.Details(show.id)) {
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
         }
     }

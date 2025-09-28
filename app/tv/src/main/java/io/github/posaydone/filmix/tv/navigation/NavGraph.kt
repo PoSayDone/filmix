@@ -19,6 +19,7 @@ import io.github.posaydone.filmix.tv.ui.screen.favoritesScreen.FavoritesScreen
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.HomeScreen
 import io.github.posaydone.filmix.tv.ui.screen.playerScreen.VideoPlayerScreen
 import io.github.posaydone.filmix.tv.ui.screen.profileScreen.ProfileScreen
+import io.github.posaydone.filmix.tv.ui.screen.settingsScreen.SettingsScreen
 import io.github.posaydone.filmix.tv.ui.screen.showDetailsScreen.ShowDetailsScreen
 import io.github.posaydone.filmix.tv.ui.screen.showsGridScreen.ShowsGridScreen
 import io.github.posaydone.filmix.tv.utils.LocalFocusTransferredOnLaunchProvider
@@ -123,6 +124,14 @@ private fun NavGraphBuilder.mainGraph(
             }
             LocalFocusTransferredOnLaunchProvider {
                 ShowsGridScreen(navController = navController)
+            }
+        }
+        composable<Screens.Main.Settings> {
+            BackHandler {
+                navController.popBackStack()
+            }
+            LocalFocusTransferredOnLaunchProvider {
+                SettingsScreen()
             }
         }
     }

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.Composable
@@ -42,6 +43,7 @@ fun NavigationSidebar(
             NavigationDrawerScreens.Home,
             NavigationDrawerScreens.Explore,
             NavigationDrawerScreens.Favorites,
+            NavigationDrawerScreens.Settings
         )
     }
 
@@ -51,12 +53,12 @@ fun NavigationSidebar(
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     fun getIcon(iconName: String): ImageVector {
-        return when (iconName) {
-            "Home" -> Icons.Default.Home
-            "Explore" -> Icons.Default.Explore
-            "Favorite" -> Icons.Default.Favorite
-            else -> Icons.Default.Error
-        }
+        if (iconName == "Home") return Icons.Default.Home
+        if (iconName == "Explore") return Icons.Default.Explore
+        if (iconName == "Favorite") return Icons.Default.Favorite
+        if (iconName == "Profile") return Icons.Default.Favorite  // Using Favorite as default for Profile
+        if (iconName == "Settings") return Icons.Default.Settings
+        else return Icons.Default.Error
     }
 
 
