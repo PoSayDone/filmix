@@ -1,16 +1,14 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
-import android.health.connect.datatypes.units.Length
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.posaydone.filmix.core.data.FilmixRepository
-import io.github.posaydone.filmix.core.data.KinopoiskRepository
+import io.github.posaydone.filmix.core.data.repository.FilmixRepository
+import io.github.posaydone.filmix.core.data.repository.KinopoiskRepository
 import io.github.posaydone.filmix.core.model.FilmixCategory
 import io.github.posaydone.filmix.core.model.KinopoiskCountry
 import io.github.posaydone.filmix.core.model.KinopoiskGenre
-import io.github.posaydone.filmix.core.model.KinopoiskMovie
 import io.github.posaydone.filmix.core.model.Rating
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.Show

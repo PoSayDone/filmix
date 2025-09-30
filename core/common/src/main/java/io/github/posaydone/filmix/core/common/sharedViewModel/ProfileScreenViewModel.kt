@@ -4,8 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.posaydone.filmix.core.data.AuthRepository
-import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.data.repository.AuthRepository
+import io.github.posaydone.filmix.core.data.repository.FilmixRepository
 import io.github.posaydone.filmix.core.model.UserProfileInfo
 import io.github.posaydone.filmix.core.model.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow

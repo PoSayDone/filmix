@@ -23,7 +23,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.common.services.PlaybackService
-import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.data.repository.FilmixRepository
 import io.github.posaydone.filmix.core.model.Episode
 import io.github.posaydone.filmix.core.model.File
 import io.github.posaydone.filmix.core.model.Season
@@ -47,7 +47,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.log
 
 @androidx.media3.common.util.UnstableApi
 data class PlayerState(

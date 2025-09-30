@@ -32,8 +32,8 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.SettingsScreenUiState
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.SettingsScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.SettingsScreenUiState
+import io.github.posaydone.filmix.core.common.sharedViewModel.SettingsScreenViewModel
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.SideDialog

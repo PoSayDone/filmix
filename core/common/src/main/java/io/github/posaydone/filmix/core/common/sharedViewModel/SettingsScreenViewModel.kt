@@ -1,13 +1,11 @@
-package io.github.posaydone.filmix.core.common.sharedViewModel.settings
+package io.github.posaydone.filmix.core.common.sharedViewModel
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.posaydone.filmix.core.data.FilmixRepository
+import io.github.posaydone.filmix.core.data.repository.FilmixRepository
 import io.github.posaydone.filmix.core.data.SettingsManager
-import io.github.posaydone.filmix.core.model.StreamTypeResponse
-import io.github.posaydone.filmix.core.model.UserProfileInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

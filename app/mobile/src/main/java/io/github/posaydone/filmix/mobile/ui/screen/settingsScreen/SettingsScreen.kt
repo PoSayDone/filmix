@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.SettingsScreenUiState
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.SettingsScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.SettingsScreenUiState
+import io.github.posaydone.filmix.core.common.sharedViewModel.SettingsScreenViewModel
 import io.github.posaydone.filmix.mobile.navigation.Screens
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.Loading

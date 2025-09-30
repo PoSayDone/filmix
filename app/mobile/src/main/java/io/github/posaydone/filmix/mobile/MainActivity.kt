@@ -9,16 +9,15 @@ import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
+import io.github.posaydone.filmix.core.common.service.AppUpdateService
+import io.github.posaydone.filmix.core.common.sharedViewModel.UpdateManagerViewModel
 import io.github.posaydone.filmix.core.model.AuthEvent
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.mobile.navigation.NavGraph
 import io.github.posaydone.filmix.mobile.ui.theme.FilmixTheme
-import io.github.posaydone.filmix.mobile.utils.AppUpdateManager
-import io.github.posaydone.filmix.core.network.service.GithubApiService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,28 +31,23 @@ class MainActivity : ComponentActivity() {
     @Inject
     @JvmSuppressWildcards
     lateinit var authEventFlow: SharedFlow<AuthEvent> // Inject the flow
-    
-    @Inject
-    lateinit var githubApiService: GithubApiService // Inject GitHub API service
 
-    private lateinit var appUpdateManager: AppUpdateManager
+    private val updateManagerViewModel: UpdateManagerViewModel by viewModels()
+    private lateinit var appUpdateService: AppUpdateService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen()
         
-        // Initialize the update manager
-        appUpdateManager = AppUpdateManager(this, githubApiService)
+        // Initialize the update service
+        appUpdateService = AppUpdateService(this, updateManagerViewModel)
         
-        // Check for updates on app start (with a delay to not block UI)
-        CoroutineScope(Dispatchers.IO).launch {
+        // Check for updates on app start (with lifecycle-aware scope)
+        lifecycleScope.launch {
             try {
-                Thread.sleep(2000) // Small delay to not impact startup time
-                val updateAvailable = appUpdateManager.autoCheckForUpdate()
-                if (updateAvailable) {
-                    Log.d("MainActivity", "Update available - notification can be shown to user")
-                    // Optionally show notification to user about available update
-                }
+                // Small delay to not impact startup time
+                kotlinx.coroutines.delay(2000)
+                appUpdateService.checkForUpdate()
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error checking for updates", e)
             }

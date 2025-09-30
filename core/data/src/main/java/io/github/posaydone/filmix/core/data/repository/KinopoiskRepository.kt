@@ -1,4 +1,4 @@
-package io.github.posaydone.filmix.core.data
+package io.github.posaydone.filmix.core.data.repository
 
 import io.github.posaydone.filmix.core.model.KinopoiskMoviesResponse
 import io.github.posaydone.filmix.core.network.dataSource.KinopoiskRemoteDataSource

@@ -3,7 +3,7 @@ package io.github.posaydone.filmix.core.common.sharedViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.posaydone.filmix.core.data.AuthRepository
+import io.github.posaydone.filmix.core.data.repository.AuthRepository
 import io.github.posaydone.filmix.core.model.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

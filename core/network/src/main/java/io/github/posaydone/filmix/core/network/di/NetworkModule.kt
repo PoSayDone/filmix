@@ -10,6 +10,7 @@ import io.github.posaydone.filmix.core.network.interceptor.FingerprintHeaderInte
 import io.github.posaydone.filmix.core.network.interceptor.TokenAuthenticator
 import io.github.posaydone.filmix.core.network.service.AuthService
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
+import io.github.posaydone.filmix.core.network.service.GithubApiService
 import io.github.posaydone.filmix.core.network.service.KinopoiskService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -43,6 +44,15 @@ internal object NetworkModule {
                     .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
                     .addInterceptor(fingerprintHeaderInterceptor).build()
             ).build().create(AuthService::class.java)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideGithubApiService(): GithubApiService {
+        return Retrofit.Builder().baseUrl("https://api.github.com/")
+            .addConverterFactory(GsonConverterFactory.create()).build()
+            .create(GithubApiService::class.java)
     }
 
     @Provides

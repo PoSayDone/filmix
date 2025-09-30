@@ -5,8 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.posaydone.filmix.core.data.FilmixRepository
-import io.github.posaydone.filmix.core.data.KinopoiskRepository
+import io.github.posaydone.filmix.core.data.repository.FilmixRepository
+import io.github.posaydone.filmix.core.data.repository.KinopoiskRepository
 import io.github.posaydone.filmix.core.model.KinopoiskMovie
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowDetails
