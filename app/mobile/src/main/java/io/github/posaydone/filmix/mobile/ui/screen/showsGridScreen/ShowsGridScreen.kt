@@ -2,12 +2,16 @@ package io.github.posaydone.filmix.mobile.ui.screen.showsGridScreen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +46,8 @@ fun ShowsGridScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentQueryType by viewModel.currentQueryType.collectAsStateWithLifecycle()
 
-    val title = if (currentQueryType == ShowsGridQueryType.FAVORITES) "Favorite Shows" else "History"
+    val title =
+        if (currentQueryType == ShowsGridQueryType.FAVORITES) "Favorite Shows" else "History"
 
     Scaffold(
         topBar = {
@@ -52,8 +57,7 @@ fun ShowsGridScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-        }
-    ) { paddingValues ->
+        }) { paddingValues ->
         when (val state = uiState) {
             is ShowsGridUiState.Loading -> {
                 Loading(modifier = Modifier.fillMaxSize())
@@ -62,7 +66,7 @@ fun ShowsGridScreen(
             is ShowsGridUiState.Error -> {
                 Error(
                     modifier = Modifier.fillMaxSize(),
-    //                message = state.message,
+                    //                message = state.message,
                     onRetry = { /* Handle retry */ })
             }
 
@@ -87,9 +91,12 @@ fun ShowsGridContent(
     hasNextPage: Boolean,
     onLoadNext: () -> Unit,
     queryType: ShowsGridQueryType,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
+    val gridState = rememberLazyGridState()
+    
     LazyVerticalGrid(
+        state = gridState,
         columns = GridCells.Fixed(3), // Mobile typically has fewer columns
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -108,36 +115,33 @@ fun ShowsGridContent(
             )
         }
 
-        // Load more indicator if there are more pages
         if (hasNextPage) {
-            item {
-                CircularProgressIndicator(
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-//                        .align(Alignment.CenterHorizontally)
-                )
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
         }
     }
 
-    // For mobile, we'll use a different scroll detection approach
-    val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
-
-    // Detect when the user scrolls near the end
     val shouldLoadMore by remember {
         derivedStateOf {
-            val totalItems = shows.size
-            val lastVisibleItemIndex =
-                gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            val threshold = totalItems - 3 // Load when we're within 3 items of the end
-            totalItems > 0 && lastVisibleItemIndex >= threshold && hasNextPage
+            val lastVisibleItem =
+                gridState.layoutInfo.visibleItemsInfo.lastOrNull() ?: return@derivedStateOf false
+            lastVisibleItem.index >= gridState.layoutInfo.totalItemsCount - 5
         }
     }
 
-    // Load more when approaching the end
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
+    LaunchedEffect(shouldLoadMore, hasNextPage) {
+        if (shouldLoadMore && hasNextPage) {
             onLoadNext()
         }
     }

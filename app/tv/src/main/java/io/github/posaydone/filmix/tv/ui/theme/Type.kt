@@ -7,30 +7,22 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Typography
 
-// Set of Material typography styles to start with
-@OptIn(ExperimentalTvMaterial3Api::class)
+val typographyCopy = Typography()
+
 val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-    /* Other default text styles to override
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
-    )
-    */
+    displayLarge = typographyCopy.displayLarge.copy(letterSpacing = 0.sp),
+    displayMedium = typographyCopy.displayMedium.copy(letterSpacing = 0.sp),
+    displaySmall = typographyCopy.displaySmall.copy(letterSpacing = 0.sp),
+    headlineLarge = typographyCopy.headlineLarge.copy(letterSpacing = 0.sp),
+    headlineMedium = typographyCopy.headlineMedium.copy(letterSpacing = 0.sp),
+    headlineSmall = typographyCopy.headlineSmall.copy(letterSpacing = 0.sp),
+    titleLarge = typographyCopy.titleLarge.copy(letterSpacing = 0.sp),
+    titleMedium = typographyCopy.titleMedium.copy(letterSpacing = 0.sp),
+    titleSmall = typographyCopy.titleSmall.copy(letterSpacing = 0.sp),
+    bodyLarge = typographyCopy.bodyLarge.copy(letterSpacing = 0.sp),
+    bodyMedium = typographyCopy.bodyMedium.copy(letterSpacing = 0.sp),
+    bodySmall = typographyCopy.bodySmall.copy(letterSpacing = 0.sp),
+    labelLarge = typographyCopy.labelLarge.copy(letterSpacing = 0.sp),
+    labelMedium = typographyCopy.labelMedium.copy(letterSpacing = 0.sp),
+    labelSmall = typographyCopy.labelSmall.copy(letterSpacing = 0.sp)
 )

@@ -31,6 +31,10 @@ import io.github.posaydone.filmix.mobile.ui.screen.showsGridScreen.ShowsGridScre
 import io.github.posaydone.filmix.mobile.ui.screen.homeScreen.HomeScreen
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.PlayerScreen
 import io.github.posaydone.filmix.mobile.ui.screen.searchResults.SearchResultsScreen
+import io.github.posaydone.filmix.mobile.ui.screen.settingsScreen.SettingsScreen
+import io.github.posaydone.filmix.mobile.ui.screen.settingsScreen.screen.ServerLocationScreen
+import io.github.posaydone.filmix.mobile.ui.screen.settingsScreen.screen.StreamTypeScreen
+import io.github.posaydone.filmix.mobile.ui.screen.settingsScreen.screen.VideoQualityScreen
 import io.github.posaydone.filmix.mobile.ui.screen.showDetailsScreen.ShowDetailsScreen
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -137,6 +141,18 @@ private fun NavGraphBuilder.mainGraph(
         }
         composable<Screens.Main.Profile> {
             ProfileScreen(navController)
+        }
+        composable<Screens.Main.Settings> {
+            SettingsScreen(navController)
+        }
+        composable<Screens.Main.Settings.VideoQuality> {
+            VideoQualityScreen(navController)
+        }
+        composable<Screens.Main.Settings.StreamType> {
+            StreamTypeScreen(navController)
+        }
+        composable<Screens.Main.Settings.ServerLocation> {
+            ServerLocationScreen(navController)
         }
         composable<Screens.Main.ShowsGrid> {
             ShowsGridScreen(navController)

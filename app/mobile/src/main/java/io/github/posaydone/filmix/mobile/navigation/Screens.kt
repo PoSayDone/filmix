@@ -25,6 +25,18 @@ sealed class Screens {
         object Profile
 
         @Serializable
+        object Settings {
+            @Serializable
+            object VideoQuality
+            
+            @Serializable
+            object StreamType
+            
+            @Serializable
+            object ServerLocation
+        }
+
+        @Serializable
         data class ShowsGrid(
             val queryType: String,
         )

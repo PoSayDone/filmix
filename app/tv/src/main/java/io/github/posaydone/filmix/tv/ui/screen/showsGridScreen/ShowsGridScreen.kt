@@ -76,10 +76,6 @@ fun ShowsGridContent(
     onLoadNext: () -> Unit,
     queryType: ShowsGridQueryType,
 ) {
-    Log.d(
-        "ScreenDebug", "ShowsGridContent receiving ${shows.size} shows. HasNextPage: $hasNextPage"
-    )
-
     val childPadding = rememberChildPadding()
     val gridState = rememberLazyGridState()
 

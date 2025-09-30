@@ -52,7 +52,6 @@ fun HomeScreen(
     Log.d("UISTATE", uiState.toString())
 
     when (val s = uiState) {
-
         is HomeScreenUiState.Loading -> {
             Loading(modifier = Modifier.fillMaxSize())
         }
@@ -135,7 +134,8 @@ private fun Body(
             modifier = Modifier
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 16.dp), verticalArrangement = Arrangement.Center
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
 //            Button(onClick = {
 //                sessionManager.saveAccessToken(

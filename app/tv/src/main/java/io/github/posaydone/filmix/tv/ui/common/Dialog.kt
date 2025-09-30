@@ -1,12 +1,18 @@
 package io.github.posaydone.filmix.tv.ui.common
 
+import android.util.EventLogTags.Description
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,10 +22,12 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -34,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
@@ -44,11 +53,14 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -59,6 +71,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
+import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import kotlin.math.max
 
@@ -116,14 +129,11 @@ fun StandardDialog(
     confirmButton: @Composable () -> Unit,
 ) {
     val elevatedContainerColor = MaterialTheme.colorScheme.applyTonalElevation(
-        backgroundColor = containerColor,
-        elevation = tonalElevation
+        backgroundColor = containerColor, elevation = tonalElevation
     )
 
     Dialog(
-        showDialog = showDialog,
-        onDismissRequest = onDismissRequest,
-        properties = properties
+        showDialog = showDialog, onDismissRequest = onDismissRequest, properties = properties
     ) {
         Column(
             modifier = Modifier
@@ -138,50 +148,42 @@ fun StandardDialog(
                     this.shape = shape
                 }
                 .drawBehind { drawRect(color = elevatedContainerColor) }
-                .padding(StandardDialogDefaults.DialogPadding)
-        ) {
+                .padding(StandardDialogDefaults.DialogPadding)) {
             icon?.let { nnIcon ->
                 CompositionLocalProvider(
-                    LocalContentColor provides iconContentColor,
-                    content = {
+                    LocalContentColor provides iconContentColor, content = {
                         nnIcon()
                         Spacer(
                             modifier = Modifier.padding(StandardDialogDefaults.IconBottomSpacing)
                         )
-                    }
-                )
+                    })
             }
             title?.let { nnTitle ->
                 CompositionLocalProvider(LocalContentColor provides titleContentColor) {
                     ProvideTextStyle(
-                        value = StandardDialogDefaults.titleTextStyle,
-                        content = {
+                        value = StandardDialogDefaults.titleTextStyle, content = {
                             Box(
                                 modifier = Modifier.heightIn(
                                     max = StandardDialogDefaults.TitleMaxHeight
                                 )
                             ) { nnTitle() }
-                        }
-                    )
+                        })
                 }
             }
             text?.let { nnText ->
                 CompositionLocalProvider(LocalContentColor provides textContentColor) {
                     ProvideTextStyle(
-                        value = StandardDialogDefaults.textStyle,
-                        content = {
+                        value = StandardDialogDefaults.textStyle, content = {
                             Spacer(modifier = Modifier.padding(StandardDialogDefaults.TextPadding))
                             Box(modifier = Modifier.weight(weight = 1f, fill = false)) {
                                 nnText()
                             }
-                        }
-                    )
+                        })
                 }
             }
             Spacer(modifier = Modifier.padding(StandardDialogDefaults.ButtonsFlowRowPadding))
             ProvideTextStyle(
-                value = StandardDialogDefaults.buttonsTextStyle,
-                content = {
+                value = StandardDialogDefaults.buttonsTextStyle, content = {
                     DialogFlowRow(
                         mainAxisSpacing = StandardDialogDefaults.ButtonsMainAxisSpacing,
                         crossAxisSpacing = StandardDialogDefaults.ButtonsCrossAxisSpacing
@@ -189,8 +191,50 @@ fun StandardDialog(
                         confirmButton()
                         dismissButton?.invoke()
                     }
-                }
-            )
+                })
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalTvMaterial3Api::class)
+@Composable
+fun SideDialog(
+    showDialog: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    width: Dp = 320.dp,
+    title: String,
+    description: String?,
+    content: @Composable () -> Unit,
+) {
+    Dialog(
+        showDialog = showDialog,
+        onDismissRequest = onDismissRequest,
+        alignment = DialogAlignment.End
+    ) {
+        Column(
+            modifier = modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .fillMaxHeight()
+                .width(width)
+                .clip(RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp))
+        ) {
+            Column(
+                modifier = Modifier.padding(vertical = 24.dp, horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (!description.isNullOrBlank()) Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            content()
         }
     }
 }
@@ -240,17 +284,12 @@ fun FullScreenDialog(
     confirmButton: @Composable () -> Unit,
 ) {
     Dialog(
-        showDialog = showDialog,
-        onDismissRequest = onDismissRequest,
-        properties = properties
+        showDialog = showDialog, onDismissRequest = onDismissRequest, properties = properties
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .drawBehind { drawRect(color = backgroundColor) }
-                .dialogFocusable(),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .drawBehind { drawRect(color = backgroundColor) }
+            .dialogFocusable(), contentAlignment = Alignment.Center) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth(FullScreenDialogDefaults.DialogMaxWidth)
@@ -259,20 +298,17 @@ fun FullScreenDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 CompositionLocalProvider(
-                    LocalContentColor provides iconContentColor,
-                    content = {
+                    LocalContentColor provides iconContentColor, content = {
                         icon?.let { nnIcon ->
                             nnIcon()
                             Spacer(
                                 modifier = Modifier.padding(FullScreenDialogDefaults.IconPadding)
                             )
                         }
-                    }
-                )
+                    })
 
                 CompositionLocalProvider(
-                    LocalContentColor provides titleContentColor,
-                    content = {
+                    LocalContentColor provides titleContentColor, content = {
                         title?.let { nnTitle ->
                             ProvideTextStyle(
                                 value = FullScreenDialogDefaults.titleTextStyle
@@ -285,12 +321,10 @@ fun FullScreenDialog(
                                 )
                             }
                         }
-                    }
-                )
+                    })
 
                 CompositionLocalProvider(
-                    LocalContentColor provides textContentColor,
-                    content = {
+                    LocalContentColor provides textContentColor, content = {
                         text?.let { nnText ->
                             ProvideTextStyle(FullScreenDialogDefaults.descriptionTextStyle) {
                                 Box(
@@ -303,8 +337,7 @@ fun FullScreenDialog(
                                 )
                             }
                         }
-                    }
-                )
+                    })
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -336,9 +369,7 @@ fun PlayerDialog(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Dialog(
-        showDialog = showDialog,
-        onDismissRequest = onDismissRequest,
-        properties = properties
+        showDialog = showDialog, onDismissRequest = onDismissRequest, properties = properties
     ) {
         Box(
             modifier = Modifier
@@ -349,8 +380,7 @@ fun PlayerDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(modifier),
-                content = content
+                    .then(modifier), content = content
             )
 
         }
@@ -390,57 +420,106 @@ class DialogState {
  * @param properties Typically platform specific properties to further configure the dialog.
  * @param content Slot for dialog content such as [StandardDialog], [FullScreenDialog], etc.
  */
-@ExperimentalComposeUiApi
-@ExperimentalTvMaterial3Api
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalTvMaterial3Api::class)
 @Composable
 fun Dialog(
     showDialog: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    alignment: DialogAlignment = DialogAlignment.Center,
     properties: DialogProperties = DialogProperties(),
     state: DialogState = remember { DialogState() },
     content: @Composable BoxScope.() -> Unit,
 ) {
-    // Transitions for background and 'dialog content' alpha.
-    var alphaTransitionState by remember {
+    // --- Alpha and Scale transitions (used for Center alignment) ---
+    var alphaAndScaleTransitionState by remember {
         mutableStateOf(MutableTransitionState(AnimationStage.Intro))
     }
-    val alphaTransition = rememberTransition(alphaTransitionState, label = "alphaTransition")
+    val alphaAndScaleTransition =
+        rememberTransition(alphaAndScaleTransitionState, label = "alphaAndScaleTransition")
 
-    // Transitions for dialog content scaling.
-    var scaleTransitionState by remember {
+    // --- Translation transition (used for Start/End alignment) ---
+    var translationTransitionState by remember {
         mutableStateOf(MutableTransitionState(AnimationStage.Intro))
     }
-    val scaleTransition = rememberTransition(scaleTransitionState, label = "scaleTransition")
+    val translationTransition =
+        rememberTransition(translationTransitionState, label = "translationTransition")
 
-    if (showDialog || alphaTransitionState.targetState != AnimationStage.Intro ||
-        scaleTransitionState.targetState != AnimationStage.Intro
-    ) {
+    val boxAlignment = when (alignment) {
+        DialogAlignment.Start -> Alignment.CenterStart
+        DialogAlignment.Center -> Alignment.Center
+        DialogAlignment.End -> Alignment.CenterEnd
+    }
+
+    val finalProperties = if (alignment != DialogAlignment.Center) {
+        DialogProperties(
+            decorFitsSystemWindows = properties.decorFitsSystemWindows,
+            usePlatformDefaultWidth = false,
+            securePolicy = properties.securePolicy
+        )
+    } else {
+        properties
+    }
+
+    if (showDialog || alphaAndScaleTransitionState.targetState != AnimationStage.Intro || translationTransitionState.targetState != AnimationStage.Intro) {
+        var contentWidth by remember { mutableStateOf(0) }
+        val density = LocalDensity.current
+
         androidx.compose.ui.window.Dialog(
             onDismissRequest = onDismissRequest,
-            properties = properties,
+            properties = finalProperties,
         ) {
-            val alpha by animateDialogAlpha(alphaTransition, alphaTransitionState)
-            val scale by animateDialogScale(scaleTransition, scaleTransitionState)
+            // --- Animations ---
+            val alpha by animateDialogAlpha(alphaAndScaleTransition, alphaAndScaleTransitionState)
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        this.scaleX = scale
-                        this.scaleY = scale
-                        this.alpha = alpha
+            // Animate scale only for Center alignment
+            val scale by alphaAndScaleTransition.animateFloat(
+                transitionSpec = { spring() }, label = "scale"
+            ) {
+                if (alignment == DialogAlignment.Center) {
+                    when (it) {
+                        AnimationStage.Intro -> 0.8f
+                        AnimationStage.Display -> 1f
+                        AnimationStage.Outro -> 0.8f
                     }
-                    .semantics {
-                        dismiss {
-                            onDismissRequest()
-                            true
-                        }
+                } else {
+                    1f // Keep scale at 1 for side dialogs
+                }
+            }
+
+            // Animate translationX only for Start/End alignment
+            val translationX by translationTransition.animateFloat(
+                transitionSpec = { tween(300) }, label = "translation"
+            ) {
+                val widthInPx = with(density) { contentWidth.toFloat() }
+                when (it) {
+                    AnimationStage.Intro -> if (alignment == DialogAlignment.Start) -widthInPx else widthInPx
+                    AnimationStage.Display -> 0f
+                    AnimationStage.Outro -> if (alignment == DialogAlignment.Start) -widthInPx else widthInPx
+                }
+            }
+
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged {
+                    contentWidth = it.width
+                } // Capture width for slide calculation
+                .graphicsLayer {
+                    this.scaleX = scale
+                    this.scaleY = scale
+                    this.alpha = alpha
+                    // Apply translation only if not centered
+                    if (alignment != DialogAlignment.Center) {
+                        this.translationX = translationX
                     }
-                    .then(modifier),
-                contentAlignment = Alignment.Center,
-                content = content
-            )
+                }
+                .semantics {
+                    dismiss {
+                        onDismissRequest()
+                        true
+                    }
+                }
+                .then(modifier), contentAlignment = boxAlignment, content = content)
 
             LaunchedEffect(alpha) {
                 state.updateProgress(currentProgress = alpha)
@@ -449,26 +528,22 @@ fun Dialog(
             // Trigger Outro animation when the caller updates showDialog to false.
             LaunchedEffect(showDialog) {
                 if (!showDialog) {
-                    // a) Fade out dialog contents b) Scale down dialog contents.
-                    alphaTransitionState.targetState = AnimationStage.Outro
-                    scaleTransitionState.targetState = AnimationStage.Outro
+                    alphaAndScaleTransitionState.targetState = AnimationStage.Outro
+                    translationTransitionState.targetState = AnimationStage.Outro
                 }
             }
 
-            LaunchedEffect(alphaTransitionState.currentState) {
-                when (alphaTransitionState.currentState) {
+            LaunchedEffect(alphaAndScaleTransitionState.currentState) {
+                when (alphaAndScaleTransitionState.currentState) {
                     AnimationStage.Intro -> {
-                        // a) Fade in dialog background b) Scale up dialog contents.
-                        alphaTransitionState.targetState = AnimationStage.Display
-                        scaleTransitionState.targetState = AnimationStage.Display
+                        alphaAndScaleTransitionState.targetState = AnimationStage.Display
+                        translationTransitionState.targetState = AnimationStage.Display
                     }
 
                     AnimationStage.Outro -> {
-                        // After the outro animation, leave the dialog & reset alpha/scale
-                        // transitions.
                         onDismissRequest()
-                        alphaTransitionState = MutableTransitionState(AnimationStage.Intro)
-                        scaleTransitionState = MutableTransitionState(AnimationStage.Intro)
+                        alphaAndScaleTransitionState = MutableTransitionState(AnimationStage.Intro)
+                        translationTransitionState = MutableTransitionState(AnimationStage.Intro)
                     }
 
                     else -> Unit
@@ -503,8 +578,7 @@ internal fun DialogFlowRow(
 
         // Return whether the placeable can be added to the current sequence.
         fun canAddToCurrentSequence(placeable: Placeable) =
-            currentSequence.isEmpty() || currentMainAxisSize + mainAxisSpacing.roundToPx() +
-                    placeable.width <= constraints.maxWidth
+            currentSequence.isEmpty() || currentMainAxisSize + mainAxisSpacing.roundToPx() + placeable.width <= constraints.maxWidth
 
         // Store current sequence information and start a new sequence.
         fun startNewSequence() {
@@ -550,8 +624,7 @@ internal fun DialogFlowRow(
         layout(mainAxisLayoutSize, crossAxisLayoutSize) {
             sequences.forEachIndexed { i, placeables ->
                 val childrenMainAxisSizes = IntArray(placeables.size) { j ->
-                    placeables[j].width +
-                            if (j < placeables.lastIndex) mainAxisSpacing.roundToPx() else 0
+                    placeables[j].width + if (j < placeables.lastIndex) mainAxisSpacing.roundToPx() else 0
                 }
                 val arrangement = Arrangement.Bottom
                 // Handle vertical direction
@@ -561,8 +634,7 @@ internal fun DialogFlowRow(
                 }
                 placeables.forEachIndexed { j, placeable ->
                     placeable.place(
-                        x = mainAxisPositions[j],
-                        y = crossAxisPositions[i]
+                        x = mainAxisPositions[j], y = crossAxisPositions[i]
                     )
                 }
             }
@@ -588,8 +660,7 @@ private fun Modifier.dialogFocusable() = composed {
         Modifier
             .focusRequester(focusRequester)
             .focusProperties { exit = { FocusRequester.Cancel } }
-            .focusGroup()
-    )
+            .focusGroup())
 }
 
 @ExperimentalTvMaterial3Api
@@ -612,28 +683,23 @@ object StandardDialogDefaults {
 
     /** The default container color for StandardDialogs */
     val containerColor: Color
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.colorScheme.inverseOnSurface
+        @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.inverseOnSurface
 
     /** The default icon color for StandardDialogs */
     val iconContentColor: Color
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.colorScheme.secondary
+        @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.secondary
 
     /** The default title color for StandardDialogs */
     val titleContentColor: Color
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.colorScheme.onSurface
+        @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.onSurface
 
     /** The default [TextStyle] for StandardDialogs' title */
     val titleTextStyle: TextStyle
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.typography.headlineMedium
+        @ReadOnlyComposable @Composable get() = MaterialTheme.typography.headlineMedium
 
     /** The default [TextStyle] for StandardDialogs' buttons */
     val buttonsTextStyle
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.typography.labelLarge
+        @ReadOnlyComposable @Composable get() = MaterialTheme.typography.labelLarge
 
     /** The default text color for StandardDialogs */
     val textContentColor: Color
@@ -643,9 +709,11 @@ object StandardDialogDefaults {
 
     /** The default text style for StandardDialogs */
     val textStyle
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.typography.bodyLarge
-            .copy(color = LocalContentColor.current.copy(alpha = TextColorOpacity))
+        @ReadOnlyComposable @Composable get() = MaterialTheme.typography.bodyLarge.copy(
+            color = LocalContentColor.current.copy(
+                alpha = TextColorOpacity
+            )
+        )
 
     /** The default tonal elevation for StandardDialogs */
     val TonalElevation: Dp = Elevation.Level2
@@ -662,39 +730,33 @@ object FullScreenDialogDefaults {
 
     /** The default background color for FullScreenDialogs */
     val backgroundColor: Color
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.colorScheme.background
+        @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.background
 
     /** The default icon color for FullScreenDialogs */
     val iconContentColor: Color
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.colorScheme.onSurface
+        @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.onSurface
 
     /** The default title color for FullScreenDialogs */
     val titleContentColor: Color
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.colorScheme.onSurface
+        @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.onSurface
 
     /** The default title text style for FullScreenDialogs */
     val titleTextStyle: TextStyle
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.typography.headlineMedium
-            .copy(textAlign = TextAlign.Center)
+        @ReadOnlyComposable @Composable get() = MaterialTheme.typography.headlineMedium.copy(
+            textAlign = TextAlign.Center
+        )
 
     /** The default buttons text style for FullScreenDialogs */
     val buttonsTextStyle: TextStyle
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.typography.labelLarge
+        @ReadOnlyComposable @Composable get() = MaterialTheme.typography.labelLarge
 
     /** The default description text color for FullScreenDialogs */
     val descriptionContentColor: Color
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+        @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
     /** The default description text style for FullScreenDialogs */
     val descriptionTextStyle: TextStyle
-        @ReadOnlyComposable
-        @Composable get() = MaterialTheme.typography.bodyLarge.copy(
+        @ReadOnlyComposable @Composable get() = MaterialTheme.typography.bodyLarge.copy(
             textAlign = TextAlign.Center,
             color = LocalContentColor.current.copy(alpha = DescriptionColorOpacity)
         )
@@ -706,22 +768,18 @@ private fun animateDialogAlpha(
     alphaTransitionState: MutableTransitionState<AnimationStage>,
 ) = alphaTransition.animateFloat(
     transitionSpec = {
-        if (alphaTransitionState.currentState == AnimationStage.Intro)
-            tween(
-                durationMillis = ENTER_DURATION,
-                easing = MotionTokens.EnterEasing,
-                delayMillis = ENTER_DELAY
-            )
-        else if (alphaTransitionState.targetState == AnimationStage.Outro)
-            tween(
-                durationMillis = EXIT_DURATION,
-                easing = MotionTokens.ExitEasing,
-                delayMillis = EXIT_DELAY
-            )
-        else
-            tween(durationMillis = 0)
-    },
-    label = "alpha"
+        if (alphaTransitionState.currentState == AnimationStage.Intro) tween(
+            durationMillis = ENTER_DURATION,
+            easing = MotionTokens.EnterEasing,
+            delayMillis = ENTER_DELAY
+        )
+        else if (alphaTransitionState.targetState == AnimationStage.Outro) tween(
+            durationMillis = EXIT_DURATION,
+            easing = MotionTokens.ExitEasing,
+            delayMillis = EXIT_DELAY
+        )
+        else tween(durationMillis = 0)
+    }, label = "alpha"
 ) { stage ->
     when (stage) {
         AnimationStage.Intro -> 0.0f
@@ -736,20 +794,17 @@ private fun animateDialogScale(
     scaleTransitionState: MutableTransitionState<AnimationStage>,
 ) = scaleTransition.animateFloat(
     transitionSpec = {
-        if (scaleTransitionState.currentState == AnimationStage.Intro)
-            tween(
-                durationMillis = ENTER_DURATION,
-                easing = MotionTokens.EnterEasing,
-                delayMillis = ENTER_DELAY
-            )
-        else
-            tween(
-                durationMillis = EXIT_DURATION,
-                easing = MotionTokens.ExitEasing,
-                delayMillis = EXIT_DELAY
-            )
-    },
-    label = "scale"
+        if (scaleTransitionState.currentState == AnimationStage.Intro) tween(
+            durationMillis = ENTER_DURATION,
+            easing = MotionTokens.EnterEasing,
+            delayMillis = ENTER_DELAY
+        )
+        else tween(
+            durationMillis = EXIT_DURATION,
+            easing = MotionTokens.ExitEasing,
+            delayMillis = EXIT_DELAY
+        )
+    }, label = "scale"
 ) { stage ->
     when (stage) {
         AnimationStage.Intro -> 0.97f

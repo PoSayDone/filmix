@@ -15,11 +15,6 @@ sealed class BottomScreens<T>(val name: String, val icon: String, val route: T) 
     )
 
     @Serializable
-    data object History : BottomScreens<Screens.Main.History>(
-        name = "History", icon = "History", route = Screens.Main.History
-    )
-
-    @Serializable
     data object Favorite : BottomScreens<Screens.Main.Favorite>(
         name = "Favorite", icon = "Favorite", route = Screens.Main.Favorite
     )
@@ -27,5 +22,10 @@ sealed class BottomScreens<T>(val name: String, val icon: String, val route: T) 
     @Serializable
     data object Profile : BottomScreens<Screens.Main.Profile>(
         name = "Profile", icon = "Profile", route = Screens.Main.Profile
+    )
+    
+    @Serializable
+    data object Settings : BottomScreens<Screens.Main.Settings>(
+        name = "Settings", icon = "Settings", route = Screens.Main.Settings
     )
 }

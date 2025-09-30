@@ -9,6 +9,6 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.hilt) apply false
-    kotlin("kapt") version "2.0.20"
+    kotlin("kapt") version "2.2.20"
 }
 val defaultApplicationId by extra("io.github.posaydone.filmix")

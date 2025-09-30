@@ -95,4 +95,7 @@ dependencies {
 
     // For image loading in Compose
     implementation(libs.coil.compose)
+
+    implementation("com.github.alorma.compose-settings:ui-tiles:2.13.0")
+
 }

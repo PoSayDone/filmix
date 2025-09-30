@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            FilmixTheme(isInDarkTheme = true) {
+            FilmixTheme {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

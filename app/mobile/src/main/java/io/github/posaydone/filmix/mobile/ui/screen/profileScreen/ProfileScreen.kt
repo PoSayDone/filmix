@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +27,7 @@ import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import io.github.posaydone.filmix.core.common.sharedViewModel.ProfileScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.ProfileScreenViewModel
+import io.github.posaydone.filmix.mobile.ui.common.LargeButton
 
 @Composable
 fun ProfileScreen(
@@ -54,7 +59,7 @@ fun ProfileScreen(
 fun ProfileScreenContent(
     userProfile: io.github.posaydone.filmix.core.model.UserProfileInfo,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.padding(32.dp),
@@ -70,33 +75,33 @@ fun ProfileScreenContent(
                 .size(128.dp)
                 .clip(CircleShape)
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Display name
         Text(
             text = userProfile.displayName ?: userProfile.login,
             style = androidx.compose.material3.MaterialTheme.typography.headlineMedium
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Username
         Text(
             text = "@${userProfile.login}",
             style = androidx.compose.material3.MaterialTheme.typography.titleMedium
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Email
         Text(
             text = userProfile.email,
             style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Pro status
         val proStatus = if (userProfile.isProPlus) {
             "Pro+ (Days left: ${userProfile.proDaysLeft})"
@@ -105,18 +110,23 @@ fun ProfileScreenContent(
         } else {
             "Free Account"
         }
-        
+
         Text(
             text = proStatus,
             style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
         )
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         // Logout button
-        Button(
+        LargeButton(
             onClick = onLogout
         ) {
+            Icon(
+                contentDescription = "Logout icon",
+                imageVector = Icons.AutoMirrored.Rounded.Logout
+            )
+            Spacer(Modifier.size(12.dp))
             Text(text = "Logout")
         }
     }

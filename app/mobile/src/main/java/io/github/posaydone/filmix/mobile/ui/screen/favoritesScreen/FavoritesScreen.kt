@@ -61,8 +61,7 @@ fun FavoritesScreen(
                     paddingValues = paddingValues,
                     navController = navController,
                     favoritesList = s.favoritesList,
-                    historyList = s.historyList,
-                    modifier = Modifier.padding(paddingValues)
+                    historyList = s.historyList
                 )
             }
         }
@@ -71,14 +70,14 @@ fun FavoritesScreen(
 
 @Composable
 fun FavoritesScreenContent(
+    modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     navController: NavHostController,
     favoritesList: List<io.github.posaydone.filmix.core.model.Show>,
     historyList: List<io.github.posaydone.filmix.core.model.Show>,
-    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(paddingValues)
             .verticalScroll(rememberScrollState())
             .padding(bottom = 16.dp), verticalArrangement = Arrangement.Center
@@ -101,7 +100,6 @@ fun FavoritesScreenContent(
         ShowsRow(
             title = "History",
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(top = 16.dp),
             showList = historyList,
             onShowClick = { show ->

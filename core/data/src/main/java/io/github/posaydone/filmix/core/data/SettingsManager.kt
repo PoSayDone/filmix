@@ -15,7 +15,7 @@ class SettingsManager @Inject constructor(
 
     companion object {
         private const val VIDEO_QUALITY_KEY = "video_quality"
-        private const val DEFAULT_VIDEO_QUALITY = "Auto"
+        private const val DEFAULT_VIDEO_QUALITY = "auto"
     }
 
     fun getVideoQuality(): String {
