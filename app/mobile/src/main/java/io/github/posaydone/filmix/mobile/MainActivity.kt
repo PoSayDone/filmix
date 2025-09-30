@@ -1,8 +1,10 @@
 package io.github.posaydone.filmix.mobile
 
 import android.app.PictureInPictureParams
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -40,18 +42,48 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    override fun onUserLeaveHint() {
-//        super.onUserLeaveHint()
-//        enterPipMode()
-//    }
-//
-//    private fun enterPipMode() {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            val params = PictureInPictureParams.Builder()
-//                .setAspectRatio(Rational(16, 9))
-//                .build()
-//
-//            enterPictureInPictureMode(params)
-//        }
-//    }
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // Check if the app should enter PiP mode
+        if (isPipModeAvailable()) {
+            enterPipMode()
+        }
+    }
+
+    private fun isPipModeAvailable(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                packageManager.hasSystemFeature("android.software.picture_in_picture") &&
+                !isInPictureInPictureMode
+    }
+
+    private fun enterPipMode() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val params = PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+                .build()
+
+            enterPictureInPictureMode(params)
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        
+        if (isInPictureInPictureMode) {
+            // In PiP mode - lock to landscape orientation
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        } else {
+            // Not in PiP mode - restore the desired orientation
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
+    }
+    
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumedActivity)
+        // This method is called when the activity becomes or stops being the top resumed activity
+        if (!isTopResumedActivity && isInPictureInPictureMode) {
+            // The app is going into background but is in PiP mode - keep it running
+            Log.d("MainActivity", "App going to background in PiP mode")
+        }
+    }
 }
