@@ -129,7 +129,6 @@ fun LockScreenOrientation() {
     }
 }
 
-@UnstableApi
 @Composable
 fun PlayerScreen(
     showId: Int,

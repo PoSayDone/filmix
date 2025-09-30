@@ -16,9 +16,6 @@ sealed class Screens {
         object Explore
 
         @Serializable
-        object History
-
-        @Serializable
         object Favorite
 
         @Serializable

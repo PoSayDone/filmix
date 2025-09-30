@@ -49,8 +49,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Log.d("UISTATE", uiState.toString())
-
     when (val s = uiState) {
         is HomeScreenUiState.Loading -> {
             Loading(modifier = Modifier.fillMaxSize())
