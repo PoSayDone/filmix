@@ -23,7 +23,6 @@ import io.github.posaydone.filmix.core.model.AuthEvent
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.mobile.ui.screen.authScreen.AuthScreen
 import io.github.posaydone.filmix.mobile.ui.screen.exploreScreen.ExploreScreen
-import io.github.posaydone.filmix.mobile.ui.common.HistoryCard
 import io.github.posaydone.filmix.mobile.ui.screen.favoritesScreen.FavoritesScreen
 import io.github.posaydone.filmix.mobile.ui.screen.historyScreen.HistoryScreen
 import io.github.posaydone.filmix.mobile.ui.screen.profileScreen.ProfileScreen

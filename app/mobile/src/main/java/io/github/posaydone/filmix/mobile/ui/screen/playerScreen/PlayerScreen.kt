@@ -104,6 +104,7 @@ import io.github.posaydone.filmix.core.model.Season
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.Translation
 import io.github.posaydone.filmix.core.model.VideoWithQualities
+import io.github.posaydone.filmix.mobile.MainActivity
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerMediaTitle
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerPulse
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerPulseState
@@ -226,6 +227,7 @@ fun PlayerScreen(
 
         onDispose {
             viewModel.saveProgress()
+            MainActivity.isPlayerActive = false  // Reset player active status when screen is disposed
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -249,6 +251,18 @@ fun PlayerScreen(
         if (showControls) {
             delay(10000)
             showControls = false
+        }
+    }
+
+    // Update the player active status for PiP mode
+    LaunchedEffect(key1 = player) {
+        MainActivity.isPlayerActive = player != null
+    }
+    
+    // Also update when player state changes (play/pause)
+    LaunchedEffect(key1 = playerState.isPlaying) {
+        if (player != null) {
+            MainActivity.isPlayerActive = true
         }
     }
 

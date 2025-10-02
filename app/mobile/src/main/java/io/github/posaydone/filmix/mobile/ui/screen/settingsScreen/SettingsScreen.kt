@@ -89,36 +89,34 @@ fun SettingsScreenContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SettingsGroup(
-            title = "Player", items = listOf({
-                SettingItemLink(
-                    title = "Video Quality",
-                    currentValue = videoQualities[currentVideoQuality] ?: currentVideoQuality,
-                    onClick = {
-                        navController.navigate(
-                            Screens.Main.Settings.VideoQuality
-                        )
-                    })
-            }, {
-
-                SettingItemLink(
-                    title = "Stream Type",
-                    currentValue = streamTypes[currentStreamType] ?: currentStreamType,
-                    onClick = {
-                        navController.navigate(
-                            Screens.Main.Settings.StreamType
-                        )
-                    })
-            }, {
-                SettingItemLink(
-                    title = "Server Location",
-                    currentValue = serverLocations[currentServerLocation] ?: currentServerLocation,
-                    onClick = {
-                        navController.navigate(
-                            Screens.Main.Settings.ServerLocation
-                        )
-                    })
-            })
+            title = "Player"
         )
+        {
+            SettingItemLink(
+                title = "Video Quality",
+                currentValue = videoQualities[currentVideoQuality] ?: currentVideoQuality,
+                onClick = {
+                    navController.navigate(
+                        Screens.Main.Settings.VideoQuality
+                    )
+                })
+            SettingItemLink(
+                title = "Stream Type",
+                currentValue = streamTypes[currentStreamType] ?: currentStreamType,
+                onClick = {
+                    navController.navigate(
+                        Screens.Main.Settings.StreamType
+                    )
+                })
+            SettingItemLink(
+                title = "Server Location",
+                currentValue = serverLocations[currentServerLocation] ?: currentServerLocation,
+                onClick = {
+                    navController.navigate(
+                        Screens.Main.Settings.ServerLocation
+                    )
+                })
+        }
     }
 }
 
