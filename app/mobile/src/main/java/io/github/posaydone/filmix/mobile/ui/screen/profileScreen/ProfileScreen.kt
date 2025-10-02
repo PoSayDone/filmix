@@ -123,7 +123,11 @@ fun ProfileScreenContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Column(
-            modifier = Modifier.padding(top = 16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             UserAvatar(userProfile.avatar)
 
@@ -134,43 +138,38 @@ fun ProfileScreenContent(
 
         }
         SettingsGroup(
-            title = "Account", items = listOf({
-                SettingItemLink(
-                    title = "Username", currentValue = userProfile.login, onClick = {})
-            }, {
-
-                SettingItemLink(
-                    title = "Email", currentValue = userProfile.email, onClick = {})
-            }, {
-                SettingItemLink(
-                    title = "Subscription", currentValue = proStatus, onClick = {})
-            })
-        )
+            title = "Account"
+        ) {
+            SettingItemLink(
+                title = "Username", currentValue = userProfile.login, onClick = {})
+            SettingItemLink(
+                title = "Email", currentValue = userProfile.email, onClick = {})
+            SettingItemLink(
+                title = "Subscription", currentValue = proStatus, onClick = {})
+        }
         SettingsGroup(
-            title = "Player", items = listOf({
-                SettingItemLink(
-                    title = "Video Quality",
-                    currentValue = videoQualities[currentVideoQuality] ?: currentVideoQuality,
-                    onClick = {
-                        navigateToVideoQualityScreen()
-                    })
-            }, {
+            title = "Player"
+        ) {
 
-                SettingItemLink(
-                    title = "Stream Type",
-                    currentValue = streamTypes[currentStreamType] ?: currentStreamType,
-                    onClick = {
-                        navigateToVideoStreamTypeScreen()
-                    })
-            }, {
-                SettingItemLink(
-                    title = "Server Location",
-                    currentValue = serverLocations[currentServerLocation] ?: currentServerLocation,
-                    onClick = {
-                        navigateToServerLocationScreen()
-                    })
-            })
-        )
+            SettingItemLink(
+                title = "Video Quality",
+                currentValue = videoQualities[currentVideoQuality] ?: currentVideoQuality,
+                onClick = {
+                    navigateToVideoQualityScreen()
+                })
+            SettingItemLink(
+                title = "Stream Type",
+                currentValue = streamTypes[currentStreamType] ?: currentStreamType,
+                onClick = {
+                    navigateToVideoStreamTypeScreen()
+                })
+            SettingItemLink(
+                title = "Server Location",
+                currentValue = serverLocations[currentServerLocation] ?: currentServerLocation,
+                onClick = {
+                    navigateToServerLocationScreen()
+                })
+        }
         LargeButton(
             style = LargeButtonStyle.TEXT, onClick = onLogout, modifier = Modifier.fillMaxWidth()
         ) {

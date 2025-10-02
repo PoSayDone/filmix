@@ -1,6 +1,7 @@
 package io.github.posaydone.filmix.mobile.ui.common.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,7 +19,7 @@ import androidx.compose.ui.unit.dp
 fun SettingsGroup(
     title: String? = null,
     modifier: Modifier = Modifier,
-    items: List<@Composable () -> Unit>,
+    content: @Composable () -> Unit,
 ) {
     Column(
         modifier = modifier.fillMaxWidth()
@@ -33,18 +34,11 @@ fun SettingsGroup(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-        ) {
-            items.forEachIndexed { index, itemContent ->
-                // 1. Execute the composable item
-                itemContent()
+                .clip(RoundedCornerShape(16.dp)),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
 
-                // 2. Add divider after every item except the last one
-                if (index < items.size - 1) {
-                    HorizontalDivider(modifier = Modifier.fillMaxWidth())
-                }
-            }
+        ) {
+            content()
         }
     }
 }

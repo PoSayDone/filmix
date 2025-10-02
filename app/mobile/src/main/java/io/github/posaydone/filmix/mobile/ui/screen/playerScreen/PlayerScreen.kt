@@ -3,8 +3,12 @@
 package io.github.posaydone.filmix.mobile.ui.screen.playerScreen
 
 import android.app.Activity
+import android.app.PictureInPictureParams
+import android.content.Context
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.util.Log
+import android.util.Rational
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -37,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.outlined.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.AutoAwesomeMotion
 import androidx.compose.material.icons.rounded.HighQuality
@@ -103,6 +108,7 @@ import io.github.posaydone.filmix.core.model.Season
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.Translation
 import io.github.posaydone.filmix.core.model.VideoWithQualities
+import io.github.posaydone.filmix.mobile.MainActivity
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerMediaTitle
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerPulse
 import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.components.PlayerPulseState
@@ -133,7 +139,26 @@ fun LockScreenOrientation() {
     }
 }
 
-@OptIn(UnstableApi::class)
+fun isPipSupported(context: Context): Boolean {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            context.packageManager.hasSystemFeature("android.software.picture_in_picture")
+}
+
+fun enterPipMode(context: Context) {
+    val activity = context as? Activity
+
+    if (activity != null && isPipSupported(context)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val params = PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+                .build()
+
+            activity.enterPictureInPictureMode(params)
+        }
+    }
+}
+
+@UnstableApi
 @Composable
 fun PlayerScreen(
     showId: Int,
@@ -171,6 +196,9 @@ fun PlayerScreen(
     val window = (view.context as Activity).window
     val insetsController = WindowCompat.getInsetsController(window, view)
 
+    val context = LocalContext.current
+    val activity = context as? Activity
+
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 
     LockScreenOrientation()
@@ -183,9 +211,13 @@ fun PlayerScreen(
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> {
                     viewModel.saveProgress()
-                    viewModel.pause()
-                    insetsController.apply {
-                        show(WindowInsetsCompat.Type.systemBars())
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity?.isInPictureInPictureMode == true) {
+                        showControls = false
+                    } else {
+                        viewModel.pause()
+                        insetsController.apply {
+                            show(WindowInsetsCompat.Type.systemBars())
+                        }
                     }
                 }
 
@@ -199,6 +231,7 @@ fun PlayerScreen(
 
         onDispose {
             viewModel.saveProgress()
+            MainActivity.isPlayerActive = false  // Reset player active status when screen is disposed
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -222,6 +255,18 @@ fun PlayerScreen(
         if (showControls) {
             delay(10000)
             showControls = false
+        }
+    }
+
+    // Update the player active status for PiP mode
+    LaunchedEffect(key1 = player) {
+        MainActivity.isPlayerActive = player != null
+    }
+    
+    // Also update when player state changes (play/pause)
+    LaunchedEffect(key1 = playerState.isPlaying) {
+        if (player != null) {
+            MainActivity.isPlayerActive = true
         }
     }
 
@@ -418,15 +463,17 @@ fun PlayerContent(
                     }
                 }
 
-                AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        TopControls(
-                            showType = showType,
-                            showDetails = details,
-                            onMoreClick = onShowQualitySheet,
-                            onAudioClick = onShowAudioSheet,
-                            onEpisodeClick = onShowEpisodeSheet,
-                        )
+            AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    val context = LocalContext.current
+                    TopControls(
+                        showType = showType,
+                        showDetails = details,
+                        onMoreClick = onShowQualitySheet,
+                        onAudioClick = onShowAudioSheet,
+                        onEpisodeClick = onShowEpisodeSheet,
+                        onPipClick = { enterPipMode(context) },
+                    )
 
                         Spacer(modifier = Modifier.weight(1f))
                         if (playerState.duration > 0L) {
@@ -542,7 +589,9 @@ private fun TopControls(
     onMoreClick: () -> Unit,
     onAudioClick: () -> Unit,
     onEpisodeClick: () -> Unit,
+    onPipClick: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .padding(16.dp)
@@ -582,6 +631,17 @@ private fun TopControls(
                 contentDescription = "Pause",
                 tint = Color.White,
             )
+        }
+        if (isPipSupported(context)) {
+            IconButton(
+                modifier = Modifier.focusable(), onClick = onPipClick
+            ) {
+                Icon(
+                    Icons.Outlined.PictureInPictureAlt,
+                    contentDescription = "Enter Picture-in-Picture mode",
+                    tint = Color.White,
+                )
+            }
         }
     }
 }

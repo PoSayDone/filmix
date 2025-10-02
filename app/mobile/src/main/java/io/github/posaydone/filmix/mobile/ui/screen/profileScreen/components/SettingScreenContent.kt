@@ -27,19 +27,17 @@ fun SettingScreenContent(
             .padding(paddingValues)
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
-        SettingsGroup(
-            items = values.map { item ->
-                {
-                    SettingItem(title = item.value, onClick = {
-                        updateValue(item.key)
-                    }, trailingContent = {
-                        if (currentValue == item.key) Icon(
-                            imageVector = Icons.Rounded.Check,
-                            contentDescription = "Checked",
-                        )
-                    })
-                }
-            },
-        )
+        SettingsGroup {
+            values.map { item ->
+                SettingItem(title = item.value, onClick = {
+                    updateValue(item.key)
+                }, trailingContent = {
+                    if (currentValue == item.key) Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = "Checked",
+                    )
+                })
+            }
+        }
     }
 }
