@@ -8,21 +8,25 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.rounded.BookmarkAdd
-import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.BookmarkRemove
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.ButtonDefaults
@@ -30,7 +34,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -52,7 +60,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.github.posaydone.filmix.core.common.R
@@ -61,12 +68,10 @@ import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenV
 import io.github.posaydone.filmix.core.common.utils.formatDuration
 import io.github.posaydone.filmix.core.common.utils.formatVoteCount
 import io.github.posaydone.filmix.core.model.KinopoiskMovie
-import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowTrailers
-import io.github.posaydone.filmix.mobile.navigation.Screens
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.LargeButton
 import io.github.posaydone.filmix.mobile.ui.common.LargeButtonStyle
@@ -79,62 +84,59 @@ val TAG = "ShowDetailsScreen"
 @Composable
 fun ShowDetailsScreen(
     showId: Int,
-    paddingValues: PaddingValues,
-    navController: NavHostController,
+    navigateToMoviePlayer: (showId: Int) -> Unit,
+    navigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ShowDetailsScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    when (val s = uiState) {
-        is ShowDetailsScreenUiState.Loading -> {
-            Loading(modifier = Modifier.fillMaxSize())
-        }
+    Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(
+            NavigationBarDefaults.windowInsets.union(WindowInsets.statusBars)
+        )
+    ) { paddingValues ->
+        when (val s = uiState) {
+            is ShowDetailsScreenUiState.Loading -> {
+                Loading(modifier = Modifier.fillMaxSize())
+            }
 
-        is ShowDetailsScreenUiState.Error -> {
-            Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
-        }
+            is ShowDetailsScreenUiState.Error -> {
+                Error(modifier = Modifier.fillMaxSize(), onRetry = s.onRetry)
+            }
 
-        is ShowDetailsScreenUiState.Done -> {
-            Details(
-                paddingValues = paddingValues,
-                showDetails = s.showDetails,
-                showProgress = s.showProgress,
-                showImages = s.showImages,
-                showTrailers = s.showTrailers,
-                kinopoiskMovie = s.kinopoiskMovie,
-                toggleFavorites = s.toggleFavorites,
-                goToMoviePlayer = {
-                    navController.navigate(Screens.Player(showId)) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                goBack = {
-                    navController.navigateUp()
-                },
-                sessionManager = s.sessionManager,
-                modifier = modifier
-                    .fillMaxSize()
-                    .animateContentSize()
-            )
+
+            is ShowDetailsScreenUiState.Done -> {
+                Details(
+                    showDetails = s.showDetails,
+                    showProgress = s.showProgress,
+                    showImages = s.showImages,
+                    showTrailers = s.showTrailers,
+                    kinopoiskMovie = s.kinopoiskMovie,
+                    toggleFavorites = s.toggleFavorites,
+                    navigateToMoviePlayer = { navigateToMoviePlayer(showId) },
+                    navigateBack = navigateBack,
+                    modifier = modifier
+                        .fillMaxSize()
+                        .animateContentSize()
+                        .padding(paddingValues)
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun Details(
-    paddingValues: PaddingValues,
     showDetails: ShowDetails,
     showProgress: ShowProgress,
     showImages: ShowImages,
     showTrailers: ShowTrailers,
     kinopoiskMovie: KinopoiskMovie?,
     toggleFavorites: () -> Unit,
-    goToMoviePlayer: () -> Unit,
-    goBack: () -> Unit,
+    navigateToMoviePlayer: () -> Unit,
+    navigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    sessionManager: SessionManager,
 ) {
     val lazyListState = rememberLazyListState()
 
@@ -161,10 +163,6 @@ private fun Details(
         LazyColumn(
             state = lazyListState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = paddingValues.calculateTopPadding(),
-                bottom = paddingValues.calculateBottomPadding()
-            )
         ) {
             item {
                 Spacer(modifier = Modifier.height(300.dp))
@@ -211,7 +209,7 @@ private fun Details(
                         )
 
                         ActionButtons(
-                            goToMoviePlayer = goToMoviePlayer,
+                            goToMoviePlayer = navigateToMoviePlayer,
                             toggleFavorites = toggleFavorites,
                             isFavorite = showDetails.isFavorite == true
                         )
@@ -234,7 +232,7 @@ private fun Details(
         }
 
 
-        TransparentTopAppBar(goBack = goBack)
+        TransparentTopAppBar(navigateBack = navigateBack)
     }
 }
 
@@ -282,7 +280,9 @@ private fun MetadataColumn(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = "%.1f".format(ratingKp ?: 0.0) + " (${formatVoteCount(votesKp ?: 0)})",
+                text = "%.1f".format(
+                    ratingKp ?: 0.0
+                ) + " (${formatVoteCount(votesKp ?: 0)})",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -391,14 +391,14 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun TransparentTopAppBar(goBack: () -> Unit) {
+private fun TransparentTopAppBar(navigateBack: () -> Unit) {
     TopAppBar(
         title = {},
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
-            FilledIconButton(onClick = goBack, modifier = Modifier.size(56.dp)) {
+            FilledIconButton(onClick = navigateBack, modifier = Modifier.size(42.dp)) {
                 Icon(
-                    contentDescription = "Back", painter = painterResource(R.drawable.ic_arrow_back)
+                    contentDescription = "Back", imageVector = Icons.AutoMirrored.Filled.ArrowBack
                 )
             }
         })

@@ -3,6 +3,7 @@ package io.github.posaydone.filmix.mobile.ui.screen.showsGridScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,11 +15,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -28,11 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridQueryType
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridScreenViewModel
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridUiState
-import io.github.posaydone.filmix.mobile.navigation.Screens
+import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.Loading
 import io.github.posaydone.filmix.mobile.ui.common.ShowCard
@@ -40,7 +40,7 @@ import io.github.posaydone.filmix.mobile.ui.common.ShowCard
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowsGridScreen(
-    navController: NavHostController,
+    navigateToShowDetails: (showId: Int) -> Unit,
     viewModel: ShowsGridScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,14 +50,9 @@ fun ShowsGridScreen(
         if (currentQueryType == ShowsGridQueryType.FAVORITES) "Favorite Shows" else "History"
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(title, style = MaterialTheme.typography.headlineMedium) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }) { paddingValues ->
+        topBar = { TopAppBar(title = { Text(title) }) },
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(NavigationBarDefaults.windowInsets)
+    ) { paddingValues ->
         when (val state = uiState) {
             is ShowsGridUiState.Loading -> {
                 Loading(modifier = Modifier.fillMaxSize())
@@ -65,19 +60,18 @@ fun ShowsGridScreen(
 
             is ShowsGridUiState.Error -> {
                 Error(
-                    modifier = Modifier.fillMaxSize(),
-                    //                message = state.message,
-                    onRetry = { /* Handle retry */ })
+                    modifier = Modifier.fillMaxSize(), onRetry = { /* Handle retry */ })
             }
 
             is ShowsGridUiState.Success -> {
                 ShowsGridContent(
-                    navController = navController,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    navigateToShowDetails = navigateToShowDetails,
                     shows = state.shows,
                     hasNextPage = state.hasNextPage,
                     onLoadNext = { viewModel.loadNextPage() },
-                    queryType = currentQueryType,
-                    modifier = Modifier.padding(paddingValues)
                 )
             }
         }
@@ -86,31 +80,26 @@ fun ShowsGridScreen(
 
 @Composable
 fun ShowsGridContent(
-    navController: NavHostController,
-    shows: io.github.posaydone.filmix.core.model.ShowList,
+    modifier: Modifier = Modifier,
+    navigateToShowDetails: (showId: Int) -> Unit,
+    shows: ShowList,
     hasNextPage: Boolean,
     onLoadNext: () -> Unit,
-    queryType: ShowsGridQueryType,
-    modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
-    
+
     LazyVerticalGrid(
+        modifier = modifier,
         state = gridState,
-        columns = GridCells.Fixed(3), // Mobile typically has fewer columns
+        columns = GridCells.Fixed(3),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.fillMaxSize()
     ) {
-        // Show items (no header since it's in the app bar now)
         items(shows) { show ->
             ShowCard(
                 show = show, onClick = {
-                    navController.navigate(Screens.Main.Details(show.id)) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navigateToShowDetails(show.id)
                 }, modifier = Modifier.fillMaxWidth()
             )
         }

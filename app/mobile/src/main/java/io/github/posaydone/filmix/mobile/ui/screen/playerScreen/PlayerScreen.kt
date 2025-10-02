@@ -23,11 +23,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,6 +46,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -129,6 +133,7 @@ fun LockScreenOrientation() {
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
     showId: Int,
@@ -314,14 +319,18 @@ fun PlayerContent(
     onPlayPauseClick: () -> Unit,
     seekTo: (Long) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .focusable()
-    ) {
-        AndroidView(
-            factory = {
+    Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .focusable()
+                .padding(paddingValues)
+        ) {
+            AndroidView(
+                factory = {
                 PlayerView(it).apply {
                     player = playerInstance
                     useController = false
@@ -332,11 +341,10 @@ fun PlayerContent(
                 it.resizeMode = playerState.resizeMode
                 it.keepScreenOn = playerState.isPlaying
             }, modifier = Modifier.fillMaxSize()
-        )
+            )
 
-        Row(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
+            Row(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(Unit) {
                         detectTransformGestures { _, _, zoom, _ ->
@@ -360,75 +368,74 @@ fun PlayerContent(
                         })
                     }) {
 
-            }
-        }
-
-        AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .fillMaxSize()
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(WindowInsets.safeDrawing.asPaddingValues())
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PlayerPulse(pulseState)
-            }
-
-
-            AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
-                MiddleControls(
-                    showType = showType,
-                    isPlaying = playerState.isPlaying,
-                    isLoading = playerState.isLoading,
-                    onPlayPauseClick = onPlayPauseClick,
-                    hasPrevEpisode = hasPrevEpisode,
-                    hasNextEpisode = hasNextEpisode,
-                    onPrevEpisodeClick = goToPrevEpisode,
-                    onNextEpisodeClick = goToNextEpisode,
-                )
-            }
-
-            AnimatedVisibility(
-                visible = playerState.isLoading,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .align(Alignment.Center)
-                    )
                 }
             }
 
             AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    TopControls(
-                        showType = showType,
-                        showDetails = details,
-                        onMoreClick = onShowQualitySheet,
-                        onAudioClick = onShowAudioSheet,
-                        onEpisodeClick = onShowEpisodeSheet,
-                    )
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .fillMaxSize()
+                )
+            }
 
-                    Spacer(modifier = Modifier.weight(1f))
-                    if (playerState.duration > 0L) {
-                        BottomControls(
-                            duration = playerState.duration,
-                            currentPosition = playerState.currentPosition,
-                            seekTo = seekTo
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(WindowInsets.safeDrawing.asPaddingValues())
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PlayerPulse(pulseState)
+                }
+
+
+                AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
+                    MiddleControls(
+                        showType = showType,
+                        isPlaying = playerState.isPlaying,
+                        isLoading = playerState.isLoading,
+                        onPlayPauseClick = onPlayPauseClick,
+                        hasPrevEpisode = hasPrevEpisode,
+                        hasNextEpisode = hasNextEpisode,
+                        onPrevEpisodeClick = goToPrevEpisode,
+                        onNextEpisodeClick = goToNextEpisode,
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = playerState.isLoading, enter = fadeIn(), exit = fadeOut()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .align(Alignment.Center)
                         )
+                    }
+                }
+
+                AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        TopControls(
+                            showType = showType,
+                            showDetails = details,
+                            onMoreClick = onShowQualitySheet,
+                            onAudioClick = onShowAudioSheet,
+                            onEpisodeClick = onShowEpisodeSheet,
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+                        if (playerState.duration > 0L) {
+                            BottomControls(
+                                duration = playerState.duration,
+                                currentPosition = playerState.currentPosition,
+                                seekTo = seekTo
+                            )
+                        }
                     }
                 }
             }
@@ -458,19 +465,17 @@ private fun MiddleControls(
     ) {
         if (showType != ShowType.MOVIE) {
             Box(
-                modifier = Modifier
-                    .then(
+                modifier = Modifier.then(
                         if (hasPrevEpisode) {
-                            Modifier.clickable(
-                                onClick = onPrevEpisodeClick,
-                                role = Role.Button,
-                                interactionSource = interactionSource,
-                                indication = ripple(bounded = false, radius = 24.dp)
-                            )
-                        } else {
-                            Modifier.semantics { disabled() }
-                        }
-                    ),
+                        Modifier.clickable(
+                            onClick = onPrevEpisodeClick,
+                            role = Role.Button,
+                            interactionSource = interactionSource,
+                            indication = ripple(bounded = false, radius = 24.dp)
+                        )
+                    } else {
+                        Modifier.semantics { disabled() }
+                    }),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -506,19 +511,17 @@ private fun MiddleControls(
 
         if (showType != ShowType.MOVIE) {
             Box(
-                modifier = Modifier
-                    .then(
+                modifier = Modifier.then(
                         if (hasNextEpisode) {
-                            Modifier.clickable(
-                                onClick = onNextEpisodeClick,
-                                role = Role.Button,
-                                interactionSource = interactionSource,
-                                indication = ripple(bounded = false, radius = 24.dp)
-                            )
-                        } else {
-                            Modifier.semantics { disabled() }
-                        }
-                    ),
+                        Modifier.clickable(
+                            onClick = onNextEpisodeClick,
+                            role = Role.Button,
+                            interactionSource = interactionSource,
+                            indication = ripple(bounded = false, radius = 24.dp)
+                        )
+                    } else {
+                        Modifier.semantics { disabled() }
+                    }),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -617,8 +620,8 @@ private fun BottomControls(
 
         CustomSeekBar(
             isSeekInProgress = { isInProgress ->
-                isSeekInProgress = isInProgress
-            },
+            isSeekInProgress = isInProgress
+        },
             onSeekBarMove = { position ->
                 seekBarTime = position
             },

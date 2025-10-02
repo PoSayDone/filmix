@@ -1,9 +1,10 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
-import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.data.KinopoiskRepository
@@ -17,12 +18,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 
 sealed class ShowDetailsScreenUiState {
@@ -41,60 +41,64 @@ sealed class ShowDetailsScreenUiState {
 
 private var TAG = "SWAG"
 
-@HiltViewModel
-class ShowDetailsScreenViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+data class ShowDetailsNavKey(val showId: Int)
+
+@HiltViewModel(assistedFactory = ShowDetailsScreenViewModel.Factory::class)
+class ShowDetailsScreenViewModel @AssistedInject constructor(
+    @Assisted val navKey: ShowDetailsNavKey,
     private val filmixRepository: FilmixRepository,
     private val kinopoiskRepository: KinopoiskRepository,
     private val sessionManager: SessionManager,
 ) : ViewModel() {
-    private val retryChannel = Channel<Unit>(Channel.RENDEZVOUS)
+    @AssistedFactory
+    interface Factory {
+        fun create(navKey: ShowDetailsNavKey): ShowDetailsScreenViewModel
+    }
+    
+    private val retryChannel = Channel<Unit>(Channel.CONFLATED)
 
-    val uiState = retryChannel.receiveAsFlow().flatMapLatest {
-        savedStateHandle.getStateFlow<Int?>("showId", null).map { showId ->
-            if (showId == null) {
-                ShowDetailsScreenUiState.Error(
-                    message = "Show id is invalid", onRetry = { reload() })
-            } else {
+    val uiState = retryChannel.receiveAsFlow()
+        .flatMapLatest {
+            flow {
                 try {
+                    val showId = navKey.showId
                     val details = filmixRepository.getShowDetails(showId)
                     val images = filmixRepository.getShowImages(showId)
                     val trailers = filmixRepository.getShowTrailers(showId)
                     val history = filmixRepository.getShowProgress(showId)
 
-                    var query =
+                    val query =
                         if (details.originalTitle.isNullOrEmpty()) details.title else details.originalTitle
-
                     val searchResult = kinopoiskRepository.movieSearch(
                         page = 1, limit = 1, query = query
                     )
-                    Log.d(TAG, "searchresult: $searchResult")
-
                     val kinopoiskMovie = searchResult.docs.firstOrNull()
 
-                    Log.d(TAG, "kinopoiskmovie: $kinopoiskMovie")
-
-                    ShowDetailsScreenUiState.Done(
-                        showDetails = details,
-                        showImages = images,
-                        showTrailers = trailers,
-                        showProgress = history,
-                        kinopoiskMovie = kinopoiskMovie,
-                        sessionManager = sessionManager,
-                        toggleFavorites = { toggleFavorites() }
-                    )
+                    emit(
+                        ShowDetailsScreenUiState.Done(
+                            showDetails = details,
+                            showImages = images,
+                            showTrailers = trailers,
+                            showProgress = history,
+                            kinopoiskMovie = kinopoiskMovie,
+                            sessionManager = sessionManager,
+                            toggleFavorites = { toggleFavorites() }
+                        ))
                 } catch (error: Exception) {
-                    ShowDetailsScreenUiState.Error(
-                        message = "Unknown error",
-                        onRetry = { reload() })
+                    emit(
+                        ShowDetailsScreenUiState.Error(
+                            message = "Unknown error",
+                            onRetry = ::reload
+                        )
+                    )
                 }
             }
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ShowDetailsScreenUiState.Loading
-    )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ShowDetailsScreenUiState.Loading
+        )
 
 
     init {
@@ -110,8 +114,7 @@ class ShowDetailsScreenViewModel @Inject constructor(
 
                 val success = withContext(Dispatchers.IO) {
                     filmixRepository.toggleFavorite(
-                        showId = currentShowDetails.id,
-                        isFavorite = newFavoriteState
+                        showId = currentShowDetails.id, isFavorite = newFavoriteState
                     )
                 }
 
@@ -127,4 +130,5 @@ class ShowDetailsScreenViewModel @Inject constructor(
             retryChannel.send(Unit)
         }
     }
+
 }

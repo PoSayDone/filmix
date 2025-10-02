@@ -21,6 +21,9 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.google.common.util.concurrent.ListenableFuture
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.common.services.PlaybackService
 import io.github.posaydone.filmix.core.data.FilmixRepository
@@ -66,16 +69,23 @@ sealed class VideoPlayerScreenUiState {
     data class Done(val showDetails: ShowDetails) : VideoPlayerScreenUiState()
 }
 
+data class PlayerScreenNavKey(val showId: Int)
+
 @androidx.media3.common.util.UnstableApi
-@HiltViewModel
-class PlayerScreenViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = PlayerScreenViewModel.Factory::class)
+class PlayerScreenViewModel @AssistedInject constructor(
+    @Assisted val navKey: PlayerScreenNavKey,
     val sessionManager: SessionManager,
     private val repository: FilmixRepository,
     context: Application,
-    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(navKey: PlayerScreenNavKey): PlayerScreenViewModel
+    }
+
     private val TAG: String = "PlayerViewModel"
-    private val showId = checkNotNull(savedStateHandle.get<Int>("showId"))
+    private val showId = navKey.showId
 
     private val _playerState = MutableStateFlow(PlayerState())
     val playerState = _playerState.asStateFlow()
@@ -564,10 +574,7 @@ class PlayerScreenViewModel @Inject constructor(
         positionJob = null
         _playerState.update {
             it.copy(
-                isPlaying = false,
-                isLoading = false,
-                currentPosition = 0L,
-                duration = 0L
+                isPlaying = false, isLoading = false, currentPosition = 0L, duration = 0L
             )
         }
         super.onCleared()

@@ -1,9 +1,6 @@
 package io.github.posaydone.filmix.mobile
 
-import android.app.PictureInPictureParams
-import android.os.Build
 import android.os.Bundle
-import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,7 +8,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.posaydone.filmix.core.model.AuthEvent
 import io.github.posaydone.filmix.core.model.SessionManager
-import io.github.posaydone.filmix.mobile.navigation.NavGraph
+import io.github.posaydone.filmix.mobile.newNavigation.graph.RootGraph
 import io.github.posaydone.filmix.mobile.ui.theme.FilmixTheme
 import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Inject
@@ -21,7 +18,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sessionManager: SessionManager // Inject SessionManager
-    
+
     @Inject
     @JvmSuppressWildcards
     lateinit var authEventFlow: SharedFlow<AuthEvent> // Inject the flow
@@ -32,7 +29,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FilmixTheme {
-                NavGraph(
+                RootGraph(
                     sessionManager = sessionManager,
                     authEventFlow = authEventFlow
                 )

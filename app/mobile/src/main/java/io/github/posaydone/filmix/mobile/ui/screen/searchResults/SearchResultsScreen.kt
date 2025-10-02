@@ -21,36 +21,38 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.SearchResultsViewModel
+import io.github.posaydone.filmix.mobile.newNavigation.screen.MainGraphData
 import io.github.posaydone.filmix.mobile.ui.common.ShowsGrid
 
 @Composable
 fun SearchResultsScreen(
-    query: String,
-    paddingValues: PaddingValues,
-    navController: NavHostController,
+    navigateBack: () -> Unit,
+    navigateToShowDetails: (showId: Int) -> Unit,
     viewModel: SearchResultsViewModel = hiltViewModel(),
 ) {
     val shows by viewModel.shows.collectAsStateWithLifecycle()
+    
 
     Scaffold(
         topBar =
-        {
-            TopAppBar({},
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                navigationIcon = {
-                    IconButton(onClick = {
-                        navController.navigateUp()
-                    }) {
-                        Icon(
-                            contentDescription = "Navback icon",
-                            painter = painterResource(R.drawable.ic_arrow_back)
-                        )
-                    }
-                })
-        }
+            {
+                TopAppBar(
+                    {},
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            navigateBack()
+                        }) {
+                            Icon(
+                                contentDescription = "Navback icon",
+                                painter = painterResource(R.drawable.ic_arrow_back)
+                            )
+                        }
+                    })
+            }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            ShowsGrid(shows, navController)
+            ShowsGrid(shows, navigateToShowDetails)
         }
     }
 }

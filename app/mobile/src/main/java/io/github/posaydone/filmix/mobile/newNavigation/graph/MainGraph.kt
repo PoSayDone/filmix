@@ -1,6 +1,11 @@
 package io.github.posaydone.filmix.mobile.newNavigation.graph
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Explore
@@ -10,30 +15,37 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import io.github.posaydone.filmix.mobile.newNavigation.screen.MainScreen
-import io.github.posaydone.filmix.mobile.newNavigation.screen.MainScreenSaver
-import io.github.posaydone.filmix.mobile.newNavigation.screen.mainScreenItems
+import io.github.posaydone.filmix.core.common.sharedViewModel.PlayerScreenNavKey
+import io.github.posaydone.filmix.core.common.sharedViewModel.PlayerScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.SearchResultsNavKey
+import io.github.posaydone.filmix.core.common.sharedViewModel.SearchResultsViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsNavKey
+import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenViewModel
+import io.github.posaydone.filmix.mobile.newNavigation.screen.MainGraphData
+import io.github.posaydone.filmix.mobile.newNavigation.screen.NavBarGraphData
+import io.github.posaydone.filmix.mobile.newNavigation.screen.navBarScreenItems
 import io.github.posaydone.filmix.mobile.ui.screen.exploreScreen.ExploreScreen
 import io.github.posaydone.filmix.mobile.ui.screen.favoritesScreen.FavoritesScreen
 import io.github.posaydone.filmix.mobile.ui.screen.homeScreen.HomeScreen
-import io.github.posaydone.filmix.mobile.ui.screen.profileScreen.ProfileScreen
-import io.github.posaydone.filmix.mobile.ui.screen.settingsScreen.SettingsScreen
+import io.github.posaydone.filmix.mobile.ui.screen.playerScreen.PlayerScreen
+import io.github.posaydone.filmix.mobile.ui.screen.searchResults.SearchResultsScreen
+import io.github.posaydone.filmix.mobile.ui.screen.showDetailsScreen.ShowDetailsScreen
+import io.github.posaydone.filmix.mobile.ui.screen.showsGridScreen.ShowsGridScreen
+import io.github.posaydone.filmix.mobile.utils.TopLevelBackStack
 
 fun getIcon(iconName: String): ImageVector {
     return when (iconName) {
@@ -41,68 +53,134 @@ fun getIcon(iconName: String): ImageVector {
         "Explore" -> Icons.Default.Explore
         "Favorite" -> Icons.Default.Favorite
         "Profile" -> Icons.Default.Person
-        "Settings" -> Icons.Default.Settings
         else -> Icons.Default.Error
     }
 }
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainGraph() {
-    val backStack = rememberNavBackStack<MainScreen>(MainScreen.Home)
-    var currentMainScreen: MainScreen by rememberSaveable(
-        stateSaver = MainScreenSaver
+    val topLevelBackStack = remember { TopLevelBackStack<Any>(NavBarGraphData.Home) }
+    val lastEntry = topLevelBackStack.backStack.lastOrNull()
+    val isPlayerScreen = lastEntry is MainGraphData.Player
+
+    Column(
+        verticalArrangement = Arrangement.Bottom,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        mutableStateOf(MainScreen.Home)
-    }
-
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Swag") })
-    }, bottomBar = {
-        NavigationBar {
-            mainScreenItems.forEach { destination ->
-                NavigationBarItem(selected = currentMainScreen == destination, icon = {
-                    Icon(
-                        imageVector = getIcon(destination.icon),
-                        contentDescription = "$destination icon"
-                    )
-                }, onClick = {
-                    if (backStack.lastOrNull() != destination) {
-                        if (backStack.lastOrNull() in mainScreenItems) {
-                            backStack.removeAt(backStack.lastIndex)
-                        }
-                    }
-
-                    backStack.add(destination)
-                    currentMainScreen = destination
-                })
-            }
-        }
-    }) {
         NavDisplay(
-            backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
+            modifier = Modifier.weight(1f),
+            backStack = topLevelBackStack.backStack,
+            onBack = { topLevelBackStack.removeLast() },
             entryDecorators = listOf(
-                rememberSavedStateNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()
+                rememberSceneSetupNavEntryDecorator(),
+                rememberSavedStateNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator()
             ),
             entryProvider = entryProvider {
-                entry<MainScreen.Home> {
-                    HomeScreen()
+                entry<NavBarGraphData.Home> {
+                    HomeScreen(
+                        navigateToShowDetails = { showId ->
+                            topLevelBackStack.add(
+                                MainGraphData.ShowDetails(
+                                    showId
+                                )
+                            )
+                        })
                 }
-                entry<MainScreen.Explore> {
-                    ExploreScreen()
+                entry<NavBarGraphData.Explore> {
+                    ExploreScreen({ query -> topLevelBackStack.add(MainGraphData.SearchResults(query)) })
                 }
-                entry<MainScreen.Favorite> {
-                    FavoritesScreen()
+                entry<NavBarGraphData.Favorite> {
+                    FavoritesScreen(navigateToShowDetails = { showId ->
+                        topLevelBackStack.add(
+                            MainGraphData.ShowDetails(
+                                showId
+                            )
+                        )
+                    }, navigateToShowsGrid = { queryType ->
+                        topLevelBackStack.add(
+                            MainGraphData.ShowsGrid(
+                                queryType
+                            )
+                        )
+                    })
                 }
-                entry<MainScreen.Profile> {
-                    ProfileScreen()
+                entry<NavBarGraphData.ProfileGraph> {
+                    ProfileGraph()
                 }
-                entry<MainScreen.Settings> {
-                    SettingsScreen()
+                entry<MainGraphData.ShowDetails> { key ->
+                    val viewModel =
+                        hiltViewModel<ShowDetailsScreenViewModel, ShowDetailsScreenViewModel.Factory>(
+                            creationCallback = { factory ->
+                                factory.create(ShowDetailsNavKey(showId = key.showId))
+                            })
+                    ShowDetailsScreen(
+                        showId = key.showId,
+                        navigateBack = { topLevelBackStack.removeLast() },
+                        navigateToMoviePlayer = {
+                            topLevelBackStack.add(MainGraphData.Player(key.showId))
+                        },
+                        viewModel = viewModel
+                    )
+                }
+                entry<MainGraphData.ShowsGrid> {
+                    ShowsGridScreen(
+                        navigateToShowDetails = { showId ->
+                            topLevelBackStack.add(
+                                MainGraphData.ShowDetails(
+                                    showId
+                                )
+                            )
+                        },
+
+                        )
+                }
+                entry<MainGraphData.SearchResults> { key ->
+                    val viewModel =
+                        hiltViewModel<SearchResultsViewModel, SearchResultsViewModel.Factory>(
+                            creationCallback = { factory ->
+                                factory.create(SearchResultsNavKey(query = key.query))
+                            })
+                    SearchResultsScreen(
+                        navigateBack = { topLevelBackStack.removeLast() },
+                        navigateToShowDetails = { showId ->
+                            topLevelBackStack.add(
+                                MainGraphData.ShowDetails(
+                                    showId
+                                )
+                            )
+                        },
+                        viewModel = viewModel
+                    )
+                }
+                entry<MainGraphData.Player> { key ->
+                    val viewModel =
+                        hiltViewModel<PlayerScreenViewModel, PlayerScreenViewModel.Factory>(
+                            creationCallback = { factory ->
+                                factory.create(PlayerScreenNavKey(showId = key.showId))
+                            })
+                    PlayerScreen(key.showId, viewModel = viewModel)
                 }
             })
+        AnimatedVisibility(visible = !isPlayerScreen) {
+            NavigationBar {
+                navBarScreenItems.forEach { destination ->
+                    val isSelected = destination == topLevelBackStack.topLevelKey
+                    NavigationBarItem(selected = isSelected, icon = {
+                        Icon(
+                            imageVector = getIcon(destination.icon),
+                            contentDescription = "$destination icon"
+                        )
+                    }, onClick = {
+                        topLevelBackStack.addTopLevel(destination)
+                    })
+                }
+            }
+        }
     }
 }

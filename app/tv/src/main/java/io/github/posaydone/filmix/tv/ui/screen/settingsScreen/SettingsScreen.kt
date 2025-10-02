@@ -32,8 +32,8 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.SettingsScreenUiState
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.SettingsScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.settings.ProfileScreenUiState
+import io.github.posaydone.filmix.core.common.sharedViewModel.settings.ProfileScreenViewModel
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.SideDialog
@@ -41,28 +41,28 @@ import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
 
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsScreenViewModel = hiltViewModel(),
+    viewModel: ProfileScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val videoQuality by viewModel.videoQuality.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
-        is SettingsScreenUiState.Loading -> {
+        is ProfileScreenUiState.Loading -> {
             Loading(modifier = Modifier.fillMaxSize())
         }
 
-        is SettingsScreenUiState.Error -> {
+        is ProfileScreenUiState.Error -> {
             Error(modifier = Modifier.fillMaxSize(), onRetry = state.onRetry)
         }
 
-        is SettingsScreenUiState.Success -> {
+        is ProfileScreenUiState.Success -> {
             SettingsScreenContent(
                 currentVideoQuality = videoQuality,
                 currentStreamType = state.currentStreamType,
                 currentServerLocation = state.currentServerLocation,
                 onStreamTypeChange = { viewModel.updateStreamType(it) },
                 onServerLocationChange = { viewModel.updateServerLocation(it) },
-                onVideoQualityChange = { viewModel.setVideoQuality(it) })
+                onVideoQualityChange = { viewModel.updateDefaultVideoQuality(it) })
         }
     }
 }
@@ -76,9 +76,9 @@ fun SettingsScreenContent(
     onServerLocationChange: (String) -> Unit,
     onVideoQualityChange: (String) -> Unit
 ) {
-    val videoQualities = SettingsScreenViewModel.videoQualities
-    val streamTypes = SettingsScreenViewModel.streamTypes
-    val serverLocations = SettingsScreenViewModel.serverLocations
+    val videoQualities = ProfileScreenViewModel.videoQualities
+    val streamTypes = ProfileScreenViewModel.streamTypes
+    val serverLocations = ProfileScreenViewModel.serverLocations
 
     var showVideoQualityDialog by remember { mutableStateOf(false) }
     var showStreamTypeDialog by remember { mutableStateOf(false) }

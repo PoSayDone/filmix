@@ -1,4 +1,4 @@
-package io.github.posaydone.filmix.mobile.ui.screen.settingsScreen.component
+package io.github.posaydone.filmix.mobile.ui.screen.profileScreen.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues

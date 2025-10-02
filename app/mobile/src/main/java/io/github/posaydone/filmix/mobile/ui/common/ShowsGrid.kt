@@ -7,12 +7,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.model.Show
-import io.github.posaydone.filmix.mobile.navigation.Screens
 
 @Composable
-fun ShowsGrid(shows: List<Show>, navController: NavHostController) {
+fun ShowsGrid(
+    shows: List<Show>,
+    navigateToShowDetails: (showId: Int) -> Unit,
+) {
     LazyVerticalGrid(
         GridCells.Adaptive(minSize = 120.dp),
         contentPadding = PaddingValues(8.dp),
@@ -21,10 +22,7 @@ fun ShowsGrid(shows: List<Show>, navController: NavHostController) {
     ) {
         items(shows) { show ->
             ShowCard(show) {
-                navController.navigate(Screens.Main.Details(show.id)) {
-                    launchSingleTop = true
-                    restoreState = true
-                }
+                navigateToShowDetails(show.id)
             }
         }
     }

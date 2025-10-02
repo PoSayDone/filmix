@@ -22,7 +22,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,20 +30,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenViewModel
-import io.github.posaydone.filmix.mobile.navigation.Screens
 import io.github.posaydone.filmix.mobile.ui.common.PasswordTextField
-import kotlinx.coroutines.launch
 
 @Composable
 fun AuthScreen(
-    navController: NavHostController,
+    navigateToHome: () -> Unit,
     viewModel: AuthScreenViewModel = hiltViewModel(),
 ) {
     var email by remember { mutableStateOf("") }
@@ -54,9 +49,7 @@ fun AuthScreen(
 
     LaunchedEffect(key1 = uiState) {
         if (uiState is AuthScreenUiState.Success) {
-            navController.navigate(Screens.Main) {
-                popUpTo<Screens.Auth> { inclusive = true }
-            }
+            navigateToHome()
             viewModel.onNavigationHandled() // Reset the state to prevent re-navigation
         }
     }
