@@ -18,7 +18,6 @@ import io.github.posaydone.filmix.core.common.sharedViewModel.FavoritesScreenUiS
 import io.github.posaydone.filmix.core.common.sharedViewModel.FavoritesScreenViewModel
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridQueryType
 import io.github.posaydone.filmix.core.model.ShowList
-import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
@@ -26,7 +25,8 @@ import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
 
 @Composable
 fun FavoritesScreen(
-    navController: NavHostController,
+    navigateToShowDetails: (showId: Int) -> Unit,
+    navigateToShowsGrid: (queryType: String) -> Unit,
     viewModel: FavoritesScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -42,7 +42,10 @@ fun FavoritesScreen(
 
         is FavoritesScreenUiState.Done -> {
             FavoritesScreenContent(
-                navController, favoritesList = s.favoritesList, historyList = s.historyList
+                navigateToShowDetails = navigateToShowDetails,
+                navigateToShowsGrid = navigateToShowsGrid,
+                favoritesList = s.favoritesList,
+                historyList = s.historyList
             )
         }
     }
@@ -50,7 +53,8 @@ fun FavoritesScreen(
 
 @Composable
 fun FavoritesScreenContent(
-    navController: NavHostController,
+    navigateToShowDetails: (showId: Int) -> Unit,
+    navigateToShowsGrid: (queryType: String) -> Unit,
     favoritesList: ShowList,
     historyList: ShowList,
 ) {
@@ -64,12 +68,9 @@ fun FavoritesScreenContent(
     ) {
         item {
             Text(
-                modifier = Modifier
-                    .padding(
-                        top = 24.dp + childPadding.top,
-                        bottom = 24.dp,
-                        start = childPadding.start
-                    ),
+                modifier = Modifier.padding(
+                    top = 24.dp + childPadding.top, bottom = 24.dp, start = childPadding.start
+                ),
                 text = "Favorites",
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface
@@ -82,32 +83,25 @@ fun FavoritesScreenContent(
                 modifier = Modifier,
                 showList = favoritesList,
                 onShowSelected = { show ->
-                    navController.navigate(Screens.Main.Details(show.id)) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navigateToShowDetails(show.id)
                 },
                 onViewAll = {
-                    navController.navigate(Screens.Main.ShowsGrid(ShowsGridQueryType.FAVORITES.name))
+                    navigateToShowsGrid(
+                        ShowsGridQueryType.FAVORITES.name
+                    )
                 })
         }
         item {
             ShowsRow(
-                title = "History",
-                modifier = Modifier
-                    .padding(
-                        bottom = childPadding.bottom
-                    ),
-                showList = historyList,
-                onShowSelected = { show ->
-                    navController.navigate(Screens.Main.Details(show.id)) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onViewAll = {
-                    navController.navigate(Screens.Main.ShowsGrid(ShowsGridQueryType.HISTORY.name))
-                })
+                title = "History", modifier = Modifier.padding(
+                bottom = childPadding.bottom
+            ), showList = historyList, onShowSelected = { show ->
+                navigateToShowDetails(show.id)
+            }, onViewAll = {
+                navigateToShowsGrid(
+                    ShowsGridQueryType.HISTORY.name
+                )
+            })
         }
     }
 }

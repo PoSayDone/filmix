@@ -32,7 +32,6 @@ import androidx.tv.material3.Text
 import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.AuthScreenViewModel
 import io.github.posaydone.filmix.core.common.R
-import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.PasswordTextField
 import io.github.posaydone.filmix.tv.ui.common.TextField
 
@@ -40,7 +39,7 @@ private var TAG = "AuthScreen"
 
 @Composable
 fun AuthScreen(
-    navController: NavHostController,
+    navigateToHome: () -> Unit,
     viewModel: AuthScreenViewModel = hiltViewModel(),
 ) {
 
@@ -51,9 +50,7 @@ fun AuthScreen(
 
     LaunchedEffect(key1 = uiState) {
         if (uiState is AuthScreenUiState.Success) {
-            navController.navigate(Screens.Main) {
-                popUpTo<Screens.Auth> { inclusive = true }
-            }
+            navigateToHome()
             viewModel.onNavigationHandled()
         }
     }

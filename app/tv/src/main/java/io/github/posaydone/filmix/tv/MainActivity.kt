@@ -13,7 +13,7 @@ import androidx.tv.material3.MaterialTheme
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.posaydone.filmix.core.model.AuthEvent
 import io.github.posaydone.filmix.core.model.SessionManager
-import io.github.posaydone.filmix.tv.navigation.NavGraph
+import io.github.posaydone.filmix.tv.navigation.graph.RootGraph
 import io.github.posaydone.filmix.tv.ui.theme.FilmixTheme
 import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Inject
@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
                     CompositionLocalProvider(
                         LocalContentColor provides MaterialTheme.colorScheme.onSurface
                     ) {
-                        NavGraph(
+                        RootGraph(
                             sessionManager = sessionManager,
                             authEventFlow = authEventFlow
                         )

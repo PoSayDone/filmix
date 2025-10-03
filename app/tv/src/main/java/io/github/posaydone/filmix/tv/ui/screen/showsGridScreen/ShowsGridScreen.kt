@@ -22,13 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridQueryType
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridScreenViewModel
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowsGridUiState
-import io.github.posaydone.filmix.tv.navigation.Screens
+import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.tv.ui.common.CircularProgressIndicator
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.Loading
@@ -38,7 +37,7 @@ import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
 
 @Composable
 fun ShowsGridScreen(
-    navController: NavHostController,
+    navigateToShowDetails: (showId: Int) -> Unit,
     viewModel: ShowsGridScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -58,7 +57,7 @@ fun ShowsGridScreen(
 
         is ShowsGridUiState.Success -> {
             ShowsGridContent(
-                navController = navController,
+                navigateToShowDetails = navigateToShowDetails,
                 shows = state.shows,
                 hasNextPage = state.hasNextPage,
                 onLoadNext = { viewModel.loadNextPage() },
@@ -70,8 +69,8 @@ fun ShowsGridScreen(
 
 @Composable
 fun ShowsGridContent(
-    navController: NavHostController,
-    shows: io.github.posaydone.filmix.core.model.ShowList,
+    navigateToShowDetails: (showId: Int) -> Unit,
+    shows: ShowList,
     hasNextPage: Boolean,
     onLoadNext: () -> Unit,
     queryType: ShowsGridQueryType,
@@ -103,10 +102,7 @@ fun ShowsGridContent(
         items(shows, key = { it.id }) { show ->
             ShowCard(
                 onClick = {
-                    navController.navigate(Screens.Main.Details(show.id)) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navigateToShowDetails(show.id)
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {

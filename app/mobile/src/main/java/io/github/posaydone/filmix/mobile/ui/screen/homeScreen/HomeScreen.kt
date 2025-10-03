@@ -3,9 +3,12 @@ package io.github.posaydone.filmix.mobile.ui.screen.homeScreen
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -29,32 +32,34 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.posaydone.filmix.core.common.R
+import io.github.posaydone.filmix.core.common.sharedViewModel.FeaturedShow
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenViewModel
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.Loading
 import io.github.posaydone.filmix.mobile.ui.common.ShowsRow
+import io.github.posaydone.filmix.mobile.ui.screen.homeScreen.components.HomeBanner
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     navigateToShowDetails: (showId: Int) -> Unit,
+    navigateToMoviePlayer: (showId: Int) -> Unit,
     viewModel: HomeScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Home") })
-        },
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(NavigationBarDefaults.windowInsets)
+            TopAppBar(title = { Text("Home") })
+        }, contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(
+            NavigationBarDefaults.windowInsets.union(WindowInsets.statusBars)
+        )
     ) { paddingValues ->
         when (val s = uiState) {
             is HomeScreenUiState.Loading -> {
@@ -96,11 +101,13 @@ fun HomeScreen(
                         .fillMaxSize()
                         .animateContentSize()
                         .padding(paddingValues),
+                    featuredShow = s.featuredShow,
                     lastSeenShows = s.lastSeenShows,
                     viewingShows = s.viewingShows,
                     popularMovies = s.popularMovies,
                     popularSeries = s.popularSeries,
                     popularCartoons = s.popularCartoons,
+                    navigateToMoviePlayer = navigateToMoviePlayer,
                     navigateToShowDetails = navigateToShowDetails,
                     reload = { viewModel.retry() })
             }
@@ -112,11 +119,13 @@ fun HomeScreen(
 @Composable
 private fun Body(
     modifier: Modifier = Modifier,
+    featuredShow: FeaturedShow,
     lastSeenShows: ShowList,
     viewingShows: ShowList,
     popularMovies: ShowList,
     popularSeries: ShowList,
     popularCartoons: ShowList,
+    navigateToMoviePlayer: (showId: Int) -> Unit,
     navigateToShowDetails: (Int) -> Unit,
     reload: () -> Unit,
 ) {
@@ -140,27 +149,9 @@ private fun Body(
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-//            Button(onClick = {
-//                sessionManager.saveAccessToken(
-//                    sessionManager.fetchAccessToken(), System.currentTimeMillis() - 1000
-//                )
-//            }) {
-//                Text("clear expiration time")
-//            }
-//            Button(onClick = {
-//                sessionManager.saveAccessToken(
-//                    null, System.currentTimeMillis() - 1000
-//                )
-//            }) {
-//                Text("remove token")
-//            }
-//            Button(onClick = {
-//                sessionManager.saveAccessToken(
-//                    "adsfjskjdfkaksjf", System.currentTimeMillis() + 10 * 60 * 1000
-//                )
-//            }) {
-//                Text("save wrong token")
-//            }
+            HomeBanner(
+                featuredShow = featuredShow, navigateToMoviePlayer = navigateToMoviePlayer
+            ) { }
             ShowsRow(
                 showList = lastSeenShows,
                 title = stringResource(R.string.continue_watching),

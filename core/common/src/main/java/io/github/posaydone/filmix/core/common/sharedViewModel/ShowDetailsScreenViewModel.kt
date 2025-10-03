@@ -67,8 +67,7 @@ class ShowDetailsScreenViewModel @AssistedInject constructor(
                     val trailers = filmixRepository.getShowTrailers(showId)
                     val history = filmixRepository.getShowProgress(showId)
 
-                    val query =
-                        if (details.originalTitle.isNullOrEmpty()) details.title else details.originalTitle
+                    val query = if (details.originalTitle.isNullOrEmpty()) details.title else details.originalTitle
                     val searchResult = kinopoiskRepository.movieSearch(
                         page = 1, limit = 1, query = query
                     )

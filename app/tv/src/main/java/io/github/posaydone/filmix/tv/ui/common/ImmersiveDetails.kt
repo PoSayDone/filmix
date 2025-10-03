@@ -91,7 +91,7 @@ fun ImmersiveDetails(
                 contentDescription = title,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.sizeIn(
-                    maxWidth = screenWidth * 0.4f, maxHeight = screenHeight * 0.2f
+                    maxWidth = screenWidth * 0.4f, maxHeight = screenHeight * 0.16f
                 )
             )
         } else {

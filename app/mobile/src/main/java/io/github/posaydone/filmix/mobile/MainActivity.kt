@@ -13,7 +13,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.posaydone.filmix.core.model.AuthEvent
 import io.github.posaydone.filmix.core.model.SessionManager
-import io.github.posaydone.filmix.mobile.newNavigation.graph.RootGraph
+import io.github.posaydone.filmix.mobile.navigation.RootGraph
 import io.github.posaydone.filmix.mobile.ui.theme.FilmixTheme
 import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Inject

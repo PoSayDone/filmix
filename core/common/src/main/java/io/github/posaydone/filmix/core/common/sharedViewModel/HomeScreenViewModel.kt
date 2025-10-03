@@ -1,6 +1,5 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
-import android.health.connect.datatypes.units.Length
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,6 +13,7 @@ import io.github.posaydone.filmix.core.model.KinopoiskMovie
 import io.github.posaydone.filmix.core.model.Rating
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.Show
+import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.core.model.Votes
@@ -36,6 +36,12 @@ import javax.inject.Inject
 
 private const val TAG = "HomeScreenViewModel"
 
+
+data class FeaturedShow(
+    val showDetails: ShowDetails,
+    val kinopoiskMovie: KinopoiskMovie?,
+)
+
 @Immutable
 sealed class HomeScreenUiState {
     data object Loading : HomeScreenUiState()
@@ -47,6 +53,7 @@ sealed class HomeScreenUiState {
 
     data class Done(
         val sessionManager: SessionManager,
+        val featuredShow: FeaturedShow,
         val lastSeenShows: ShowList,
         val viewingShows: ShowList,
         val popularMovies: ShowList,
@@ -113,8 +120,19 @@ class HomeScreenViewModel @Inject constructor(
                     message = error.exceptionOrNull()?.message ?: "Unknown error",
                     onRetry = { retry() })
             } else {
+                var show = lastSeenResult.getOrThrow().first()
+                var query =
+                    if (show.original_name.isNullOrEmpty()) show.title else show.original_name
+
+                val searchResult = kinopoiskRepository.movieSearch(
+                    page = 1, limit = 1, query = query
+                )
+                val kinopoiskMovie = searchResult.docs.firstOrNull()
+                val showDetails = filmixRepository.getShowDetails(show.id)
+
                 HomeScreenUiState.Done(
                     sessionManager = sessionManager,
+                    featuredShow = FeaturedShow(showDetails, kinopoiskMovie),
                     lastSeenShows = lastSeenResult.getOrThrow(),
                     viewingShows = viewingResult.getOrThrow(),
                     popularMovies = popularMoviesResult.getOrThrow(),
@@ -149,8 +167,7 @@ class HomeScreenViewModel @Inject constructor(
             _immersiveContentState.value = ImmersiveContentUiState.Loading
             try {
 
-                var query =
-                    if (show.original_name.isNullOrEmpty()) show.title else show.original_name
+                var query = if (show.original_name.isNullOrEmpty()) show.title else show.original_name
 
                 val searchResult = kinopoiskRepository.movieSearch(
                     page = 1, limit = 1, query = query
@@ -159,7 +176,7 @@ class HomeScreenViewModel @Inject constructor(
 
                 if (kinopoiskMovie != null) {
                     val content = ImmersiveContentUiState.Content(
-                        backdropUrl = kinopoiskMovie.backdrop?.url,
+                        backdropUrl = kinopoiskMovie.backdrop?.url ?: show.poster,
                         title = kinopoiskMovie.name,
                         ageRating = kinopoiskMovie.ageRating,
                         logoUrl = kinopoiskMovie.logo?.url,

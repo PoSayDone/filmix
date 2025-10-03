@@ -3,13 +3,13 @@ package io.github.posaydone.filmix.tv.ui.common
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +22,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.relocation.bringIntoViewResponder
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,7 +57,8 @@ import io.github.posaydone.filmix.core.common.sharedViewModel.ImmersiveContentUi
 import io.github.posaydone.filmix.core.model.Show
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
-import io.github.posaydone.filmix.tv.ui.utils.bringIntoViewIfChildrenAreFocused
+import io.github.posaydone.filmix.tv.ui.utils.CustomBringIntoViewSpec
+import io.github.posaydone.filmix.tv.ui.utils.ImmersiveShowRowViewResponder
 
 enum class ItemDirection(val aspectRatio: Float) {
     Vertical(10.5f / 16f), Horizontal(16f / 9f);
@@ -62,10 +66,11 @@ enum class ItemDirection(val aspectRatio: Float) {
 
 private const val TAG = "ShowsRow"
 
+@OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("UnusedContentLambdaTargetStateParameter")
 @Composable
 fun ShowsRow(
-    cardWidth: Dp = 148.dp,
+    cardWidth: Dp = 118.dp,
     showList: ShowList,
     modifier: Modifier = Modifier,
     itemDirection: ItemDirection = ItemDirection.Vertical,
@@ -84,93 +89,97 @@ fun ShowsRow(
 ) {
     val (lazyRow, firstItem) = remember { FocusRequester.createRefs() }
     var isInitiallyFocused = remember { mutableStateOf(false) }
+    val horizontalBivs = remember { CustomBringIntoViewSpec(0.4f, 0f) }
 
-    Column(
-        modifier = modifier
-            .focusGroup()
-            .onGloballyPositioned {
-                if (!isInitiallyFocused.value && requestInitialFocus) {
-                    lazyRow.requestFocus()
-                    isInitiallyFocused.value = true
-                }
-            }) {
-        if (title != null) {
-            Text(
-                text = title,
-                style = titleStyle,
-                modifier = Modifier
-                    .alpha(1.0f)
-                    .padding(start = startPadding, top = 16.dp, bottom = 16.dp)
-            )
-        }
-        AnimatedContent(
-            targetState = showList,
-            label = "",
-        ) {
-            LazyRow(
-                contentPadding = PaddingValues(
-                    start = startPadding,
-                    end = endPadding,
-                ),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier
-                    .focusRequester(lazyRow)
-                    .focusRestorer(firstItem)
+    CompositionLocalProvider(LocalBringIntoViewSpec provides horizontalBivs) {
+        Column(
+            modifier = modifier
+                .focusGroup()
+                .onGloballyPositioned {
+                    if (!isInitiallyFocused.value && requestInitialFocus) {
+                        lazyRow.requestFocus()
+                        isInitiallyFocused.value = true
+                    }
+                }) {
+            if (title != null) {
+                Text(
+                    text = title,
+                    style = titleStyle,
+                    modifier = Modifier
+                        .alpha(1.0f)
+                        .padding(start = startPadding, top = 16.dp, bottom = 16.dp)
+                )
+            }
+            AnimatedContent(
+                targetState = showList,
+                label = "",
             ) {
-                if (onViewAll != null) {
-                    item {
-                        ShowCard(
-                            onClick = { onViewAll() },
-                            modifier = Modifier
-                                .width(cardWidth)
-                                .focusRequester(firstItem),
-                        ) {
-                            Box(
+                LazyRow(
+                    contentPadding = PaddingValues(
+                        start = startPadding,
+                        end = endPadding,
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier
+                        .focusRequester(lazyRow)
+                        .focusRestorer(firstItem)
+                ) {
+                    if (onViewAll != null) {
+                        item {
+                            ShowCard(
+                                onClick = { onViewAll() },
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .aspectRatio(ItemDirection.Vertical.aspectRatio),
-                                contentAlignment = Alignment.Center
+                                    .width(cardWidth)
+                                    .focusRequester(firstItem),
                             ) {
-                                Text(
-                                    text = "View All",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .aspectRatio(ItemDirection.Vertical.aspectRatio),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "View All",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                itemsIndexed(showList, key = { _, show -> show.id }) { index, show ->
-                    val itemModifier = if (index == 0) {
-                        Modifier.focusRequester(firstItem)
-                    } else {
-                        Modifier
+                    itemsIndexed(showList, key = { _, show -> show.id }) { index, show ->
+                        val itemModifier = if (index == 0) {
+                            Modifier.focusRequester(firstItem)
+                        } else {
+                            Modifier
+                        }
+
+                        ShowsRowItem(
+                            modifier = itemModifier.weight(1f),
+                            index = index,
+                            cardWidth = cardWidth,
+                            itemDirection = itemDirection,
+                            onShowSelected = {
+                                lazyRow.saveFocusedChild()
+                                onShowSelected(it)
+                            },
+                            onShowFocused = { onShowFocused?.invoke(show) },
+                            show = show,
+                            showItemTitle = showItemTitle,
+                            showIndexOverImage = showIndexOverImage
+                        )
                     }
 
-                    ShowsRowItem(
-                        modifier = itemModifier.weight(1f),
-                        index = index,
-                        cardWidth = cardWidth,
-                        itemDirection = itemDirection,
-                        onShowSelected = {
-                            lazyRow.saveFocusedChild()
-                            onShowSelected(it)
-                        },
-                        onShowFocused = { onShowFocused?.invoke(show) },
-                        show = show,
-                        showItemTitle = showItemTitle,
-                        showIndexOverImage = showIndexOverImage
-                    )
                 }
-
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ImmersiveShowsRow(
     showList: ShowList,
@@ -189,19 +198,14 @@ fun ImmersiveShowsRow(
     onShowSelected: (Show) -> Unit = {},
     requestInitialFocus: Boolean = false,
 ) {
-
     var isListFocused by remember { mutableStateOf(false) }
     var selectedShow by remember(showList) { mutableStateOf(showList.first()) }
-    val animatedCardWidth by animateDpAsState(
-        targetValue = if (isListFocused) 110.dp else 148.dp,
-        animationSpec = tween(durationMillis = 300),
-        label = "cardWidthAnimation"
-    )
+
+    val screenHeight = LocalWindowInfo.current.containerSize.height
 
     Box(
         modifier
             .fillMaxSize()
-            .bringIntoViewIfChildrenAreFocused()
     ) {
         Box(
             modifier = Modifier
@@ -239,7 +243,9 @@ fun ImmersiveShowsRow(
                         ageRating = immersiveState.ageRating.toString()
                     )
                 } else if (immersiveState is ImmersiveContentUiState.Loading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {}
+                    Box(
+                        modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                    ) {}
                 }
             }
 
@@ -248,8 +254,6 @@ fun ImmersiveShowsRow(
                     .align(Alignment.BottomStart)
                     .onFocusChanged { isListFocused = it.hasFocus }) {
                 ShowsRow(
-                    requestInitialFocus = requestInitialFocus,
-                    cardWidth = animatedCardWidth,
                     showList = showList,
                     itemDirection = itemDirection,
                     startPadding = startPadding,
@@ -285,19 +289,20 @@ private fun ShowsRowItem(
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
-    ShowCard(onClick = { onShowSelected(show) }, title = {
+    ShowCard(
+        onClick = { onShowSelected(show) }, title = {
         ShowsRowItemText(
             showItemTitle = showItemTitle, isItemFocused = isFocused, show = show
         )
     }, modifier = Modifier
-        .width(cardWidth)
-        .onFocusChanged {
-            isFocused = it.isFocused
-            if (it.isFocused) {
-                onShowFocused(show)
+            .width(cardWidth)
+            .onFocusChanged {
+                isFocused = it.isFocused
+                if (it.isFocused) {
+                    onShowFocused(show)
+                }
             }
-        }
-        .then(modifier)) {
+            .then(modifier)) {
         ShowsRowItemImage(
             modifier = Modifier.aspectRatio(itemDirection.aspectRatio),
             showIndexOverImage = showIndexOverImage,

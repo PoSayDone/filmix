@@ -59,7 +59,6 @@ import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
 import io.github.posaydone.filmix.core.model.ShowTrailers
 import io.github.posaydone.filmix.core.model.Votes
-import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.Error
 import io.github.posaydone.filmix.tv.ui.common.ImmersiveBackground
 import io.github.posaydone.filmix.tv.ui.common.ImmersiveDetails
@@ -75,9 +74,9 @@ private const val TAG = "ShowDetailsScreen"
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShowDetailsScreen(
-    showId: Int,
-    navController: NavHostController,
     modifier: Modifier = Modifier,
+    showId: Int,
+    navigateToMoviePlayer: (showId: Int) -> Unit,
     viewModel: ShowDetailsScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -100,10 +99,7 @@ fun ShowDetailsScreen(
                 kinopoiskMovie = s.kinopoiskMovie,
                 toggleFavorites = s.toggleFavorites,
                 goToMoviePlayer = {
-                    navController.navigate(Screens.Player(showId)) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navigateToMoviePlayer(showId)
                 },
                 modifier = Modifier
                     .fillMaxSize()

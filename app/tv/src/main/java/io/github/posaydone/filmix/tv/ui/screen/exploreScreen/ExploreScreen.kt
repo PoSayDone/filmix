@@ -27,7 +27,6 @@ import androidx.navigation.NavHostController
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import io.github.posaydone.filmix.tv.navigation.Screens
 import io.github.posaydone.filmix.tv.ui.common.CircularProgressIndicator
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
 import io.github.posaydone.filmix.tv.ui.common.TextField
@@ -35,7 +34,7 @@ import io.github.posaydone.filmix.tv.ui.screen.homeScreen.rememberChildPadding
 
 @Composable
 fun ExploreScreen(
-    navController: NavHostController,
+    navigateToShowDetails: (showId: Int) -> Unit,
     viewModel: ExploreScreenViewModel = hiltViewModel(),
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -115,12 +114,8 @@ fun ExploreScreen(
                             .padding(horizontal = childPadding.start)
                             .fillMaxWidth(),
                         showList = showList,
-                        onShowSelected = { show ->
-                            navController.navigate(Screens.Main.Details(show.id)) {
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        })
+                        onShowSelected = { show -> navigateToShowDetails(show.id) }
+                    )
                 }
             }
         }

@@ -8,8 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.ProfileScreenUiState
-import io.github.posaydone.filmix.core.common.sharedViewModel.settings.ProfileScreenViewModel
+import io.github.posaydone.filmix.core.common.sharedViewModel.ProfileScreenUiState
+import io.github.posaydone.filmix.core.common.sharedViewModel.ProfileScreenViewModel
 import io.github.posaydone.filmix.mobile.ui.common.Error
 import io.github.posaydone.filmix.mobile.ui.common.Loading
 import io.github.posaydone.filmix.mobile.ui.screen.profileScreen.components.SettingScreenContent

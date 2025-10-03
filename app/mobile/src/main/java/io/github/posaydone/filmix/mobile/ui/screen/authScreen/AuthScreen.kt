@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,74 +55,76 @@ fun AuthScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .padding(24.dp)
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-
-        Icon(
-            modifier = Modifier.size(60.dp),
-            painter = painterResource(id = R.drawable.ic_filmix),
-            contentDescription = "Filmix icon",
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        PasswordTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-
-                imeAction = ImeAction.Done
-            ),
-
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
+    Scaffold { paddingValues ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth(),
-            onClick = {
-                viewModel.authorizeUser(username = email, password = password)
-            },
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
-            enabled = uiState != AuthScreenUiState.Loading
+                .padding(24.dp)
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = stringResource(R.string.sign_in),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(Modifier.size(12.dp))
-            Icon(
-                modifier = Modifier.size(28.dp),
-                imageVector = Icons.AutoMirrored.Rounded.ArrowRightAlt,
-                contentDescription = null
-            )
-        }
 
-        if (uiState is AuthScreenUiState.Error) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = (uiState as AuthScreenUiState.Error).message,
-                color = MaterialTheme.colorScheme.error
+            Icon(
+                modifier = Modifier.size(60.dp),
+                painter = painterResource(id = R.drawable.ic_filmix),
+                contentDescription = "Filmix icon",
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            PasswordTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+
+                    imeAction = ImeAction.Done
+                ),
+
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    viewModel.authorizeUser(username = email, password = password)
+                },
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
+                enabled = uiState != AuthScreenUiState.Loading
+            ) {
+                Text(
+                    text = stringResource(R.string.sign_in),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(Modifier.size(12.dp))
+                Icon(
+                    modifier = Modifier.size(28.dp),
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowRightAlt,
+                    contentDescription = null
+                )
+            }
+
+            if (uiState is AuthScreenUiState.Error) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = (uiState as AuthScreenUiState.Error).message,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }

@@ -3,7 +3,6 @@
 package io.github.posaydone.filmix.mobile.ui.screen.searchResults
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,10 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.SearchResultsViewModel
-import io.github.posaydone.filmix.mobile.newNavigation.screen.MainGraphData
 import io.github.posaydone.filmix.mobile.ui.common.ShowsGrid
 
 @Composable

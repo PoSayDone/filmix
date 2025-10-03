@@ -1,35 +1,60 @@
 package io.github.posaydone.filmix.tv.ui.screen.homeScreen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.bringIntoViewResponder
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
+import androidx.tv.material3.MaterialTheme
 import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenViewModel
 import io.github.posaydone.filmix.core.common.sharedViewModel.ImmersiveContentUiState
 import io.github.posaydone.filmix.core.model.Show
 import io.github.posaydone.filmix.core.model.ShowList
-import io.github.posaydone.filmix.tv.navigation.Screens
+import io.github.posaydone.filmix.tv.ui.common.BackdropMask
 import io.github.posaydone.filmix.tv.ui.common.Error
-import io.github.posaydone.filmix.tv.ui.common.ImmersiveShowsRow
+import io.github.posaydone.filmix.tv.ui.common.ImmersiveBackground
+import io.github.posaydone.filmix.tv.ui.common.ImmersiveDetails
 import io.github.posaydone.filmix.tv.ui.common.Loading
 import io.github.posaydone.filmix.tv.ui.common.ShowsRow
+import io.github.posaydone.filmix.tv.ui.common.gradientOverlay
+import io.github.posaydone.filmix.tv.ui.utils.CustomBringIntoViewSpec
 import io.github.posaydone.filmix.tv.ui.utils.Padding
 
 val ParentPadding = PaddingValues(vertical = 16.dp, horizontal = 12.dp)
@@ -49,7 +74,7 @@ fun rememberChildPadding(direction: LayoutDirection = LocalLayoutDirection.curre
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    navController: NavHostController,
+    navigateToShowDetails: (Int) -> Unit,
     viewModel: HomeScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -74,20 +99,16 @@ fun HomeScreen(
                 popularMovies = s.popularMovies,
                 popularSeries = s.popularSeries,
                 popularCartoons = s.popularCartoons,
-                immersiveContentState = immersiveContentState,
+                immersiveState = immersiveContentState,
                 onImmersiveShowFocused = viewModel::onImmersiveShowFocused,
-                goToDetails = { showId ->
-                    navController.navigate(Screens.Main.Details(showId)) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
+                navigateToShowDetails = navigateToShowDetails,
             )
         }
     }
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Body(
     modifier: Modifier = Modifier,
@@ -96,67 +117,126 @@ private fun Body(
     popularMovies: ShowList,
     popularSeries: ShowList,
     popularCartoons: ShowList,
-    immersiveContentState: ImmersiveContentUiState, // Receive the new state
-    onImmersiveShowFocused: (Show) -> Unit,       // Receive the callback
-    goToDetails: (showId: Int) -> Unit,
+    immersiveState: ImmersiveContentUiState,
+    onImmersiveShowFocused: (Show) -> Unit,
+    navigateToShowDetails: (showId: Int) -> Unit,
 ) {
-    val lazyListState = rememberLazyListState()
+    val lazyColumnState = rememberLazyListState()
+    val verticalBivs = remember { CustomBringIntoViewSpec(0.9f, 1.0f) }
 
-    LazyColumn(
-        state = lazyListState,
-        contentPadding = PaddingValues(bottom = 108.dp),
+    val backdropHeight = LocalConfiguration.current.run { screenHeightDp.dp } - 32.dp
+
+    AnimatedVisibility(
+        visible = true, enter = fadeIn(), exit = fadeOut()
     ) {
-        item(contentType = "LastSeenRow") {
-            ImmersiveShowsRow(
-                requestInitialFocus = true,
-                showItemTitle = false,
-                showList = lastSeenShows,
-                title = stringResource(R.string.continue_watching),
-                immersiveState = immersiveContentState,
-                onShowSelected = { show -> goToDetails(show.id) },
-                // Pass the focus callback down
-                onShowFocused = onImmersiveShowFocused
+        if (immersiveState is ImmersiveContentUiState.Content) {
+            ImmersiveBackground(
+                imageUrl = immersiveState.backdropUrl
             )
-        }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .gradientOverlay(MaterialTheme.colorScheme.surface)
+            )
 
-        item(contentType = "ViewingRow") {
-            ShowsRow(
+            val childPadding = rememberChildPadding()
+            ImmersiveDetails(
                 modifier = Modifier
-                    .padding(top = 16.dp),
-                showList = viewingShows,
-                title = stringResource(R.string.watching_now),
-                onShowSelected = { show -> goToDetails(show.id) },
+                    .padding(
+                        start = childPadding.start, top = childPadding.top + 24.dp
+                    )
+                    .fillMaxWidth(),
+                logoUrl = immersiveState.logoUrl,
+                title = immersiveState?.title ?: "",
+                description = if (immersiveState.shortDescription.isNullOrBlank()) immersiveState.description else immersiveState.shortDescription,
+                rating = immersiveState.rating,
+                votes = immersiveState.votes,
+                genres = immersiveState.genres,
+                countries = immersiveState.countries,
+                year = immersiveState.year,
+                seriesLength = immersiveState.seriesLength,
+                movieLength = immersiveState.movieLength,
+                ageRating = immersiveState.ageRating.toString()
             )
+        } else if (immersiveState is ImmersiveContentUiState.Loading) {
+            Box(
+                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+            ) {}
         }
+    }
 
-        item(contentType = "PopularMoviesRow") {
-            ShowsRow(
-                modifier = Modifier
-                    .padding(top = 16.dp),
-                showList = popularMovies,
-                title = stringResource(R.string.popular_movies),
-                onShowSelected = { show -> goToDetails(show.id) },
-            )
-        }
+    CompositionLocalProvider(LocalBringIntoViewSpec provides verticalBivs) {
+        LazyColumn(
+            modifier = Modifier
+                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                .drawWithContent {
+                    drawContent()
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colorStops = arrayOf(0.48f to Color.Transparent, 0.5f to Color.Black),
+                        ), blendMode = BlendMode.DstIn
+                    )
+                },
+            state = lazyColumnState,
+            contentPadding = PaddingValues(bottom = 108.dp),
+        ) {
+            item {
+                Spacer(modifier = Modifier.height(backdropHeight - 246.dp))
+            }
+            item(contentType = "LastSeenRow") {
+                ShowsRow(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    showItemTitle = false,
+                    showList = lastSeenShows,
+                    title = stringResource(R.string.continue_watching),
+                    onShowSelected = { show -> navigateToShowDetails(show.id) },
+                    onShowFocused = onImmersiveShowFocused
+                )
+            }
 
-        item(contentType = "PopularSeriesRow") {
-            ShowsRow(
-                modifier = Modifier
-                    .padding(top = 16.dp),
-                showList = popularSeries,
-                title = stringResource(R.string.popular_series),
-                onShowSelected = { show -> goToDetails(show.id) },
-            )
-        }
+            item(contentType = "ViewingRow") {
+                ShowsRow(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    showItemTitle = false,
+                    showList = viewingShows,
+                    title = stringResource(R.string.watching_now),
+                    onShowSelected = { show -> navigateToShowDetails(show.id) },
+                    onShowFocused = onImmersiveShowFocused
+                )
+            }
 
-        item(contentType = "PopularCartoonsRow") {
-            ShowsRow(
-                modifier = Modifier
-                    .padding(top = 16.dp),
-                showList = popularCartoons,
-                title = stringResource(R.string.popular_cartoons),
-                onShowSelected = { show -> goToDetails(show.id) },
-            )
+            item(contentType = "PopularMoviesRow") {
+                ShowsRow(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    showItemTitle = false,
+                    showList = popularMovies,
+                    title = stringResource(R.string.popular_movies),
+                    onShowSelected = { show -> navigateToShowDetails(show.id) },
+                    onShowFocused = onImmersiveShowFocused
+                )
+            }
+
+            item(contentType = "PopularSeriesRow") {
+                ShowsRow(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    showItemTitle = false,
+                    showList = popularSeries,
+                    title = stringResource(R.string.popular_series),
+                    onShowSelected = { show -> navigateToShowDetails(show.id) },
+                    onShowFocused = onImmersiveShowFocused
+                )
+            }
+
+            item(contentType = "PopularCartoonsRow") {
+                ShowsRow(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    showItemTitle = false,
+                    showList = popularCartoons,
+                    title = stringResource(R.string.popular_cartoons),
+                    onShowSelected = { show -> navigateToShowDetails(show.id) },
+                    onShowFocused = onImmersiveShowFocused
+                )
+            }
         }
     }
 }

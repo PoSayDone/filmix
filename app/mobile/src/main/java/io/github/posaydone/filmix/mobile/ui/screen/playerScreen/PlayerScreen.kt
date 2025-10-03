@@ -140,8 +140,9 @@ fun LockScreenOrientation() {
 }
 
 fun isPipSupported(context: Context): Boolean {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            context.packageManager.hasSystemFeature("android.software.picture_in_picture")
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && context.packageManager.hasSystemFeature(
+        "android.software.picture_in_picture"
+    )
 }
 
 fun enterPipMode(context: Context) {
@@ -149,9 +150,7 @@ fun enterPipMode(context: Context) {
 
     if (activity != null && isPipSupported(context)) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val params = PictureInPictureParams.Builder()
-                .setAspectRatio(Rational(16, 9))
-                .build()
+            val params = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
 
             activity.enterPictureInPictureMode(params)
         }
@@ -231,7 +230,8 @@ fun PlayerScreen(
 
         onDispose {
             viewModel.saveProgress()
-            MainActivity.isPlayerActive = false  // Reset player active status when screen is disposed
+            MainActivity.isPlayerActive =
+                false  // Reset player active status when screen is disposed
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -262,7 +262,7 @@ fun PlayerScreen(
     LaunchedEffect(key1 = player) {
         MainActivity.isPlayerActive = player != null
     }
-    
+
     // Also update when player state changes (play/pause)
     LaunchedEffect(key1 = playerState.isPlaying) {
         if (player != null) {
@@ -364,104 +364,100 @@ fun PlayerContent(
     onPlayPauseClick: () -> Unit,
     seekTo: (Long) -> Unit,
 ) {
-    Scaffold(
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
-    ) { paddingValues ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .focusable()
+    ) {
+        AndroidView(
+            factory = {
+            PlayerView(it).apply {
+                player = playerInstance
+                useController = false
+                resizeMode = playerState.resizeMode
+                keepScreenOn = playerState.isPlaying
+            }
+        }, update = {
+            it.resizeMode = playerState.resizeMode
+            it.keepScreenOn = playerState.isPlaying
+        }, modifier = Modifier.fillMaxSize()
+        )
+
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, _, zoom, _ ->
+                        if (zoom > 1) {
+                            setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
+                        } else if (zoom < 1) {
+                            setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
+                        }
+                    }
+                }
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { onToggleControls() }, onDoubleTap = { offset ->
+                        val screenWidth = size.width
+                        if (offset.x < screenWidth / 2) {
+                            seekBack()
+                            pulseState.setType(PlayerPulse.Type.BACK)
+                        } else {
+                            seekForward()
+                            pulseState.setType(PlayerPulse.Type.FORWARD)
+                        }
+                    })
+                }) {
+
+            }
+        }
+
+        AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .fillMaxSize()
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
-                .focusable()
-                .padding(paddingValues)
+                .padding(WindowInsets.safeDrawing.asPaddingValues())
         ) {
-            AndroidView(
-                factory = {
-                PlayerView(it).apply {
-                    player = playerInstance
-                    useController = false
-                    resizeMode = playerState.resizeMode
-                    keepScreenOn = playerState.isPlaying
-                }
-            }, update = {
-                it.resizeMode = playerState.resizeMode
-                it.keepScreenOn = playerState.isPlaying
-            }, modifier = Modifier.fillMaxSize()
-            )
-
-            Row(modifier = Modifier.fillMaxSize()) {
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, _, zoom, _ ->
-                            if (zoom > 1) {
-                                setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
-                            } else if (zoom < 1) {
-                                setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
-                            }
-                        }
-                    }
-                    .pointerInput(Unit) {
-                        detectTapGestures(onTap = { onToggleControls() }, onDoubleTap = { offset ->
-                            val screenWidth = size.width
-                            if (offset.x < screenWidth / 2) {
-                                seekBack()
-                                pulseState.setType(PlayerPulse.Type.BACK)
-                            } else {
-                                seekForward()
-                                pulseState.setType(PlayerPulse.Type.FORWARD)
-                            }
-                        })
-                    }) {
-
-                }
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PlayerPulse(pulseState)
             }
 
+
             AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .fillMaxSize()
+                MiddleControls(
+                    showType = showType,
+                    isPlaying = playerState.isPlaying,
+                    isLoading = playerState.isLoading,
+                    onPlayPauseClick = onPlayPauseClick,
+                    hasPrevEpisode = hasPrevEpisode,
+                    hasNextEpisode = hasNextEpisode,
+                    onPrevEpisodeClick = goToPrevEpisode,
+                    onNextEpisodeClick = goToNextEpisode,
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(WindowInsets.safeDrawing.asPaddingValues())
+            AnimatedVisibility(
+                visible = playerState.isLoading, enter = fadeIn(), exit = fadeOut()
             ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PlayerPulse(pulseState)
-                }
-
-
-                AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
-                    MiddleControls(
-                        showType = showType,
-                        isPlaying = playerState.isPlaying,
-                        isLoading = playerState.isLoading,
-                        onPlayPauseClick = onPlayPauseClick,
-                        hasPrevEpisode = hasPrevEpisode,
-                        hasNextEpisode = hasNextEpisode,
-                        onPrevEpisodeClick = goToPrevEpisode,
-                        onNextEpisodeClick = goToNextEpisode,
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .align(Alignment.Center)
                     )
                 }
-
-                AnimatedVisibility(
-                    visible = playerState.isLoading, enter = fadeIn(), exit = fadeOut()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .align(Alignment.Center)
-                        )
-                    }
-                }
+            }
 
             AnimatedVisibility(visible = showControls, enter = fadeIn(), exit = fadeOut()) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -475,14 +471,13 @@ fun PlayerContent(
                         onPipClick = { enterPipMode(context) },
                     )
 
-                        Spacer(modifier = Modifier.weight(1f))
-                        if (playerState.duration > 0L) {
-                            BottomControls(
-                                duration = playerState.duration,
-                                currentPosition = playerState.currentPosition,
-                                seekTo = seekTo
-                            )
-                        }
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (playerState.duration > 0L) {
+                        BottomControls(
+                            duration = playerState.duration,
+                            currentPosition = playerState.currentPosition,
+                            seekTo = seekTo
+                        )
                     }
                 }
             }
@@ -513,16 +508,16 @@ private fun MiddleControls(
         if (showType != ShowType.MOVIE) {
             Box(
                 modifier = Modifier.then(
-                        if (hasPrevEpisode) {
-                        Modifier.clickable(
-                            onClick = onPrevEpisodeClick,
-                            role = Role.Button,
-                            interactionSource = interactionSource,
-                            indication = ripple(bounded = false, radius = 24.dp)
-                        )
-                    } else {
-                        Modifier.semantics { disabled() }
-                    }),
+                    if (hasPrevEpisode) {
+                    Modifier.clickable(
+                        onClick = onPrevEpisodeClick,
+                        role = Role.Button,
+                        interactionSource = interactionSource,
+                        indication = ripple(bounded = false, radius = 24.dp)
+                    )
+                } else {
+                    Modifier.semantics { disabled() }
+                }),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -559,16 +554,16 @@ private fun MiddleControls(
         if (showType != ShowType.MOVIE) {
             Box(
                 modifier = Modifier.then(
-                        if (hasNextEpisode) {
-                        Modifier.clickable(
-                            onClick = onNextEpisodeClick,
-                            role = Role.Button,
-                            interactionSource = interactionSource,
-                            indication = ripple(bounded = false, radius = 24.dp)
-                        )
-                    } else {
-                        Modifier.semantics { disabled() }
-                    }),
+                    if (hasNextEpisode) {
+                    Modifier.clickable(
+                        onClick = onNextEpisodeClick,
+                        role = Role.Button,
+                        interactionSource = interactionSource,
+                        indication = ripple(bounded = false, radius = 24.dp)
+                    )
+                } else {
+                    Modifier.semantics { disabled() }
+                }),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
