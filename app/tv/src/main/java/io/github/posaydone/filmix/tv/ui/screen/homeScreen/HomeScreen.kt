@@ -131,7 +131,7 @@ private fun Body(
     ) {
         if (immersiveState is ImmersiveContentUiState.Content) {
             ImmersiveBackground(
-                imageUrl = immersiveState.backdropUrl
+                imageUrl = immersiveState.fullShow.backdropUrl
             )
             Box(
                 Modifier
@@ -146,17 +146,29 @@ private fun Body(
                         start = childPadding.start, top = childPadding.top + 24.dp
                     )
                     .fillMaxWidth(),
-                logoUrl = immersiveState.logoUrl,
-                title = immersiveState?.title ?: "",
-                description = if (immersiveState.shortDescription.isNullOrBlank()) immersiveState.description else immersiveState.shortDescription,
-                rating = immersiveState.rating,
-                votes = immersiveState.votes,
-                genres = immersiveState.genres,
-                countries = immersiveState.countries,
-                year = immersiveState.year,
-                seriesLength = immersiveState.seriesLength,
-                movieLength = immersiveState.movieLength,
-                ageRating = immersiveState.ageRating.toString()
+                logoUrl = immersiveState.fullShow.logoUrl,
+                title = immersiveState.fullShow.title,
+                description = immersiveState.fullShow.description ?: immersiveState.fullShow.shortDescription,
+                rating = io.github.posaydone.filmix.core.model.Rating(
+                    kp = immersiveState.fullShow.ratingKp ?: 0.0,
+                    imdb = immersiveState.fullShow.ratingImdb ?: 0.0,
+                    filmCritics = 0.0,
+                    russianFilmCritics = 0.0,
+                    await = 0.0
+                ),
+                votes = io.github.posaydone.filmix.core.model.Votes(
+                    kp = immersiveState.fullShow.votesKp ?: 0,
+                    imdb = immersiveState.fullShow.votesImdb ?: 0,
+                    filmCritics = 0,
+                    russianFilmCritics = 0,
+                    await = 0
+                ),
+                genres = immersiveState.fullShow.genres.map { io.github.posaydone.filmix.core.model.KinopoiskGenre(name = it) },
+                countries = immersiveState.fullShow.countries.map { io.github.posaydone.filmix.core.model.KinopoiskCountry(name = it) },
+                year = immersiveState.fullShow.year,
+                seriesLength = immersiveState.fullShow.seriesLength,
+                movieLength = immersiveState.fullShow.movieLength,
+                ageRating = immersiveState.fullShow.ageRating.toString()
             )
         } else if (immersiveState is ImmersiveContentUiState.Loading) {
             Box(

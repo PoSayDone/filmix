@@ -7,8 +7,8 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.posaydone.filmix.core.data.FilmixRepository
-import io.github.posaydone.filmix.core.data.KinopoiskRepository
-import io.github.posaydone.filmix.core.model.KinopoiskMovie
+import io.github.posaydone.filmix.core.data.MovieRepository
+import io.github.posaydone.filmix.core.model.FullShow
 import io.github.posaydone.filmix.core.model.SessionManager
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
@@ -30,8 +30,8 @@ sealed class ShowDetailsScreenUiState {
     data class Error(val message: String, val onRetry: () -> Unit) : ShowDetailsScreenUiState()
     data class Done(
         val sessionManager: SessionManager,
-        val kinopoiskMovie: KinopoiskMovie?,
-        val showDetails: ShowDetails,
+        val fullShow: FullShow,
+        val showDetails: io.github.posaydone.filmix.core.model.ShowDetails, // Still need this for isFavorite status
         val showImages: ShowImages,
         val showTrailers: ShowTrailers,
         val showProgress: ShowProgress,
@@ -47,7 +47,7 @@ data class ShowDetailsNavKey(val showId: Int)
 class ShowDetailsScreenViewModel @AssistedInject constructor(
     @Assisted val navKey: ShowDetailsNavKey,
     private val filmixRepository: FilmixRepository,
-    private val kinopoiskRepository: KinopoiskRepository,
+    private val movieRepository: MovieRepository,
     private val sessionManager: SessionManager,
 ) : ViewModel() {
     @AssistedFactory
@@ -62,24 +62,19 @@ class ShowDetailsScreenViewModel @AssistedInject constructor(
             flow {
                 try {
                     val showId = navKey.showId
-                    val details = filmixRepository.getShowDetails(showId)
+                    val showDetails = filmixRepository.getShowDetails(showId) // Need this for toggleFavorites
+                    val fullShow = movieRepository.getFullMovieByFilmixId(showId)
                     val images = filmixRepository.getShowImages(showId)
                     val trailers = filmixRepository.getShowTrailers(showId)
                     val history = filmixRepository.getShowProgress(showId)
 
-                    val query = if (details.originalTitle.isNullOrEmpty()) details.title else details.originalTitle
-                    val searchResult = kinopoiskRepository.movieSearch(
-                        page = 1, limit = 1, query = query
-                    )
-                    val kinopoiskMovie = searchResult.docs.firstOrNull()
-
                     emit(
                         ShowDetailsScreenUiState.Done(
-                            showDetails = details,
+                            fullShow = fullShow,
+                            showDetails = showDetails,
                             showImages = images,
                             showTrailers = trailers,
                             showProgress = history,
-                            kinopoiskMovie = kinopoiskMovie,
                             sessionManager = sessionManager,
                             toggleFavorites = { toggleFavorites() }
                         ))

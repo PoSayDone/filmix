@@ -5,11 +5,11 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.posaydone.filmix.core.data.FanartRepository
 import io.github.posaydone.filmix.core.data.FilmixRepository
-import io.github.posaydone.filmix.core.data.KinopoiskRepository
+import io.github.posaydone.filmix.core.data.MovieRepository
 import io.github.posaydone.filmix.core.data.TmdbRepository
 import io.github.posaydone.filmix.core.model.FilmixCategory
+import io.github.posaydone.filmix.core.model.FullShow
 import io.github.posaydone.filmix.core.model.ImageObject
 import io.github.posaydone.filmix.core.model.KinopoiskCountry
 import io.github.posaydone.filmix.core.model.KinopoiskGenre
@@ -21,8 +21,7 @@ import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.core.model.Votes
-import io.github.posaydone.filmix.core.model.fanart.FanartMovieResponse
-import io.github.posaydone.filmix.core.model.fanart.FanartTvResponse
+import io.github.posaydone.filmix.core.model.tmdb.TmdbImagesResponse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -42,12 +41,6 @@ import javax.inject.Inject
 
 private const val TAG = "HomeScreenViewModel"
 
-
-data class FeaturedShow(
-    val showDetails: ShowDetails,
-    val kinopoiskMovie: KinopoiskMovie?,
-)
-
 @Immutable
 sealed class HomeScreenUiState {
     data object Loading : HomeScreenUiState()
@@ -59,7 +52,7 @@ sealed class HomeScreenUiState {
 
     data class Done(
         val sessionManager: SessionManager,
-        val featuredShow: FeaturedShow,
+        val featuredShow: FullShow,
         val lastSeenShows: ShowList,
         val viewingShows: ShowList,
         val popularMovies: ShowList,
@@ -73,21 +66,7 @@ sealed class HomeScreenUiState {
 sealed interface ImmersiveContentUiState {
     data object Loading : ImmersiveContentUiState
     data class Content(
-        val backdropUrl: String?,
-        val title: String?,
-        val ageRating: Int,
-        val logoUrl: String?,
-        val description: String?,
-        val shortDescription: String?,
-        val rating: Rating,
-        val votes: Votes,
-        val isSeries: Boolean,
-        val type: String,
-        val seriesLength: Int?,
-        val movieLength: Int?,
-        val genres: List<KinopoiskGenre>,
-        val countries: List<KinopoiskCountry>,
-        val year: Int,
+        val fullShow: FullShow
     ) : ImmersiveContentUiState
 
     data object Error : ImmersiveContentUiState
@@ -96,8 +75,8 @@ sealed interface ImmersiveContentUiState {
 @HiltViewModel
 class HomeScreenViewModel @Inject constructor(
     private val filmixRepository: FilmixRepository,
-    private val kinopoiskRepository: KinopoiskRepository,
-    private val fanartRepository: FanartRepository,
+    private val tmdbRepository: TmdbRepository,
+    private val movieRepository: MovieRepository,
     private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val retryChannel = Channel<Unit>()
@@ -128,18 +107,12 @@ class HomeScreenViewModel @Inject constructor(
                     onRetry = { retry() })
             } else {
                 var show = lastSeenResult.getOrThrow().first()
-                var query =
-                    if (show.original_name.isNullOrEmpty()) show.title else show.original_name
-
-                val searchResult = kinopoiskRepository.movieSearch(
-                    page = 1, limit = 1, query = query
-                )
-                val kinopoiskMovie = searchResult.docs.firstOrNull()
-                val showDetails = filmixRepository.getShowDetails(show.id)
+                
+                val fullShow = movieRepository.getFullMovieByFilmixId(show.id)
 
                 HomeScreenUiState.Done(
                     sessionManager = sessionManager,
-                    featuredShow = FeaturedShow(showDetails, kinopoiskMovie),
+                    featuredShow = fullShow,
                     lastSeenShows = lastSeenResult.getOrThrow(),
                     viewingShows = viewingResult.getOrThrow(),
                     popularMovies = popularMoviesResult.getOrThrow(),
@@ -173,58 +146,16 @@ class HomeScreenViewModel @Inject constructor(
         fetchJob = viewModelScope.launch {
             _immersiveContentState.value = ImmersiveContentUiState.Loading
             try {
+                // Use MovieRepository to get full show information
+                val fullShow = movieRepository.getFullMovieByFilmixId(show.id)
 
-                var query =
-                    if (show.original_name.isNullOrEmpty()) show.title else show.original_name
-
-                val searchResult = kinopoiskRepository.movieSearch(
-                    page = 1, limit = 1, query = query
+                
+                val content = ImmersiveContentUiState.Content(
+                    fullShow = fullShow
                 )
-                val kinopoiskMovie = searchResult.docs.firstOrNull()
 
-                val fanartImages = if (kinopoiskMovie?.isSeries == true) {
-                    kinopoiskMovie?.externalId?.tmdb?.let { fanartRepository.getTvShowImages(it) }
-                } else {
-                    kinopoiskMovie?.externalId?.tmdb?.let { fanartRepository.getMovieImages(it) }
-                }
-
-                var logo = if (fanartImages != null) {
-                    if (
-                        fanartImages is FanartTvResponse
-                    ) {
-                        fanartImages.clearlogo?.first()?.url
-                    } else {
-                        (fanartImages as FanartMovieResponse).hdmovielogo?.first()?.url
-                            ?: (fanartImages as FanartMovieResponse).movielogo?.first()?.url
-                    }
-                } else {
-                    kinopoiskMovie?.logo?.url
-                }
-
-                Log.d("logo", logo ?: "")
-
-                if (kinopoiskMovie != null) {
-                    val content = ImmersiveContentUiState.Content(
-                        backdropUrl = kinopoiskMovie.backdrop?.url ?: show.poster,
-                        title = kinopoiskMovie.name,
-                        ageRating = kinopoiskMovie.ageRating,
-                        logoUrl = logo,
-                        shortDescription = kinopoiskMovie.shortDescription,
-                        description = kinopoiskMovie.description,
-                        countries = kinopoiskMovie.countries,
-                        type = kinopoiskMovie.type,
-                        year = kinopoiskMovie.year,
-                        movieLength = kinopoiskMovie.movieLength,
-                        seriesLength = kinopoiskMovie.seriesLength,
-                        votes = kinopoiskMovie.votes,
-                        genres = kinopoiskMovie.genres,
-                        rating = kinopoiskMovie.rating,
-                        isSeries = kinopoiskMovie.isSeries
-                    )
-
-                    kinopoiskCache[show.id] = content
-                    _immersiveContentState.value = content
-                }
+                kinopoiskCache[show.id] = content
+                _immersiveContentState.value = content
 
             } catch (e: Exception) {
                 _immersiveContentState.value = ImmersiveContentUiState.Error

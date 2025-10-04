@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "io.github.posaydone.filmix.core.data"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 21

@@ -36,7 +36,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
@@ -45,13 +44,13 @@ import io.github.posaydone.filmix.core.common.R
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenViewModel
 import io.github.posaydone.filmix.core.model.Country
+import io.github.posaydone.filmix.core.model.FullShow
 import io.github.posaydone.filmix.core.model.Genre
 import io.github.posaydone.filmix.core.model.KinopoiskCountry
 import io.github.posaydone.filmix.core.model.KinopoiskGenre
-import io.github.posaydone.filmix.core.model.KinopoiskMovie
 import io.github.posaydone.filmix.core.model.LastEpisode
 import io.github.posaydone.filmix.core.model.MaxEpisode
-import io.github.posaydone.filmix.core.model.Person
+import io.github.posaydone.filmix.core.model.KinopoiskPerson
 import io.github.posaydone.filmix.core.model.Rating
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImage
@@ -93,10 +92,10 @@ fun ShowDetailsScreen(
         is ShowDetailsScreenUiState.Done -> {
             Details(
                 showDetails = s.showDetails,
+                fullShow = s.fullShow,
                 showProgress = s.showProgress,
                 showImages = s.showImages,
                 showTrailers = s.showTrailers,
-                kinopoiskMovie = s.kinopoiskMovie,
                 toggleFavorites = s.toggleFavorites,
                 goToMoviePlayer = {
                     navigateToMoviePlayer(showId)
@@ -112,8 +111,8 @@ fun ShowDetailsScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Details(
-    kinopoiskMovie: KinopoiskMovie?,
     showDetails: ShowDetails,
+    fullShow: FullShow,
     showProgress: ShowProgress?,
     showImages: ShowImages,
     showTrailers: ShowTrailers?,
@@ -132,7 +131,7 @@ private fun Details(
                 .fillMaxHeight()
         ) {
             ImmersiveBackground(
-                imageUrl = kinopoiskMovie?.backdrop?.url ?: showImages.frames.firstOrNull()?.url
+                imageUrl = fullShow.backdropUrl ?: showImages.frames.firstOrNull()?.url
                 ?: showDetails.poster
             )
             Box(
@@ -151,34 +150,33 @@ private fun Details(
                     ), verticalArrangement = Arrangement.SpaceBetween
             ) {
                 ImmersiveDetails(
-                    logoUrl = kinopoiskMovie?.logo?.url ?: null,
-                    title = kinopoiskMovie?.name ?: showDetails.title,
-                    description = if (kinopoiskMovie == null) showDetails.shortStory else if (kinopoiskMovie.shortDescription.isNullOrEmpty()) kinopoiskMovie.description else kinopoiskMovie.shortDescription,
-                    rating = kinopoiskMovie?.rating ?: Rating(
-                        kp = showDetails.ratingKinopoisk,
-                        imdb = showDetails.ratingImdb,
+                    logoUrl = fullShow.logoUrl,
+                    title = fullShow.title,
+                    description = fullShow.description ?: fullShow.shortDescription ?: showDetails.shortStory,
+                    rating = Rating(
+                        kp = fullShow.ratingKp,
+                        imdb = fullShow.ratingImdb,
                         filmCritics = .0,
                         russianFilmCritics = .0,
                         await = .0
                     ),
-                    votes = kinopoiskMovie?.votes ?: Votes(
-                        kp = showDetails.votesKinopoisk,
-                        imdb = showDetails.votesIMDB,
+                    votes = Votes(
+                        kp = fullShow.votesKp,
+                        imdb = fullShow.votesImdb,
                         filmCritics = 0,
                         russianFilmCritics = 0,
                         await = 0
                     ),
-                    genres = kinopoiskMovie?.genres ?: showDetails.genres.map { g ->
+                    genres = fullShow.genres.map { g ->
                         KinopoiskGenre(
-                            g.name
+                            g
                         )
                     },
-                    countries = kinopoiskMovie?.countries
-                        ?: showDetails.countries.map { c -> KinopoiskCountry(c.name) },
-                    year = kinopoiskMovie?.year ?: showDetails.year,
-                    movieLength = kinopoiskMovie?.movieLength ?: showDetails.duration,
-                    seriesLength = kinopoiskMovie?.seriesLength,
-                    ageRating = kinopoiskMovie?.ageRating?.toString() ?: showDetails.mpaa ?: ""
+                    countries = fullShow.countries.map { c -> KinopoiskCountry(c) },
+                    year = fullShow.year,
+                    movieLength = fullShow.movieLength ?: showDetails.duration,
+                    seriesLength = fullShow.seriesLength,
+                    ageRating = fullShow.ageRating.toString()
                 )
                 ShowDetailsButtons(
                     modifier = Modifier.onFocusChanged {
@@ -196,76 +194,104 @@ private fun Details(
     }
 }
 
-@Preview(device = "id:tv_4k")
-@Composable
-private fun ShowDetailsScreenPreview() {
-
-    Details(
-        toggleFavorites = {},
-        showDetails = ShowDetails(
-            id = 1,
-            category = "TV Show",
-            title = "Mock Show",
-            originalTitle = "Mock Show Original",
-            year = 2023,
-            updated = "2024-01-18",
-            actors = arrayListOf(
-                Person(id = "1", name = "John Doe", poster = "https://example.com/john_doe.jpg"),
-                Person(id = "2", name = "Jane Doe", poster = "https://example.com/jane_doe.jpg")
-            ),
-            directors = arrayListOf(
-                Person(
-                    id = "3", name = "Director One", poster = "https://example.com/director_one.jpg"
-                ), Person(
-                    id = "4", name = "Director Two", poster = "https://example.com/director_two.jpg"
-                )
-            ),
-            lastEpisode = LastEpisode(
-                season = 2, episode = "10", translation = "Dub", date = "2024-01-15"
-            ),
-            maxEpisode = MaxEpisode(season = 2, episode = 10),
-            countries = arrayListOf(
-                Country(id = 1, name = "USA"), Country(id = 2, name = "UK")
-            ),
-            genres = arrayListOf(
-                Genre(id = 1, name = "Drama", alt_name = "drama"),
-                Genre(id = 2, name = "Sci-Fi", alt_name = "sci-fi")
-            ),
-            poster = "https://example.com/mock_show_poster.jpg",
-            rip = "WEBRip",
-            quality = "1080p",
-            votesPos = 5000,
-            votesNeg = 200,
-            ratingImdb = 8.5,
-            ratingKinopoisk = 8.2,
-            url = "https://example.com/mock_show",
-            duration = 120,
-            votesIMDB = 10000,
-            votesKinopoisk = 8000,
-            idKinopoisk = 123456,
-            mpaa = "PG-13",
-            slogan = "A mock show for testing",
-            shortStory = "This is a mock show created for testing purposes.",
-            status = null,
-            isFavorite = true,
-            isDeferred = false,
-            isHdr = true
-        ),
-        showImages = ShowImages(
-            frames = listOf(
-                ShowImage(size = 1920, title = "Frame 1", url = "https://example.com/frame1.jpg"),
-                ShowImage(size = 1920, title = "Frame 2", url = "https://example.com/frame2.jpg")
-            ), posters = listOf(
-                ShowImage(size = 1080, title = "Poster 1", url = "https://example.com/poster1.jpg"),
-                ShowImage(size = 1080, title = "Poster 2", url = "https://example.com/poster2.jpg")
-            )
-        ),
-        showProgress = null,
-        showTrailers = null,
-        kinopoiskMovie = null,
-        goToMoviePlayer = {},
-    )
-}
+//@Preview(device = "id:tv_4k")
+//@Composable
+//private fun ShowDetailsScreenPreview() {
+//
+//    Details(
+//        showDetails = ShowDetails(
+//            id = 1,
+//            category = "TV Show",
+//            title = "Mock Show",
+//            originalTitle = "Mock Show Original",
+//            year = 2023,
+//            updated = "2024-01-18",
+//            actors = arrayListOf(
+//                KinopoiskPerson(id = "1", name = "John Doe", poster = "https://example.com/john_doe.jpg"),
+//                KinopoiskPerson(id = "2", name = "Jane Doe", poster = "https://example.com/jane_doe.jpg")
+//            ),
+//            directors = arrayListOf(
+//                KinopoiskPerson(
+//                    id = "3", name = "Director One", poster = "https://example.com/director_one.jpg"
+//                ), KinopoiskPerson(
+//                    id = "4", name = "Director Two", poster = "https://example.com/director_two.jpg"
+//                )
+//            ),
+//            lastEpisode = LastEpisode(
+//                season = 2, episode = "10", translation = "Dub", date = "2024-01-15"
+//            ),
+//            maxEpisode = MaxEpisode(season = 2, episode = 10),
+//            countries = arrayListOf(
+//                Country(id = 1, name = "USA"), Country(id = 2, name = "UK")
+//            ),
+//            genres = arrayListOf(
+//                Genre(id = 1, name = "Drama", alt_name = "drama"),
+//                Genre(id = 2, name = "Sci-Fi", alt_name = "sci-fi")
+//            ),
+//            poster = "https://example.com/mock_show_poster.jpg",
+//            rip = "WEBRip",
+//            quality = "1080p",
+//            votesPos = 5000,
+//            votesNeg = 200,
+//            ratingImdb = 8.5,
+//            ratingKinopoisk = 8.2,
+//            url = "https://example.com/mock_show",
+//            duration = 120,
+//            votesIMDB = 10000,
+//            votesKinopoisk = 8000,
+//            idKinopoisk = 123456,
+//            mpaa = "PG-13",
+//            slogan = "A mock show for testing",
+//            shortStory = "This is a mock show created for testing purposes.",
+//            status = null,
+//            isFavorite = true,
+//            isDeferred = false,
+//            isHdr = true
+//        ),
+//        fullShow = FullShow(
+//            id = 1,
+//            title = "Mock Show",
+//            originalTitle = "Mock Show Original",
+//            year = 2023,
+//            posterUrl = "https://example.com/mock_show_poster.jpg",
+//            backdropUrl = "https://example.com/mock_show_backdrop.jpg",
+//            logoUrl = null,
+//            description = "This is a mock show created for testing purposes.",
+//            shortDescription = "Test description",
+//            ratingKp = 8.2,
+//            ratingImdb = 8.5,
+//            votesKp = 8000,
+//            votesImdb = 10000,
+//            isSeries = false,
+//            isShow = false,
+//            genres = listOf("Drama", "Sci-Fi"),
+//            countries = listOf("USA", "UK"),
+//            ageRating = 13,
+//            movieLength = 120,
+//            seriesLength = null,
+//            quality = "1080p",
+//            status = "Completed",
+//            votesPos = 5000,
+//            votesNeg = 200,
+//            tmdbPosterPaths = emptyList(),
+//            tmdbBackdropPaths = emptyList(),
+//            tmdbLogoPaths = emptyList()
+//        ),
+//        showProgress = null,
+//        showImages = ShowImages(
+//            frames = listOf(
+//                ShowImage(size = 1920, title = "Frame 1", url = "https://example.com/frame1.jpg"),
+//                ShowImage(size = 1920, title = "Frame 2", url = "https://example.com/frame2.jpg")
+//            ), posters = listOf(
+//                ShowImage(size = 1080, title = "Poster 1", url = "https://example.com/poster1.jpg"),
+//                ShowImage(size = 1080, title = "Poster 2", url = "https://example.com/poster2.jpg")
+//            )
+//        ),
+//        showTrailers = null,
+//        toggleFavorites = {},
+//        goToMoviePlayer = {},
+//    )
+//}
 
 @Composable
 private fun InfoItem(

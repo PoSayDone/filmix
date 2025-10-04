@@ -12,6 +12,7 @@ data class Show(
     val votesNeg: Int,
     val votesPos: Int,
     val year: Int,
+    val url: String,
 )
 
 data class ShowStatus(

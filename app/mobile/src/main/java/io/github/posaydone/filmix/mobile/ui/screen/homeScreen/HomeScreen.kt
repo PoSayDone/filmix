@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.posaydone.filmix.core.common.R
-import io.github.posaydone.filmix.core.common.sharedViewModel.FeaturedShow
+
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenUiState
 import io.github.posaydone.filmix.core.common.sharedViewModel.HomeScreenViewModel
 import io.github.posaydone.filmix.core.model.ShowList
@@ -119,7 +119,7 @@ fun HomeScreen(
 @Composable
 private fun Body(
     modifier: Modifier = Modifier,
-    featuredShow: FeaturedShow,
+    featuredShow: io.github.posaydone.filmix.core.model.FullShow,
     lastSeenShows: ShowList,
     viewingShows: ShowList,
     popularMovies: ShowList,

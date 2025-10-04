@@ -1,5 +1,3 @@
-import org.gradle.model.internal.typeregistration.InstanceFactory.ImplementationInfo
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -9,7 +7,7 @@ plugins {
 
 android {
     namespace = "io.github.posaydone.filmix.core.network"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 21

@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.posaydone.filmix.core.common.sharedViewModel.FeaturedShow
+
 import io.github.posaydone.filmix.mobile.ui.screen.showDetailsScreen.ActionButtons
 import io.github.posaydone.filmix.mobile.ui.screen.showDetailsScreen.ShowPoster
 import io.github.posaydone.filmix.mobile.ui.screen.showDetailsScreen.TitleSection
@@ -36,7 +36,7 @@ import io.github.posaydone.filmix.mobile.ui.utils.bottomBorder
 @Composable
 fun HomeBanner(
     modifier: Modifier = Modifier,
-    featuredShow: FeaturedShow,
+    featuredShow: io.github.posaydone.filmix.core.model.FullShow,
     navigateToMoviePlayer: (showId: Int) -> Unit,
     onClick: (Int) -> Unit,
 ) {
@@ -44,8 +44,8 @@ fun HomeBanner(
 
     Box(modifier = modifier) {
         ShowPoster(
-            backdropUrl = featuredShow.kinopoiskMovie?.backdrop?.url,
-            posterUrl = featuredShow.kinopoiskMovie?.poster?.url ?: featuredShow.showDetails.poster,
+            backdropUrl = featuredShow.backdropUrl,
+            posterUrl = featuredShow.posterUrl,
             height = headerHeight
         )
 
@@ -61,8 +61,8 @@ fun HomeBanner(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 TitleSection(
-                    title = featuredShow.showDetails.title,
-                    logoUrl = featuredShow.kinopoiskMovie?.logo?.url,
+                    title = featuredShow.title,
+                    logoUrl = featuredShow.logoUrl,
                     height = 70.dp,
                 )
                 Column(
@@ -74,7 +74,7 @@ fun HomeBanner(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = if (featuredShow.kinopoiskMovie?.shortDescription.isNullOrBlank()) featuredShow.showDetails.shortStory else featuredShow.kinopoiskMovie?.shortDescription!!,
+                        text = featuredShow.description ?: featuredShow.shortDescription ?: "",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyLarge.copy(letterSpacing = 0.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -82,7 +82,7 @@ fun HomeBanner(
                     )
                     ActionButtons(
                         playButtonText = "Continue watching",
-                        navigateToMoviePlayer = { navigateToMoviePlayer(featuredShow.showDetails.id) },
+                        navigateToMoviePlayer = { navigateToMoviePlayer(featuredShow.id) },
                     )
                 }
             }

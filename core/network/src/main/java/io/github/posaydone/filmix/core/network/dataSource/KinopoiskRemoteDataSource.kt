@@ -1,5 +1,6 @@
 package io.github.posaydone.filmix.core.network.dataSource
 
+import io.github.posaydone.filmix.core.model.KinopoiskMovie
 import io.github.posaydone.filmix.core.model.KinopoiskMoviesResponse
 import io.github.posaydone.filmix.core.network.service.KinopoiskService
 import javax.inject.Inject
@@ -13,5 +14,11 @@ class KinopoiskRemoteDataSource @Inject constructor(
         query: String,
     ): KinopoiskMoviesResponse {
         return kinopoiskService.movieSearch(page, limit, query)
+    }
+
+    suspend fun getById(
+        id: Int,
+    ): KinopoiskMovie {
+        return kinopoiskService.getById(id)
     }
 }

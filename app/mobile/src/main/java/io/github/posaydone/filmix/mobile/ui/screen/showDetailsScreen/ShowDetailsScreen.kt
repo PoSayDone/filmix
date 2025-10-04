@@ -72,7 +72,7 @@ import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenU
 import io.github.posaydone.filmix.core.common.sharedViewModel.ShowDetailsScreenViewModel
 import io.github.posaydone.filmix.core.common.utils.formatDuration
 import io.github.posaydone.filmix.core.common.utils.formatVoteCount
-import io.github.posaydone.filmix.core.model.KinopoiskMovie
+import io.github.posaydone.filmix.core.model.FullShow
 import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowProgress
@@ -114,10 +114,10 @@ fun ShowDetailsScreen(
             is ShowDetailsScreenUiState.Done -> {
                 Details(
                     showDetails = s.showDetails,
+                    fullShow = s.fullShow,
                     showProgress = s.showProgress,
                     showImages = s.showImages,
                     showTrailers = s.showTrailers,
-                    kinopoiskMovie = s.kinopoiskMovie,
                     toggleFavorites = s.toggleFavorites,
                     navigateToMoviePlayer = { navigateToMoviePlayer(showId) },
                     navigateBack = navigateBack,
@@ -134,10 +134,10 @@ fun ShowDetailsScreen(
 @Composable
 private fun Details(
     showDetails: ShowDetails,
+    fullShow: FullShow,
     showProgress: ShowProgress,
     showImages: ShowImages,
     showTrailers: ShowTrailers,
-    kinopoiskMovie: KinopoiskMovie?,
     toggleFavorites: () -> Unit,
     navigateToMoviePlayer: () -> Unit,
     navigateBack: () -> Unit,
@@ -155,8 +155,8 @@ private fun Details(
 
     Box(modifier = modifier) {
         ShowPoster(
-            backdropUrl = kinopoiskMovie?.backdrop?.url,
-            posterUrl = kinopoiskMovie?.poster?.url ?: showDetails.poster,
+            backdropUrl = fullShow.backdropUrl,
+            posterUrl = fullShow.posterUrl,
             height = headerHeight,
             modifier = Modifier.graphicsLayer {
                 val scrollOffset = lazyListState.firstVisibleItemScrollOffset.toFloat()
@@ -178,21 +178,18 @@ private fun Details(
 
             item {
                 ShowBannerContent(
-                    title = showDetails.title,
-                    logoUrl = kinopoiskMovie?.logo?.url,
-                    ratingKp = kinopoiskMovie?.rating?.kp ?: showDetails.ratingKinopoisk,
-                    votesKp = kinopoiskMovie?.votes?.kp ?: showDetails.votesKinopoisk,
-                    originalTitle = showDetails.originalTitle,
-                    year = kinopoiskMovie?.year ?: showDetails.year,
-                    genres = (kinopoiskMovie?.genres?.map { it.name }
-                        ?: showDetails.genres.map { it.name }),
-                    countries = (kinopoiskMovie?.countries?.map { it.name }
-                        ?: showDetails.countries.map { it.name }),
+                    title = fullShow.title,
+                    logoUrl = fullShow.logoUrl,
+                    ratingKp = fullShow.ratingKp,
+                    votesKp = fullShow.votesKp,
+                    originalTitle = fullShow.originalTitle,
+                    year = fullShow.year,
+                    genres = fullShow.genres,
+                    countries = fullShow.countries,
                     totalMinutes = max(
-                        kinopoiskMovie?.movieLength ?: 0, kinopoiskMovie?.seriesLength ?: 0
+                        fullShow.movieLength ?: 0, fullShow.seriesLength ?: 0
                     ).takeIf { it > 0 } ?: showDetails.duration ?: 0,
-                    ageRating = kinopoiskMovie?.ageRating
-                        ?: showDetails.mpaa?.filter { it.isDigit() }?.toIntOrNull(),
+                    ageRating = fullShow.ageRating.takeIf { it > 0 },
                     isFavorite = showDetails.isFavorite,
                     onPlayClick = navigateToMoviePlayer,
                     onToggleFavoritesClick = toggleFavorites
@@ -209,8 +206,7 @@ private fun Details(
                         modifier = Modifier.padding(24.dp),
                     ) {
                         DescriptionSection(
-                            description = kinopoiskMovie?.description
-                                ?: kinopoiskMovie?.shortDescription ?: showDetails.shortStory
+                            description = fullShow.description ?: fullShow.shortDescription ?: showDetails.shortStory
                         )
                     }
                 }
@@ -218,7 +214,7 @@ private fun Details(
         }
 
         DynamicTopAppBar(
-            title = showDetails.title, isScrolled = isScrolled, navigateBack = navigateBack
+            title = fullShow.title, isScrolled = isScrolled, navigateBack = navigateBack
         )
     }
 }
