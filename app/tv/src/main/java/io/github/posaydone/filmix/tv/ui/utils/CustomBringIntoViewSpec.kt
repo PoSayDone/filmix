@@ -16,8 +16,6 @@ class CustomBringIntoViewSpec(
         tween(durationMillis = 50, easing = EaseInOut)
 
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
-        Log.d("Composition", "$offset, $size, $containerSize")
-        
         val leadingEdgeOfItemRequestingFocus = offset
         val trailingEdgeOfItemRequestingFocus = offset + size
         

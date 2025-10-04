@@ -9,8 +9,10 @@ import io.github.posaydone.filmix.core.network.interceptor.AuthInterceptor
 import io.github.posaydone.filmix.core.network.interceptor.FingerprintHeaderInterceptor
 import io.github.posaydone.filmix.core.network.interceptor.TokenAuthenticator
 import io.github.posaydone.filmix.core.network.service.AuthService
+import io.github.posaydone.filmix.core.network.service.FanartApiService
 import io.github.posaydone.filmix.core.network.service.FilmixApiService
 import io.github.posaydone.filmix.core.network.service.KinopoiskService
+import io.github.posaydone.filmix.core.network.service.TmdbApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -63,5 +65,25 @@ internal object NetworkModule {
         return Retrofit.Builder().baseUrl(Constants.FILMIX_API_URL)
             .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
             .create(FilmixApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTmdbApiService(
+        okHttpClient: OkHttpClient,
+    ): TmdbApiService {
+        return Retrofit.Builder().baseUrl(Constants.TMDB_API_URL)
+            .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
+            .create(TmdbApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFanartApiService(
+        okHttpClient: OkHttpClient,
+    ): FanartApiService {
+        return Retrofit.Builder().baseUrl(Constants.FANART_API_URL)
+            .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
+            .create(FanartApiService::class.java)
     }
 }

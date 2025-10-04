@@ -1,12 +1,16 @@
 package io.github.posaydone.filmix.core.common.sharedViewModel
 
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.posaydone.filmix.core.data.FanartRepository
 import io.github.posaydone.filmix.core.data.FilmixRepository
 import io.github.posaydone.filmix.core.data.KinopoiskRepository
+import io.github.posaydone.filmix.core.data.TmdbRepository
 import io.github.posaydone.filmix.core.model.FilmixCategory
+import io.github.posaydone.filmix.core.model.ImageObject
 import io.github.posaydone.filmix.core.model.KinopoiskCountry
 import io.github.posaydone.filmix.core.model.KinopoiskGenre
 import io.github.posaydone.filmix.core.model.KinopoiskMovie
@@ -17,6 +21,8 @@ import io.github.posaydone.filmix.core.model.ShowDetails
 import io.github.posaydone.filmix.core.model.ShowImages
 import io.github.posaydone.filmix.core.model.ShowList
 import io.github.posaydone.filmix.core.model.Votes
+import io.github.posaydone.filmix.core.model.fanart.FanartMovieResponse
+import io.github.posaydone.filmix.core.model.fanart.FanartTvResponse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -91,6 +97,7 @@ sealed interface ImmersiveContentUiState {
 class HomeScreenViewModel @Inject constructor(
     private val filmixRepository: FilmixRepository,
     private val kinopoiskRepository: KinopoiskRepository,
+    private val fanartRepository: FanartRepository,
     private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val retryChannel = Channel<Unit>()
@@ -167,19 +174,41 @@ class HomeScreenViewModel @Inject constructor(
             _immersiveContentState.value = ImmersiveContentUiState.Loading
             try {
 
-                var query = if (show.original_name.isNullOrEmpty()) show.title else show.original_name
+                var query =
+                    if (show.original_name.isNullOrEmpty()) show.title else show.original_name
 
                 val searchResult = kinopoiskRepository.movieSearch(
                     page = 1, limit = 1, query = query
                 )
                 val kinopoiskMovie = searchResult.docs.firstOrNull()
 
+                val fanartImages = if (kinopoiskMovie?.isSeries == true) {
+                    kinopoiskMovie?.externalId?.tmdb?.let { fanartRepository.getTvShowImages(it) }
+                } else {
+                    kinopoiskMovie?.externalId?.tmdb?.let { fanartRepository.getMovieImages(it) }
+                }
+
+                var logo = if (fanartImages != null) {
+                    if (
+                        fanartImages is FanartTvResponse
+                    ) {
+                        fanartImages.clearlogo?.first()?.url
+                    } else {
+                        (fanartImages as FanartMovieResponse).hdmovielogo?.first()?.url
+                            ?: (fanartImages as FanartMovieResponse).movielogo?.first()?.url
+                    }
+                } else {
+                    kinopoiskMovie?.logo?.url
+                }
+
+                Log.d("logo", logo ?: "")
+
                 if (kinopoiskMovie != null) {
                     val content = ImmersiveContentUiState.Content(
                         backdropUrl = kinopoiskMovie.backdrop?.url ?: show.poster,
                         title = kinopoiskMovie.name,
                         ageRating = kinopoiskMovie.ageRating,
-                        logoUrl = kinopoiskMovie.logo?.url,
+                        logoUrl = logo,
                         shortDescription = kinopoiskMovie.shortDescription,
                         description = kinopoiskMovie.description,
                         countries = kinopoiskMovie.countries,

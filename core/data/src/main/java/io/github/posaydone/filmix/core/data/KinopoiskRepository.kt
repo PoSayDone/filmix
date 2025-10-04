@@ -13,3 +13,4 @@ class KinopoiskRepository @Inject constructor(private val kinopoiskRemoteDataSou
         return kinopoiskRemoteDataSource.movieSearch(page, limit, query)
     }
 }
+
